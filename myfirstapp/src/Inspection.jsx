@@ -198,29 +198,6 @@ export function Inspection() {
         }
     };
 
-    const checkEvents = async () => {
-        if (!selectedSchool) {
-            alert("Please select a school first");
-            return;
-        }
-
-        try {
-            const res = await fetch(
-                `https://research.im.dhis2.org/in5320g18/api/events?orgUnit=${selectedSchool}&program=UxK2o06ScIe&pageSize=50`,
-                {
-                    headers: {
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                }
-            );
-            const data = await res.json();
-            console.log("📋 Events for this school:", data);
-            alert(`Found ${data.events?.length || 0} events for this school. Check console for details.`);
-        } catch (err) {
-            console.error("Error fetching events:", err);
-        }
-    };
-
     if (loading) {
         return (
             <CenteredContent>
