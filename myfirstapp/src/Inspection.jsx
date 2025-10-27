@@ -19,7 +19,6 @@ export function Inspection() {
     const [selectedSchool, setSelectedSchool] = useState("");
     const [loading, setLoading] = useState(true);
     const [dataElementIds, setDataElementIds] = useState([]);
-    const [optionSets, setOptionSets] = useState({});
     const [form, setForm] = useState({
         reportDate: "",
         hasComputerLab: "",
@@ -36,7 +35,6 @@ export function Inspection() {
     });
     const [errors, setErrors] = useState([]);
 
-    // Fetch all schools
     useEffect(() => {
         const fetchSchools = async () => {
             try {
@@ -56,8 +54,6 @@ export function Inspection() {
         };
         fetchSchools();
     }, []);
-
-    // Fetch all dataElement IDs
     useEffect(() => {
         const fetchDataElements = async () => {
             try {
@@ -94,13 +90,10 @@ export function Inspection() {
         const errs = [];
         if (!selectedSchool) errs.push("You must select a school");
         if (!form.reportDate) errs.push("Report date is required");
-
-        // Check if all required fields are filled
         if (!form.hasComputerLab) errs.push("Computer lab question is required");
         if (!form.hasElectricity) errs.push("Electricity question is required");
         if (!form.hasHandwash) errs.push("Handwashing facilities question is required");
         if (!form.hasYard) errs.push("Yard/playground question is required");
-
         const numberFields = ["classroomsTotal", "classroomsClean", "teacherToilets"];
         numberFields.forEach((f) => {
             if (form[f] && (isNaN(form[f]) || Number(form[f]) < 0))
@@ -108,17 +101,6 @@ export function Inspection() {
         });
         return errs;
     };
-
-    // Generate a unique event ID
-    const generateUID = () => {
-        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-        let uid = chars[Math.floor(Math.random() * 52)]; // First char must be letter
-        for (let i = 0; i < 10; i++) {
-            uid += chars[Math.floor(Math.random() * chars.length)];
-        }
-        return uid;
-    };
-
     const trySubmitEvent = async (payload) => {
         const base = "https://research.im.dhis2.org/in5320g18/api";
         const url = `${base}/tracker?async=false`;
@@ -139,10 +121,8 @@ export function Inspection() {
             console.log("📥 Full API Response:", JSON.stringify(result, null, 2));
 
             if (res.ok) {
-                // Check for validation errors in the response
                 if (result.status === "ERROR") {
                     console.error("❌ Validation errors:", result.validationReport);
-                    alert(`Submission failed with validation errors. Check console for details.`);
                     return false;
                 }
 
@@ -150,16 +130,13 @@ export function Inspection() {
                     console.log("📊 Stats:", result.stats);
                 }
 
-                alert(`✅ Inspection submitted successfully!\n\nCheck the Capture app:\n1. Select the correct school\n2. Check the date filter\n3. Click Search/Refresh`);
                 return true;
             } else {
                 console.error("❌ Failed:", result);
-                alert(`Submission failed: ${result.message || 'Unknown error'}`);
                 return false;
             }
         } catch (err) {
             console.error("⚠️ Network error:", err);
-            alert("Network error. Check console for details.");
             return false;
         }
     };
@@ -172,22 +149,9 @@ export function Inspection() {
         }
         setErrors([]);
 
-        if (dataElementIds.length < 13) {
-            alert("Error: Not enough dataElement IDs fetched yet.");
-            return;
-        }
-
-        if (!programStageId) {
-            alert("Error: Program stage ID not loaded yet.");
-            return;
-        }
-
-        // Find selected school name for logging
         const selectedSchoolObj = schools.find(s => s.id === selectedSchool);
         console.log("🏫 Submitting to school:", selectedSchoolObj?.name, `(${selectedSchool})`);
         console.log("📅 Report date:", form.reportDate);
-
-        // Filter out empty values and build clean dataValues array
         const dataValues = [
             { dataElement: dataElementIds[0], value: form.hasComputerLab },
             { dataElement: dataElementIds[1], value: form.compLabCondition },
@@ -202,11 +166,8 @@ export function Inspection() {
             { dataElement: dataElementIds[12], value: form.teacherToilets },
         ].filter(dv => dv.value !== "" && dv.value !== null && dv.value !== undefined);
 
-        const eventUID = generateUID();
-        console.log("🆔 Generated Event UID:", eventUID);
 
         const event = {
-            event: eventUID,
             program: "UxK2o06ScIe",
             programStage: programStageId,
             orgUnit: selectedSchool,
@@ -219,7 +180,6 @@ export function Inspection() {
         const success = await trySubmitEvent(payload);
 
         if (success) {
-            // Reset form after successful submission
             setForm({
                 reportDate: "",
                 hasComputerLab: "",
@@ -238,7 +198,6 @@ export function Inspection() {
         }
     };
 
-    // Debug function to check events
     const checkEvents = async () => {
         if (!selectedSchool) {
             alert("Please select a school first");
@@ -274,9 +233,6 @@ export function Inspection() {
         { label: "Yes", value: "true" },
         { label: "No", value: "false" },
     ];
-
-    // Hardcoded condition options based on DHIS2 Capture app
-    // We'll try common option code patterns and let the API tell us if they're wrong
     const conditionOptions = [
         { code: "1", name: "Strongly disagree" },
         { code: "2", name: "Disagree" },
@@ -284,8 +240,6 @@ export function Inspection() {
         { code: "4", name: "Agree" },
         { code: "5", name: "Strongly agree" }
     ];
-
-    console.log("🎨 Using condition options:", conditionOptions);
 
     return (
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
@@ -361,9 +315,6 @@ export function Inspection() {
                 <Button primary onClick={handleSubmit}>
                     Submit Inspection
                 </Button>
-                <Button onClick={checkEvents}>
-                    Check Existing Events (Debug)
-                </Button>
             </div>
 
             {errors.length > 0 && (
@@ -373,15 +324,6 @@ export function Inspection() {
                     ))}
                 </NoticeBox>
             )}
-
-            <NoticeBox warning title="After Submission">
-                <div>To see your submitted inspection in the Capture app:</div>
-                <ol style={{ marginLeft: 20, marginTop: 10 }}>
-                    <li>Select the SAME school you just submitted to</li>
-                    <li>Check the date filter includes your report date</li>
-                    <li>Click "Search" or refresh the page</li>
-                </ol>
-            </NoticeBox>
         </div>
     );
 }
