@@ -36,24 +36,29 @@ export function Inspection() {
     const [errors, setErrors] = useState([]);
 
     useEffect(() => {
-        const fetchSchools = async () => {
-            try {
-                const res = await fetch(
-                    "https://research.im.dhis2.org/in5320g18/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name,parent[id,name]&paging=false",
-                    {
-                        headers: {
-                            Authorization: "Basic " + btoa("admin:district"),
-                        },
-                    }
-                );
-                const data = await res.json();
-                setSchools(data.organisationUnits || []);
-            } catch (err) {
-                console.error("Error fetching schools:", err);
-            }
-        };
-        fetchSchools();
-    }, []);
+    const fetchSchools = async () => {
+        try {
+            const res = await fetch(
+                "https://research.im.dhis2.org/in5320g18/api/programs/UxK2o06ScIe?fields=organisationUnits[id,name,level,parent[id,name]]&paging=false",
+                {
+                    headers: {
+                        Authorization: "Basic " + btoa("admin:district"),
+                    },
+                }
+            );
+
+            const data = await res.json();
+
+            const orgUnits = data.organisationUnits || [];
+            setSchools(orgUnits);
+        } catch (err) {
+            console.error("Error fetching schools:", err);
+        }
+    };
+
+    fetchSchools();
+}, []);
+
     useEffect(() => {
         const fetchDataElements = async () => {
             try {
