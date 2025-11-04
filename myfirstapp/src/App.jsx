@@ -1,7 +1,6 @@
 import React from "react";
 import classes from "./App.module.css";
 import { useState } from "react";
-
 import { Inspection } from "./Inspection";
 import { Navigation } from "./Navigation";
 
