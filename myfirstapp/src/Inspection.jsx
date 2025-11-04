@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
     InputField,
@@ -13,27 +12,19 @@ import {
     CircularLoader,
 } from "@dhis2/ui";
 
+// 🏫 Inspection form component
 export function Inspection() {
-    // ============================================================================
-    // STATE MANAGEMENT
-    // ============================================================================
-
-    // Stores the DHIS2 program stage ID (required for event submission)
+    // =======================
+    // 🔧 State definitions
+    // =======================
     const [programStageId, setProgramStageId] = useState("");
-
-    // List of all schools fetched from DHIS2 (organisation units at level 5)
     const [schools, setSchools] = useState([]);
-
-    // Currently selected school ID from the dropdown
     const [selectedSchool, setSelectedSchool] = useState("");
-
-    // Loading state to show spinner while fetching initial data
     const [loading, setLoading] = useState(true);
-
-    // Array of data element IDs in the correct order (used for mapping form values to DHIS2)
     const [dataElementIds, setDataElementIds] = useState([]);
+    const [errors, setErrors] = useState([]);
 
-    // Form state containing all user inputs
+    // 📋 Form data
     const [form, setForm] = useState({
         reportDate: "",
         hasComputerLab: "",
@@ -49,17 +40,9 @@ export function Inspection() {
         teacherToilets: "",
     });
 
-    // Validation errors to display to the user
-    const [errors, setErrors] = useState([]);
-
-    // ============================================================================
-    // DATA FETCHING - Runs once when component mounts
-    // ============================================================================
-
-    /**
-     * Fetches the list of schools (organisation units) from DHIS2
-     * Filters for level 5 units under "Jambalaya Cluster"
-     */
+    // =======================
+    // 🏫 Fetch list of schools (Org Units)
+    // =======================
     useEffect(() => {
         const fetchSchools = async () => {
             try {
@@ -80,11 +63,9 @@ export function Inspection() {
         fetchSchools();
     }, []);
 
-    /**
-     * Fetches program metadata including:
-     * - Program Stage ID (required for event submission)
-     * - Data Element IDs (used to map form fields to DHIS2 data elements)
-     */
+    // =======================
+    // 🧩 Fetch Program Stage & Data Element IDs
+    // =======================
     useEffect(() => {
         const fetchDataElements = async () => {
             try {
@@ -98,12 +79,12 @@ export function Inspection() {
                 );
                 const data = await res.json();
 
-                // Extract and store program stage ID
+                // Get Program Stage ID
                 const stageId = data.programStages[0].id;
                 setProgramStageId(stageId);
                 console.log("📋 Program Stage ID:", stageId);
 
-                // Extract data element IDs in order
+                // Extract all data element IDs
                 const ids = data.programStages[0].programStageDataElements.map(
                     (el) => el.dataElement.id
                 );
@@ -119,25 +100,16 @@ export function Inspection() {
         fetchDataElements();
     }, []);
 
-    // ============================================================================
-    // FORM HANDLING
-    // ============================================================================
-
-    /**
-     * Updates form state when any input changes
-     * @param {string} name - The form field name
-     * @param {string} value - The new value
-     */
+    // =======================
+    // ✏️ Form field handler
+    // =======================
     const handleChange = (name, value) => setForm({ ...form, [name]: value });
 
-    /**
-     * Validates all required form fields before submission
-     * @returns {string[]} Array of error messages (empty if valid)
-     */
+    // =======================
+    // 🧩 Validation function
+    // =======================
     const validateInputs = () => {
         const errs = [];
-
-        // Required field validations
         if (!selectedSchool) errs.push("You must select a school");
         if (!form.reportDate) errs.push("Report date is required");
         if (!form.hasComputerLab) errs.push("Computer lab question is required");
@@ -145,25 +117,18 @@ export function Inspection() {
         if (!form.hasHandwash) errs.push("Handwashing facilities question is required");
         if (!form.hasYard) errs.push("Yard/playground question is required");
 
-        // Number field validations
+        // Validate numeric inputs
         const numberFields = ["classroomsTotal", "classroomsClean", "teacherToilets"];
         numberFields.forEach((f) => {
             if (form[f] && (isNaN(form[f]) || Number(form[f]) < 0))
                 errs.push(`${f} must be a valid positive number`);
         });
-
         return errs;
     };
 
-    // ============================================================================
-    // DHIS2 SUBMISSION
-    // ============================================================================
-
-    /**
-     * Submits event data to DHIS2 Tracker API
-     * @param {Object} payload - The event payload in DHIS2 format
-     * @returns {boolean} True if submission succeeded, false otherwise
-     */
+    // =======================
+    // 📤 Submit event to DHIS2 Tracker API
+    // =======================
     const trySubmitEvent = async (payload) => {
         const base = "https://research.im.dhis2.org/in5320g18/api";
         const url = `${base}/tracker?async=false`;
@@ -183,11 +148,9 @@ export function Inspection() {
             const result = await res.json();
             console.log("📥 Full API Response:", JSON.stringify(result, null, 2));
 
-            // Check for validation errors in successful HTTP response
             if (res.ok) {
                 if (result.status === "ERROR") {
                     console.error("❌ Validation errors:", result.validationReport);
-                    alert("Submission failed with validation errors. Check console for details.");
                     return false;
                 }
 
@@ -195,26 +158,21 @@ export function Inspection() {
                     console.log("📊 Stats:", result.stats);
                 }
 
-                alert("✅ Inspection submitted successfully!");
                 return true;
             } else {
                 console.error("❌ Failed:", result);
-                alert(`Submission failed: ${result.message || 'Unknown error'}`);
                 return false;
             }
         } catch (err) {
             console.error("⚠️ Network error:", err);
-            alert("Network error. Check console for details.");
             return false;
         }
     };
 
-    /**
-     * Main form submission handler
-     * Validates inputs, builds DHIS2 event payload, and submits to API
-     */
+    // =======================
+    // 🚀 Handle Submit button
+    // =======================
     const handleSubmit = async () => {
-        // Step 1: Validate all inputs
         const validationErrors = validateInputs();
         if (validationErrors.length > 0) {
             setErrors(validationErrors);
@@ -222,44 +180,39 @@ export function Inspection() {
         }
         setErrors([]);
 
-        // Step 2: Log submission details for debugging
         const selectedSchoolObj = schools.find(s => s.id === selectedSchool);
         console.log("🏫 Submitting to school:", selectedSchoolObj?.name, `(${selectedSchool})`);
         console.log("📅 Report date:", form.reportDate);
 
-        // Step 3: Build data values array mapping form fields to data element IDs
-        // Note: Indices match the order of data elements in programStageDataElements
+        // 🧱 Build DataValues from user input
         const dataValues = [
-            { dataElement: dataElementIds[0], value: form.hasComputerLab },      // Has computer lab (Yes/No)
-            { dataElement: dataElementIds[1], value: form.compLabCondition },    // Computer lab condition
-            { dataElement: dataElementIds[2], value: form.hasElectricity },      // Has electricity (Yes/No)
-            { dataElement: dataElementIds[3], value: form.elecCondition },       // Electricity condition
-            { dataElement: dataElementIds[4], value: form.hasHandwash },         // Has handwashing (Yes/No)
-            { dataElement: dataElementIds[5], value: form.handwashCondition },   // Handwashing condition
-            { dataElement: dataElementIds[8], value: form.classroomsTotal },     // Total classrooms
-            { dataElement: dataElementIds[9], value: form.classroomsClean },     // Clean classrooms
-            { dataElement: dataElementIds[10], value: form.hasYard },            // Has yard (Yes/No)
-            { dataElement: dataElementIds[11], value: form.yardCondition },      // Yard condition
-            { dataElement: dataElementIds[12], value: form.teacherToilets },     // Teacher toilets
+            { dataElement: dataElementIds[0], value: form.hasComputerLab },
+            { dataElement: dataElementIds[1], value: form.compLabCondition },
+            { dataElement: dataElementIds[2], value: form.hasElectricity },
+            { dataElement: dataElementIds[3], value: form.elecCondition },
+            { dataElement: dataElementIds[4], value: form.hasHandwash },
+            { dataElement: dataElementIds[5], value: form.handwashCondition },
+            { dataElement: dataElementIds[8], value: form.classroomsTotal },
+            { dataElement: dataElementIds[9], value: form.classroomsClean },
+            { dataElement: dataElementIds[10], value: form.hasYard },
+            { dataElement: dataElementIds[11], value: form.yardCondition },
+            { dataElement: dataElementIds[12], value: form.teacherToilets },
         ].filter(dv => dv.value !== "" && dv.value !== null && dv.value !== undefined);
 
-        // Step 4: Build DHIS2 event object
+        // 🧾 Build Event Payload
         const event = {
-            program: "UxK2o06ScIe",                          // School Inspection program ID
-            programStage: programStageId,                     // Program stage ID (fetched on load)
-            orgUnit: selectedSchool,                          // Selected school ID
-            occurredAt: new Date(form.reportDate).toISOString(), // Event date in ISO format
-            status: "ACTIVE",                                 // Event status
-            dataValues: dataValues,                           // Form data mapped to data elements
+            program: "UxK2o06ScIe",
+            programStage: programStageId,
+            orgUnit: selectedSchool,
+            occurredAt: new Date(form.reportDate).toISOString(),
+            status: "ACTIVE",
+            dataValues: dataValues,
         };
 
-        // Step 5: Wrap event in payload structure required by Tracker API
         const payload = { events: [event] };
-
-        // Step 6: Submit to DHIS2
         const success = await trySubmitEvent(payload);
 
-        // Step 7: Reset form on successful submission
+        // ✅ Reset form on success
         if (success) {
             setForm({
                 reportDate: "",
@@ -279,11 +232,9 @@ export function Inspection() {
         }
     };
 
-    // ============================================================================
-    // RENDERING
-    // ============================================================================
-
-    // Show loading spinner while fetching initial data
+    // =======================
+    // ⏳ Loading state
+    // =======================
     if (loading) {
         return (
             <CenteredContent>
@@ -292,14 +243,14 @@ export function Inspection() {
         );
     }
 
-    // Radio button options for Yes/No questions
+    // =======================
+    // 🎛️ UI Options
+    // =======================
     const yesNoOptions = [
         { label: "Yes", value: "true" },
         { label: "No", value: "false" },
     ];
 
-    // Dropdown options for condition fields (agreement scale)
-    // Codes are numeric strings (1-5) as required by DHIS2 optionSets
     const conditionOptions = [
         { code: "1", name: "Strongly disagree" },
         { code: "2", name: "Disagree" },
@@ -308,19 +259,14 @@ export function Inspection() {
         { code: "5", name: "Strongly agree" }
     ];
 
-    // Configuration for Yes/No + Condition field groups
-    const fieldGroups = [
-        { name: "hasComputerLab", label: "The school has a computer lab for learners", condition: "compLabCondition" },
-        { name: "hasElectricity", label: "The school has an electricity supply", condition: "elecCondition" },
-        { name: "hasHandwash", label: "The school has handwashing facilities", condition: "handwashCondition" },
-        { name: "hasYard", label: "The school has a yard/playground", condition: "yardCondition" },
-    ];
-
+    // =======================
+    // 🧠 Render form
+    // =======================
     return (
         <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
             <h2>New School Inspection</h2>
 
-            {/* School Selection */}
+            {/* Select Organisation Unit */}
             <SingleSelectField
                 label="Organisation Unit (School)"
                 selected={selectedSchool}
@@ -340,12 +286,15 @@ export function Inspection() {
                 onChange={(e) => handleChange("reportDate", e.value)}
             />
 
-            {/* Yes/No + Condition Field Groups */}
-            {fieldGroups.map((item) => (
+            {/* Grouped Question Fields */}
+            {[
+                { name: "hasComputerLab", label: "The school has a computer lab for learners", condition: "compLabCondition" },
+                { name: "hasElectricity", label: "The school has an electricity supply", condition: "elecCondition" },
+                { name: "hasHandwash", label: "The school has handwashing facilities", condition: "handwashCondition" },
+                { name: "hasYard", label: "The school has a yard/playground", condition: "yardCondition" },
+            ].map((item) => (
                 <FieldSet key={item.name}>
                     <Legend>{item.label}</Legend>
-
-                    {/* Yes/No Radio Buttons */}
                     {yesNoOptions.map((opt) => (
                         <Radio
                             key={opt.value}
@@ -354,8 +303,6 @@ export function Inspection() {
                             onChange={() => handleChange(item.name, opt.value)}
                         />
                     ))}
-
-                    {/* Condition Dropdown */}
                     <SingleSelectField
                         label="Condition"
                         selected={form[item.condition]}
@@ -369,7 +316,7 @@ export function Inspection() {
                 </FieldSet>
             ))}
 
-            {/* Number Input Fields */}
+            {/* Numeric Inputs */}
             <InputField
                 label="Total number of classrooms"
                 type="number"
@@ -390,11 +337,13 @@ export function Inspection() {
             />
 
             {/* Submit Button */}
-            <Button primary onClick={handleSubmit}>
-                Submit Inspection
-            </Button>
+            <div style={{ display: "flex", gap: 10 }}>
+                <Button primary onClick={handleSubmit}>
+                    Submit Inspection
+                </Button>
+            </div>
 
-            {/* Validation Error Display */}
+            {/* Validation Errors */}
             {errors.length > 0 && (
                 <NoticeBox error title="Validation Errors">
                     {errors.map((e, i) => (
