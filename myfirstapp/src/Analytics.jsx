@@ -26,13 +26,13 @@ export default function Analytics() {
     const [chartData, setChartData] = useState(null);
 
     // ========== CONFIGURATION ==========
-    const RESOURCE_PROGRAM_ID = 'qHmXyxzZZZZ'; // Your resources program ID (from screenshot)
+    const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS'; // Your resources program ID (from screenshot)
 
     const DATA_ELEMENTS = {
         TOILETS: 'slYohGwjQme',      // "toilets" from screenshot
         SEATS: 'fgUU2XNkGvI',         // "seats" from screenshot
         BOOKS: 'm9k3VefvGQw',         // "books" from screenshot
-        CLASSROOMS: 'XIgpDhDC4Ol' // Add if you have this
+        CLASSROOMS: 'mlbyc3CWNyb' // Add if you have this
     };
 
     // ========== 1. FETCH SCHOOLS ==========
