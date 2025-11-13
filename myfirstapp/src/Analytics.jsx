@@ -113,7 +113,7 @@ export default function Analytics() {
         const grouped = {};
 
         eventList.forEach(event => {
-            const eventDate = new Date(event.eventDate);
+            const eventDate = new Date(event.occurredAt || event.createdAt);
             const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
 
             if (!grouped[month]) {
