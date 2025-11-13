@@ -4,6 +4,7 @@ import { useState } from "react";
 import { Inspection } from "./Inspection";
 import { Navigation } from "./Navigation";
 import Analytics from "./Analytics"
+import SchoolPlanner from "./SchoolPlanner";
 
 function MyApp() {
     const [activePage, setActivePage] = useState("Inspection");
@@ -23,6 +24,7 @@ function MyApp() {
             <div className={classes.right}>
                 {activePage === "Inspection" && <Inspection />}
                 {activePage === "Analytics" && <Analytics />}
+                {activePage === "SchoolPlanner" && <SchoolPlanner />}
             </div>
         </div>
     );
