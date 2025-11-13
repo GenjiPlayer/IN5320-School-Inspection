@@ -3,6 +3,7 @@ import classes from "./App.module.css";
 import { useState } from "react";
 import { Inspection } from "./Inspection";
 import { Navigation } from "./Navigation";
+import Analytics from "./Analytics"
 
 function MyApp() {
     const [activePage, setActivePage] = useState("Inspection");
@@ -21,6 +22,7 @@ function MyApp() {
             </div>
             <div className={classes.right}>
                 {activePage === "Inspection" && <Inspection />}
+                {activePage === "Analytics" && <Analytics />}
             </div>
         </div>
     );

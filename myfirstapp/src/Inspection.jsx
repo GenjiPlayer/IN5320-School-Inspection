@@ -47,7 +47,7 @@ export function Inspection() {
         const fetchSchools = async () => {
             try {
                 const res = await fetch(
-                    "https://research.im.dhis2.org/in5320g18/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name,parent[id,name]&paging=false",
+                    "https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name,parent[id,name]&paging=false",
                     {
                         headers: {
                             Authorization: "Basic " + btoa("admin:district"),
@@ -70,7 +70,7 @@ export function Inspection() {
         const fetchDataElements = async () => {
             try {
                 const res = await fetch(
-                    "https://research.im.dhis2.org/in5320g18/api/programs/UxK2o06ScIe?fields=programStages[id,programStageDataElements[dataElement[id,name,code]]]",
+                    "https://research.im.dhis2.org/in5320g20/api/programs/UxK2o06ScIe?fields=programStages[id,programStageDataElements[dataElement[id,name,code]]]",
                     {
                         headers: {
                             Authorization: "Basic " + btoa("admin:district"),
@@ -130,7 +130,7 @@ export function Inspection() {
     // 📤 Submit event to DHIS2 Tracker API
     // =======================
     const trySubmitEvent = async (payload) => {
-        const base = "https://research.im.dhis2.org/in5320g18/api";
+        const base = "https://research.im.dhis2.org/in5320g20/api";
         const url = `${base}/tracker?async=false`;
 
         try {
