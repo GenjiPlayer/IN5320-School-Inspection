@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import Highcharts from 'highcharts';
+import 'highcharts/highcharts-more';
 import HighchartsReact from 'highcharts-react-official';
 import {
     Card,
@@ -7,14 +8,8 @@ import {
     NoticeBox,
     SingleSelectField,
     SingleSelectOption,
+    AlertBar,
 } from '@dhis2/ui';
-
-/**
- * Analytics Dashboard - Simplified Version
- *
- * Uses only the Resources event program data that you already have
- * Based on your Inspection.jsx working endpoints
- */
 
 export default function Analytics() {
     // State
@@ -24,15 +19,44 @@ export default function Analytics() {
     const [error, setError] = useState(null);
     const [events, setEvents] = useState([]);
     const [chartData, setChartData] = useState(null);
+    const [clusterData, setClusterData] = useState(null);
 
     // ========== CONFIGURATION ==========
-    const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS'; // Your resources program ID (from screenshot)
+    const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS';
 
     const DATA_ELEMENTS = {
-        TOILETS: 'slYohGwjQme',      // "toilets" from screenshot
-        SEATS: 'fgUU2XNkGvI',         // "seats" from screenshot
-        BOOKS: 'm9k3VefvGQw',         // "books" from screenshot
-        CLASSROOMS: 'mlbyc3CWNyb' // Add if you have this
+        TOILETS: 'slYohGwjQme',
+        SEATS: 'fgUU2XNkGvI',
+        BOOKS: 'm9k3VefvGQw',
+        CLASSROOMS: 'mlbyc3CWNyb'
+    };
+
+    // Standards with thresholds
+    const STANDARDS = {
+        toilets: {
+            min: 15,
+            label: 'Total Toilets',
+            warning: 'Limited sanitation capacity',
+            errorIcon: true
+        },
+        seats: {
+            min: 50,
+            label: 'Total Seats',
+            warning: 'Insufficient seating',
+            errorIcon: false
+        },
+        books: {
+            min: 100,
+            label: 'Total Books',
+            warning: 'Insufficient textbooks',
+            errorIcon: false
+        },
+        classrooms: {
+            max: 10,
+            label: 'Total Classrooms',
+            warning: 'Capacity OK',
+            successIcon: true
+        }
     };
 
     // ========== 1. FETCH SCHOOLS ==========
@@ -67,10 +91,11 @@ export default function Analytics() {
 
     // ========== 2. FETCH EVENTS WHEN SCHOOL CHANGES ==========
     useEffect(() => {
-        if (selectedSchool) {
+        if (selectedSchool && schools.length > 0) {
             fetchEvents();
+            fetchClusterData();
         }
-    }, [selectedSchool]);
+    }, [selectedSchool, schools]);
 
     const fetchEvents = async () => {
         setLoading(true);
@@ -95,8 +120,6 @@ export default function Analytics() {
 
             console.log('📊 Fetched events:', eventList);
             setEvents(eventList);
-
-            // Process events into chart data
             processEvents(eventList);
 
         } catch (err) {
@@ -107,18 +130,38 @@ export default function Analytics() {
         }
     };
 
+    const fetchClusterData = async () => {
+        try {
+            const allSchoolsData = await Promise.all(
+                schools.map(async (school) => {
+                    const res = await fetch(
+                        `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&fields=*`,
+                        {
+                            headers: {
+                                Authorization: 'Basic ' + btoa('admin:district'),
+                            }
+                        }
+                    );
+                    const data = await res.json();
+                    return data.events || [];
+                })
+            );
+
+            processClusterData(allSchoolsData.flat());
+        } catch (err) {
+            console.error('Failed to fetch cluster data:', err);
+        }
+    };
+
     // ========== 3. PROCESS EVENTS INTO CHART DATA ==========
     const processEvents = (eventList) => {
-        // Group events by month, keeping only the LATEST event per month
         const grouped = {};
 
         eventList.forEach(event => {
             const eventDate = new Date(event.occurredAt || event.createdAt);
             const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
 
-            // Initialize or update if this event is later
             if (!grouped[month] || eventDate > grouped[month].date) {
-                // Extract data values from this event
                 const resources = {
                     toilets: 0,
                     seats: 0,
@@ -147,23 +190,80 @@ export default function Analytics() {
             }
         });
 
-        // Sort months and create chart data
         const sortedMonths = Object.keys(grouped).sort();
+        const processed = sortedMonths.map(month => ({
+            month,
+            toilets: grouped[month].toilets,
+            seats: grouped[month].seats,
+            books: grouped[month].books,
+            classrooms: grouped[month].classrooms
+        }));
 
-        const processed = sortedMonths.map(month => {
-            return {
-                month,
-                toilets: grouped[month].toilets,
-                seats: grouped[month].seats,
-                books: grouped[month].books,
-                classrooms: grouped[month].classrooms
-            };
-        });
+        console.log('📊 Processed chart data:', processed);
         setChartData(processed);
     };
 
-    // ========== 4. CREATE HIGHCHARTS CONFIG ==========
-    const createChartConfig = (title, dataKey, color) => {
+    const processClusterData = (eventList) => {
+        const grouped = {};
+
+        eventList.forEach(event => {
+            const eventDate = new Date(event.occurredAt || event.createdAt);
+            const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+
+            if (!grouped[month]) {
+                grouped[month] = {
+                    toilets: [],
+                    seats: [],
+                    books: [],
+                    classrooms: []
+                };
+            }
+
+            event.dataValues?.forEach(dv => {
+                const value = parseInt(dv.value) || 0;
+
+                if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
+                    grouped[month].toilets.push(value);
+                } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
+                    grouped[month].seats.push(value);
+                } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
+                    grouped[month].books.push(value);
+                } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
+                    grouped[month].classrooms.push(value);
+                }
+            });
+        });
+
+        console.log('📊 Cluster data:', grouped);
+        setClusterData(grouped);
+    };
+
+    // ========== 4. CALCULATE STATISTICS ==========
+    const calculateAverage = (values) => {
+        if (!values || values.length === 0) return 0;
+        const sum = values.reduce((a, b) => a + b, 0);
+        return parseFloat((sum / values.length).toFixed(2));
+    };
+
+    const calculateStdDev = (values, average) => {
+        if (!values || values.length === 0) return 0;
+        const squareDiffs = values.map(value => Math.pow(value - average, 2));
+        const avgSquareDiff = calculateAverage(squareDiffs);
+        return Math.sqrt(avgSquareDiff);
+    };
+
+    // ========== 5. CHECK IF STANDARD IS MET ==========
+    const checkStandard = (value, standard) => {
+        if (standard.min !== undefined) {
+            return value >= standard.min;
+        } else if (standard.max !== undefined) {
+            return value <= standard.max;
+        }
+        return true;
+    };
+
+    // ========== 6. CREATE HIGHCHARTS CONFIG WITH DEVIATION ==========
+    const createChartConfig = (title, dataKey, color, standard) => {
         if (!chartData || chartData.length === 0) {
             return null;
         }
@@ -171,6 +271,30 @@ export default function Analytics() {
         const categories = chartData.map(d => d.month);
         const data = chartData.map(d => d[dataKey]);
         const latestValue = data[data.length - 1];
+
+        // Calculate cluster statistics for each month
+        const clusterAverages = [];
+        const upperBands = [];
+        const lowerBands = [];
+
+        categories.forEach(month => {
+            if (clusterData && clusterData[month]) {
+                const values = clusterData[month][dataKey];
+                const avg = calculateAverage(values);
+                const stdDev = calculateStdDev(values, avg);
+
+                clusterAverages.push(parseFloat(avg.toFixed(2)));
+                upperBands.push(parseFloat((avg + stdDev).toFixed(2)));
+                lowerBands.push(parseFloat((avg - stdDev).toFixed(2)));
+            } else {
+                const avg = calculateAverage(data);
+                clusterAverages.push(avg);
+                upperBands.push(avg);
+                lowerBands.push(avg);
+            }
+        });
+
+        const isBelowStandard = !checkStandard(latestValue, standard);
 
         return {
             chart: {
@@ -184,12 +308,12 @@ export default function Analytics() {
                 text: title,
                 align: 'left',
                 style: {
-                    fontSize: '18px',
+                    fontSize: '16px',
                     fontWeight: 'bold'
                 }
             },
             subtitle: {
-                text: `<span style="background-color: #2196f3; color: white; padding: 5px 15px; border-radius: 4px; font-weight: bold;">Current: ${latestValue}</span>`,
+                text: `<span style="background-color: ${isBelowStandard ? '#ff9800' : '#4caf50'}; color: white; padding: 5px 15px; border-radius: 4px; font-weight: bold;">${latestValue}</span>`,
                 align: 'right',
                 useHTML: true,
                 y: 25
@@ -206,7 +330,26 @@ export default function Analytics() {
             yAxis: {
                 title: {
                     text: 'Current Total'
-                }
+                },
+                plotLines: standard.min !== undefined ? [{
+                    color: '#dc3545',
+                    dashStyle: 'Dash',
+                    value: standard.min,
+                    width: 2,
+                    label: {
+                        text: 'min',
+                        style: { color: '#dc3545', fontWeight: 'bold' }
+                    }
+                }] : standard.max !== undefined ? [{
+                    color: '#dc3545',
+                    dashStyle: 'Dash',
+                    value: standard.max,
+                    width: 2,
+                    label: {
+                        text: 'max',
+                        style: { color: '#dc3545', fontWeight: 'bold' }
+                    }
+                }] : []
             },
             tooltip: {
                 shared: true,
@@ -228,38 +371,90 @@ export default function Analytics() {
                     radius: 4,
                     symbol: 'circle'
                 },
-                lineWidth: 2
+                lineWidth: 2,
+                zIndex: 3
+            }, {
+                name: 'Average across cluster',
+                data: clusterAverages,
+                color: '#2196f3',
+                dashStyle: 'Dash',
+                lineWidth: 2,
+                marker: {
+                    enabled: false
+                },
+                zIndex: 2
+            }, {
+                name: '±1 standard deviation',
+                data: upperBands.map((upper, i) => [lowerBands[i], upper]),
+                type: 'arearange',
+                lineWidth: 0,
+                color: '#2196f3',
+                fillOpacity: 0.3,
+                zIndex: 0,
+                marker: {
+                    enabled: false
+                }
             }],
             plotOptions: {
                 line: {
                     dataLabels: {
-                        enabled: false
+                        enabled: true,
+                        formatter: function() {
+                            if (this.point.index === this.series.data.length - 1) {
+                                return this.y;
+                            }
+                            return null;
+                        }
                     },
                     enableMouseTracking: true
+                },
+                arearange: {
+                    enableMouseTracking: false
                 }
             }
         };
     };
 
-    // ========== 5. RENDER CHART ==========
-    const renderChart = (title, dataKey, color) => {
-        const config = createChartConfig(title, dataKey, color);
+    // ========== 7. RENDER CHART WITH ALERT ==========
+    const renderChart = (title, dataKey, color, standard) => {
+        const config = createChartConfig(title, dataKey, color, standard);
 
         if (!config) {
             return null;
         }
 
+        const latestValue = chartData[chartData.length - 1][dataKey];
+        const isBelowStandard = !checkStandard(latestValue, standard);
+        const isAboveStandard = standard.successIcon && checkStandard(latestValue, standard);
+
         return (
-            <Card key={dataKey} style={{ marginBottom: '20px', padding: '20px' }}>
-                <HighchartsReact
-                    highcharts={Highcharts}
-                    options={config}
-                />
-            </Card>
+            <div key={dataKey} style={{ marginBottom: '20px' }}>
+                {isBelowStandard && standard.errorIcon && (
+                    <AlertBar critical>
+                        {standard.warning}
+                    </AlertBar>
+                )}
+                {isBelowStandard && !standard.errorIcon && (
+                    <AlertBar warning>
+                        {standard.warning}
+                    </AlertBar>
+                )}
+                {isAboveStandard && (
+                    <AlertBar success>
+                        {standard.warning}
+                    </AlertBar>
+                )}
+                <Card style={{ marginTop: (isBelowStandard || isAboveStandard) ? '10px' : '0', padding: '20px' }}>
+                    <HighchartsReact
+                        highcharts={Highcharts}
+                        options={config}
+                    />
+                </Card>
+            </div>
         );
     };
 
-    // ========== 6. RENDER MAIN COMPONENT ==========
+    // ========== 8. RENDER MAIN COMPONENT ==========
     if (loading && !chartData) {
         return (
             <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
@@ -306,10 +501,10 @@ export default function Analytics() {
                 </div>
             ) : chartData && chartData.length > 0 ? (
                 <>
-                    {renderChart('Total Toilets', 'toilets', '#ff9800')}
-                    {renderChart('Total Seats', 'seats', '#4caf50')}
-                    {renderChart('Total Books', 'books', '#2196f3')}
-                    {renderChart('Total Classrooms', 'classrooms', '#9c27b0')}
+                    {renderChart('Total Toilets', 'toilets', '#ff9800', STANDARDS.toilets)}
+                    {renderChart('Total Seats', 'seats', '#4caf50', STANDARDS.seats)}
+                    {renderChart('Total Books', 'books', '#2196f3', STANDARDS.books)}
+                    {renderChart('Total Classrooms', 'classrooms', '#9c27b0', STANDARDS.classrooms)}
                 </>
             ) : (
                 <NoticeBox warning title="No Data">
