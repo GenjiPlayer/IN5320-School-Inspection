@@ -109,62 +109,56 @@ export default function Analytics() {
 
     // ========== 3. PROCESS EVENTS INTO CHART DATA ==========
     const processEvents = (eventList) => {
-        // Group events by month
+        // Group events by month, keeping only the LATEST event per month
         const grouped = {};
 
         eventList.forEach(event => {
             const eventDate = new Date(event.occurredAt || event.createdAt);
             const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
 
-            if (!grouped[month]) {
-                grouped[month] = {
+            // Initialize or update if this event is later
+            if (!grouped[month] || eventDate > grouped[month].date) {
+                // Extract data values from this event
+                const resources = {
                     toilets: 0,
                     seats: 0,
                     books: 0,
                     classrooms: 0
                 };
+
+                event.dataValues?.forEach(dv => {
+                    const value = parseInt(dv.value) || 0;
+
+                    if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
+                        resources.toilets = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
+                        resources.seats = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
+                        resources.books = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
+                        resources.classrooms = value;
+                    }
+                });
+
+                grouped[month] = {
+                    date: eventDate,
+                    ...resources
+                };
             }
-
-            // Extract data values
-            event.dataValues?.forEach(dv => {
-                const value = parseInt(dv.value) || 0;
-
-                // Match data elements (you'll need to update these IDs)
-                if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
-                    grouped[month].toilets += value;
-                } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
-                    grouped[month].seats += value;
-                } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
-                    grouped[month].books += value;
-                } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
-                    grouped[month].classrooms += value;
-                }
-            });
         });
 
-        // Sort months and calculate cumulative values
+        // Sort months and create chart data
         const sortedMonths = Object.keys(grouped).sort();
 
-        let cumulativeToilets = 0;
-        let cumulativeSeats = 0;
-        let cumulativeBooks = 0;
-        let cumulativeClassrooms = 0;
-
         const processed = sortedMonths.map(month => {
-            cumulativeToilets += grouped[month].toilets;
-            cumulativeSeats += grouped[month].seats;
-            cumulativeBooks += grouped[month].books;
-            cumulativeClassrooms += grouped[month].classrooms;
-
             return {
                 month,
-                toilets: cumulativeToilets,
-                seats: cumulativeSeats,
-                books: cumulativeBooks,
-                classrooms: cumulativeClassrooms
+                toilets: grouped[month].toilets,
+                seats: grouped[month].seats,
+                books: grouped[month].books,
+                classrooms: grouped[month].classrooms
             };
         });
-
         setChartData(processed);
     };
 
@@ -211,7 +205,7 @@ export default function Analytics() {
             },
             yAxis: {
                 title: {
-                    text: 'Cumulative Total'
+                    text: 'Current Total'
                 }
             },
             tooltip: {
