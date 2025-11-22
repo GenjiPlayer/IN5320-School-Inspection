@@ -24,7 +24,7 @@ import Inspection from "./Inspection.jsx";
 import Analytics from "./Analytics.jsx";
 import SchoolPlanner from "./SchoolPlanner.jsx";
 
-// HEADER
+/* HEADER */
 function Header() {
     return (
         <div className={classes.appHeader}>
@@ -37,7 +37,7 @@ function Header() {
     );
 }
 
-// FOOTER
+/* FOOTER */
 function Footer({ activePage, setActivePage }) {
     return (
         <footer className={classes.footerNav}>
@@ -71,26 +71,22 @@ function Footer({ activePage, setActivePage }) {
     );
 }
 
-// MAIN APP
+/* MAIN APP */
 export default function App() {
     const [activePage, setActivePage] = useState("dashboard");
 
     function renderPage() {
-    switch (activePage) {
-        case "inspection":
-            return <Inspection setActivePage={setActivePage} />;
-
-        case "analytics":
-            return <Analytics />;
-
-        case "planner":
-            return <SchoolPlanner />;
-
-        case "dashboard":
-        default:
-            return <Dashboard setActivePage={setActivePage} />;
+        switch (activePage) {
+            case "inspection":
+                return <Inspection setActivePage={setActivePage} />;
+            case "analytics":
+                return <Analytics />;
+            case "planner":
+                return <SchoolPlanner />;
+            default:
+                return <Dashboard setActivePage={setActivePage} />;
+        }
     }
-}
 
     return (
         <div className={classes.container}>
@@ -101,8 +97,7 @@ export default function App() {
     );
 }
 
-// DASHBOARD
-// DASHBOARD
+/* DASHBOARD */
 function Dashboard({ setActivePage }) {
     return (
         <div className={classes.containerCard}>
@@ -111,7 +106,7 @@ function Dashboard({ setActivePage }) {
             <Card className={classes.scheduleCard}>
                 <div className={classes.scheduleHeaderRow}>
                     <div className={classes.cardHeader}>Today’s Schedule</div>
-                    <div className={classes.scheduleNavButtons}>
+                    <div>
                         <Button small icon={<IconArrowLeft24 />} />
                         <Button small icon={<IconArrowRight24 />} />
                     </div>
@@ -130,7 +125,7 @@ function Dashboard({ setActivePage }) {
                 </div>
             </Card>
 
-            {/* NEW INSPECTION */}
+            {/* NEW INSPECTION BUTTON */}
             <Button
                 primary
                 large
@@ -141,11 +136,11 @@ function Dashboard({ setActivePage }) {
                 New Inspection
             </Button>
 
-            {/* PROGRAM LIST */}
+            {/* PROGRAM CARDS */}
             <div className={classes.programWrapper}>
                 <div className={classes.programList}>
 
-                    {/* CARD 1 — School Registry */}
+                    {/* School Registry */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => setActivePage("inspection")}
@@ -154,7 +149,7 @@ function Dashboard({ setActivePage }) {
                             <div className={classes.programContent}>
                                 <div
                                     className={classes.programIcon}
-                                    style={{ background: "#F5A45A" }}
+                                    style={{background: "#FFCC80" }}
                                 >
                                     <IconHome24 />
                                 </div>
@@ -163,7 +158,7 @@ function Dashboard({ setActivePage }) {
                         </Card>
                     </div>
 
-                    {/* CARD 2 — Visitation Planner */}
+                    {/* Visitation Planner */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => setActivePage("planner")}
@@ -172,7 +167,7 @@ function Dashboard({ setActivePage }) {
                             <div className={classes.programContent}>
                                 <div
                                     className={classes.programIcon}
-                                    style={{ background: "#E36A5A" }}
+                                    style={{ background: "#FFA2A2" }}
                                 >
                                     <IconClock24 />
                                 </div>
@@ -181,7 +176,7 @@ function Dashboard({ setActivePage }) {
                         </Card>
                     </div>
 
-                    {/* CARD 3 — Analytics */}
+                    {/* Analytics */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => setActivePage("analytics")}
@@ -190,7 +185,7 @@ function Dashboard({ setActivePage }) {
                             <div className={classes.programContent}>
                                 <div
                                     className={classes.programIcon}
-                                    style={{ background: "#3B7F6A" }}
+                                    style={{ background: "#4DB6AC" }}
                                 >
                                     <IconVisualizationColumn24 />
                                 </div>
@@ -199,7 +194,7 @@ function Dashboard({ setActivePage }) {
                         </Card>
                     </div>
 
-                    {/* CARD 4 — Inspection Reports */}
+                    {/* Reports */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => setActivePage("inspection")}
@@ -208,7 +203,7 @@ function Dashboard({ setActivePage }) {
                             <div className={classes.programContent}>
                                 <div
                                     className={classes.programIcon}
-                                    style={{ background: "#A7D397" }}
+                                    style={{ background: "#A5D6A7" }}
                                 >
                                     <IconFolder24 />
                                 </div>
