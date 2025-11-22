@@ -1,17 +1,219 @@
+
+/*GLOBAL ROOT STRUCTURE – in order to create proper spacing on top*/
+:global(html, body, #dhis2-app-root) {
+    margin: 0;
+    padding: 0;
+    height: 100%;
+    background: #2D6693;
+}
+
+#root, .container {
+    height: 100%;
+}
+
+/* MAIN APP CONTAINER */
 .container {
     display: flex;
-    min-height: 100vh;
+    flex-direction: column;
+    background-color: #2D6693;
+    height: 100%;
+    overflow: hidden;
+    min-width: 360px;      
+    margin: 0 auto;  
 }
 
-.left {
-    width: 200px;
-    min-height: 100vh;
-    padding-top: 20px;
+
+/*  STICKY HEADER – keep program name visible at all times */
+.appHeader {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: #2D6693;
+    padding: 20px 18px;
+    display: flex;
+    align-items: center;
 }
 
-.right {
-    flex-grow: 1;
-    min-height: 100vh;
-    padding: 26px 16px 0;
-    background: #f0f0f0;
+.appHeader h1 {
+    font-family: 'Roboto', sans-serif;
+    font-size: 28px;
+    line-height: 36px;
+    font-weight: 400;
+    color: white;
+    margin: 0;
+}
+
+.rightButtons {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+
+/* MAIN SCROLL AREA */
+.main {
+    flex: 1 1 auto;
+    background: #EFF6FA;
+    padding: 12px;
+    padding-bottom: env(safe-area-inset-bottom, 70px);
+    border-radius: 16px 16px 0 0;
+    overflow-y: auto;
+    -webkit-overflow-scrolling: touch;
+    overscroll-behavior: contain;
+}
+
+/* CONTENT WRAPPER */
+.containerCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+
+/* TODAY'S SCHEDULE */
+.scheduleHeaderRow {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    padding: 12px;
+    margin-bottom: 12px;
+}
+
+.scheduleNavButtons {
+    display: flex;
+    gap: 8px; 
+}
+
+.cardHeader {
+    font-family: 'Roboto', sans-serif;
+    font-size: 22px;
+    line-height: 28px;
+    font-weight: 400;
+    margin: 0;
+}
+
+.scheduleCard {
+    background: #fff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e200); 
+}
+
+.scheduleItem {
+    display: flex;
+    background: #F5F9FF;
+    padding: 22px;
+    border-radius: 20px;
+    box-shadow: var(--elevation-e100);
+    min-height: 110px;
+}
+
+.scheduleIcon {
+    width: 68px;
+    height: 68px;
+    border-radius: 50%;
+    background: #E7F1FF;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 18px;
+}
+
+
+/* TEXT – in order to keep font Roboto accourding to design framework */
+.schoolName {
+    font-family: 'Roboto', sans-serif;
+    font-size: 16px;
+    line-height: 24px;
+    font-weight: 500;
+    color: #0157C9;
+}
+
+.schoolAddress,
+.schoolTime {
+    font-family: 'Roboto', sans-serif;
+    font-size: 14px;
+    line-height: 20px;
+}
+
+
+/* PROGRAM LIST */
+.programWrapper {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.programList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.programCard {
+    background: white;
+    border-radius: 16px;
+    box-shadow: var(--elevation-e200);
+    cursor: pointer;
+    transition: transform 0.05s ease, opacity 0.08s ease;
+}
+
+.programCard:active {
+    box-shadow: var(--elevation-e300);
+    transform: scale(0.995);
+    opacity: 0.9;
+}
+
+.programCard:focus-visible {
+    outline: 3px solid #1a3fb0;
+    outline-offset: 4px;
+    border-radius: 16px;
+}
+
+.programContent {
+    display: flex;
+    align-items: center;
+    padding: 18px;
+}
+
+.programIcon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin-right: 18px;
+}
+
+.programText {
+    font-family: 'Roboto', sans-serif;
+    font-size: 20px;
+    line-height: 28px;
+    color: #666;
+}
+
+
+/* STICKY FOOTER NAV – in order to keep visible at all times*/
+.footerNav {
+    position: sticky;
+    z-index: 999;
+    background: #fff;
+    padding: 24px;
+    display: flex;
+    justify-content: center;
+}
+
+.footerButton,
+.footerButtonActive {
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    background: transparent !important;
+    border: none !important;
+}
+
+.footerButtonActive {
+    color: #1a3fb0 !important;
+    font-weight: 700 !important;
 }
