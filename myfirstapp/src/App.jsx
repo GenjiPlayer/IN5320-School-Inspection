@@ -23,6 +23,7 @@ import classes from "./App.module.css";
 import Inspection from "./Inspection.jsx";
 import Analytics from "./Analytics.jsx";
 import SchoolPlanner from "./SchoolPlanner.jsx";
+import SchoolRegistry from "./SchoolRegistry.jsx";
 
 /* HEADER */
 function Header() {
@@ -85,6 +86,8 @@ export default function App() {
                 return <SchoolPlanner />;
             default:
                 return <Dashboard setActivePage={setActivePage} />;
+            case "registry":
+                return <SchoolRegistry setActivePage={setActivePage} />;
         }
     }
 
@@ -143,7 +146,7 @@ function Dashboard({ setActivePage }) {
                     {/* School Registry */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => setActivePage("inspection")}
+                        onClick={() => setActivePage("registry")}
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>

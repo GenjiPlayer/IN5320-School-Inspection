@@ -1,0 +1,274 @@
+/* =========================================
+   GLOBAL SCROLL FIX
+========================================= */
+
+:global(body) {
+    overflow-x: hidden !important;
+}
+
+/* =========================================
+   PAGE WRAPPER
+========================================= */
+.pageWrapper {
+    font-family: "Roboto", sans-serif;
+    width: 100%;
+    max-width: 100%;
+    box-sizing: border-box;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    overflow-x: hidden;
+}
+
+/* =========================================
+   LOADING
+========================================= */
+.loadingWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+}
+
+/* =========================================
+   HEADER
+========================================= */
+.pageHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 4px;
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.pageHeader h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e1e1e;
+}
+
+/* =========================================
+   SEARCH CARD
+========================================= */
+.searchCard {
+    width: 100%;
+    background: white;
+    padding: 12px;
+    border-radius: 14px;
+    box-shadow: var(--elevation-e100);
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+}
+
+/* ADD SCHOOL button inside searchCard */
+.searchAddBtn {
+    display: flex !important;
+    margin: 12px auto 0 auto !important;
+    width: 100%;
+}
+
+/* =========================================
+   SCHOOL LIST
+========================================= */
+.schoolList {
+    width: 100%;
+    display: flex;
+    flex-direction: column;
+    gap: 14px;
+}
+
+/* =========================================
+   SCHOOL CARD
+========================================= */
+.schoolCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+    overflow-x: hidden;
+}
+
+.schoolCardContent {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* =========================================
+   LEFT ICON BUBBLE
+========================================= */
+.schoolIcon {
+    width: 46px;
+    height: 46px;
+    background: #e7f1ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.schoolIcon svg {
+    width: 22px;
+    height: 22px;
+    color: #2d6cdf;
+}
+
+/* =========================================
+   RIGHT SIDE CONTENT
+========================================= */
+.schoolRight {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+/* SCHOOL NAME */
+.schoolName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* =========================================
+   STATUS ROW
+========================================= */
+.statusRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    font-weight: 600;
+}
+
+.iconRed svg {
+    color: #c83333 !important;
+}
+
+.textRed {
+    color: #c83333;
+}
+
+.iconOrange svg {
+    color: #d88a1a !important;
+}
+
+.textOrange {
+    color: #d88a1a;
+}
+
+/* =========================================
+   NEXT INSPECTION
+========================================= */
+.nextInspectionRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+    color: #4a5568;
+}
+
+.nextInspectionRow svg {
+    color: #4a5568;
+}
+
+/* =========================================
+   SHOW MORE / LESS
+========================================= */
+.showMore {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a3fb0;
+    cursor: pointer;
+    user-select: none;
+}
+
+/* Rotate icon only */
+.showMoreIcon {
+    transition: transform 0.25s ease;
+}
+
+/* Expanded rotation */
+.rotateUp {
+    transform: rotate(180deg);
+}
+
+/* =========================================
+   DETAILS SECTION
+========================================= */
+.detailsWrapper {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #e7edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.detailLine {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.detailLabel {
+    color: #6a7280;
+    font-weight: 500;
+}
+
+.detailValue {
+    color: #1f2937;
+    font-weight: 400;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* =========================================
+   DHIS2 ACTION BUTTONS — FULL WIDTH
+========================================= */
+.actionButtonDHIS2 {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 10px !important;
+
+    padding: 12px 14px !important;
+    margin: 0 !important;
+
+    border-radius: 6px !important;
+}
+
+/* Icon inside button */
+.actionButtonDHIS2 svg {
+    margin: 0;
+    flex-shrink: 0;
+}
+
+/* Remove default DHIS2 spacing */
+:global(.dhis2-uiwidgets-button) {
+    margin: 0 !important;
+}
