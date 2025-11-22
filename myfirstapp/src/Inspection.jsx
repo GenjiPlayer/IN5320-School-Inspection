@@ -13,7 +13,7 @@ import {
 } from "@dhis2/ui";
 
 // 🏫 Inspection form component
-export function Inspection() {
+export default function Inspection() {
     // =======================
     // 🔧 State definitions
     // =======================

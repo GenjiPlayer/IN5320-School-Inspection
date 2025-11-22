@@ -1,3 +1,4 @@
+import React, { useState } from "react";
 import {
     Button,
     ButtonStrip,
@@ -19,14 +20,15 @@ import {
 } from "@dhis2/ui";
 
 import classes from "./App.module.css";
-
+import Inspection from "./Inspection.jsx";
+import Analytics from "./Analytics.jsx";
+import SchoolPlanner from "./SchoolPlanner.jsx";
 
 // HEADER
 function Header() {
     return (
         <div className={classes.appHeader}>
             <h1>School Inspection</h1>
-
             <div className={classes.rightButtons}>
                 <Button small icon={<IconSync24 />} />
                 <Button small icon={<IconSettings24 />} />
@@ -36,11 +38,20 @@ function Header() {
 }
 
 // FOOTER
-function Footer() {
+function Footer({ activePage, setActivePage }) {
     return (
         <footer className={classes.footerNav}>
             <ButtonStrip middle>
-                <Button className={classes.footerButtonActive} icon={<IconApps24 />} small>
+                <Button
+                    className={
+                        activePage === "dashboard"
+                            ? classes.footerButtonActive
+                            : classes.footerButton
+                    }
+                    icon={<IconApps24 />}
+                    small
+                    onClick={() => setActivePage("dashboard")}
+                >
                     Programs
                 </Button>
 
@@ -61,118 +72,153 @@ function Footer() {
 }
 
 // MAIN APP
-function MyApp() {
+export default function App() {
+    const [activePage, setActivePage] = useState("dashboard");
+
+    function renderPage() {
+    switch (activePage) {
+        case "inspection":
+            return <Inspection setActivePage={setActivePage} />;
+
+        case "analytics":
+            return <Analytics />;
+
+        case "planner":
+            return <SchoolPlanner />;
+
+        case "dashboard":
+        default:
+            return <Dashboard setActivePage={setActivePage} />;
+    }
+}
+
     return (
         <div className={classes.container}>
-
             <Header />
-
-            <main className={classes.main}>
-
-                <div className={classes.containerCard}>
-
-                    {/*TODAY'S SCHEDULE CARD*/}
-                    <Card className={classes.scheduleCard}>
-
-                        {/* title + arrows */}
-                        <div className={classes.scheduleHeaderRow}>
-                            <div className={classes.cardHeader}>Today’s Schedule</div>
-
-                            <div className={classes.scheduleNavButtons}>
-                              <Button small icon={<IconArrowLeft24 />} />
-                              <Button small icon={<IconArrowRight24 />} />
-                          </div>
-                        </div>
-
-                        {/* Card content */}
-                        <div className={classes.scheduleItem}>
-                            <div className={classes.scheduleIcon}>
-                                <IconLocation24 />
-                            </div>
-
-                            <div>
-                                <div className={classes.schoolName}>Campama LBS</div>
-                                <div className={classes.schoolAddress}>
-                                    Schoolstreet 231, district
-                                </div>
-                                <div className={classes.schoolTime}>08:15 – 10:00</div>
-                            </div>
-                        </div>
-                    </Card>
-
-                    {/* NEW INSPECTION BUTTON*/}
-                    <Button
-                        primary
-                        large
-                        icon={<IconAdd24 />}
-                        className={classes.newInspectionBtn}
-                        style={{ width: "100%" }}
-                    >
-                        New Inspection
-                    </Button>
-
-
-                    {/* PROGRAM LIST */}
-                    <div className={classes.programWrapper}>
-                        <div className={classes.programList}>
-
-                            <Card
-                                className={classes.programCard}
-                                onClick={() => console.log("School Registry")}
-                            >
-                                <div className={classes.programContent}>
-                                    <div className={classes.programIcon} style={{ background: "#F5A45A" }}>
-                                        <IconHome24 />
-                                    </div>
-                                    <div className={classes.programText}>School Registry</div>
-                                </div>
-                            </Card>
-
-                            <Card
-                                className={classes.programCard}
-                                onClick={() => console.log("Visitation Planner")}
-                            >
-                                <div className={classes.programContent}>
-                                    <div className={classes.programIcon} style={{ background: "#E36A5A" }}>
-                                        <IconClock24 />
-                                    </div>
-                                    <div className={classes.programText}>Visitation Planner</div>
-                                </div>
-                            </Card>
-
-                            <Card
-                                className={classes.programCard}
-                                onClick={() => console.log("Analytics")}
-                            >
-                                <div className={classes.programContent}>
-                                    <div className={classes.programIcon} style={{ background: "#3B7F6A" }}>
-                                        <IconVisualizationColumn24 />
-                                    </div>
-                                    <div className={classes.programText}>Analytics</div>
-                                </div>
-                            </Card>
-
-                            <Card
-                                className={classes.programCard}
-                                onClick={() => console.log("Inspection Reports")}
-                            >
-                                <div className={classes.programContent}>
-                                    <div className={classes.programIcon} style={{ background: "#A7D397" }}>
-                                        <IconFolder24 />
-                                    </div>
-                                    <div className={classes.programText}>Inspection Reports</div>
-                                </div>
-                            </Card>
-
-                        </div>
-                    </div>
-
-                </div>
-            </main>
-
-            <Footer />
+            <main className={classes.main}>{renderPage()}</main>
+            <Footer activePage={activePage} setActivePage={setActivePage} />
         </div>
     );
 }
 
-export default MyApp;
+// DASHBOARD
+// DASHBOARD
+function Dashboard({ setActivePage }) {
+    return (
+        <div className={classes.containerCard}>
+
+            {/* TODAY’S SCHEDULE */}
+            <Card className={classes.scheduleCard}>
+                <div className={classes.scheduleHeaderRow}>
+                    <div className={classes.cardHeader}>Today’s Schedule</div>
+                    <div className={classes.scheduleNavButtons}>
+                        <Button small icon={<IconArrowLeft24 />} />
+                        <Button small icon={<IconArrowRight24 />} />
+                    </div>
+                </div>
+
+                <div className={classes.scheduleItem}>
+                    <div className={classes.scheduleIcon}>
+                        <IconLocation24 />
+                    </div>
+
+                    <div>
+                        <div className={classes.schoolName}>Campama LBS</div>
+                        <div className={classes.schoolAddress}>Schoolstreet 231, district</div>
+                        <div className={classes.schoolTime}>08:15 – 10:00</div>
+                    </div>
+                </div>
+            </Card>
+
+            {/* NEW INSPECTION */}
+            <Button
+                primary
+                large
+                icon={<IconAdd24 />}
+                className={classes.newInspectionBtn}
+                onClick={() => setActivePage("inspection")}
+            >
+                New Inspection
+            </Button>
+
+            {/* PROGRAM LIST */}
+            <div className={classes.programWrapper}>
+                <div className={classes.programList}>
+
+                    {/* CARD 1 — School Registry */}
+                    <div
+                        className={classes.programCardWrapper}
+                        onClick={() => setActivePage("inspection")}
+                    >
+                        <Card className={classes.programCard}>
+                            <div className={classes.programContent}>
+                                <div
+                                    className={classes.programIcon}
+                                    style={{ background: "#F5A45A" }}
+                                >
+                                    <IconHome24 />
+                                </div>
+                                <div className={classes.programText}>School Registry</div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* CARD 2 — Visitation Planner */}
+                    <div
+                        className={classes.programCardWrapper}
+                        onClick={() => setActivePage("planner")}
+                    >
+                        <Card className={classes.programCard}>
+                            <div className={classes.programContent}>
+                                <div
+                                    className={classes.programIcon}
+                                    style={{ background: "#E36A5A" }}
+                                >
+                                    <IconClock24 />
+                                </div>
+                                <div className={classes.programText}>Visitation Planner</div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* CARD 3 — Analytics */}
+                    <div
+                        className={classes.programCardWrapper}
+                        onClick={() => setActivePage("analytics")}
+                    >
+                        <Card className={classes.programCard}>
+                            <div className={classes.programContent}>
+                                <div
+                                    className={classes.programIcon}
+                                    style={{ background: "#3B7F6A" }}
+                                >
+                                    <IconVisualizationColumn24 />
+                                </div>
+                                <div className={classes.programText}>Analytics</div>
+                            </div>
+                        </Card>
+                    </div>
+
+                    {/* CARD 4 — Inspection Reports */}
+                    <div
+                        className={classes.programCardWrapper}
+                        onClick={() => setActivePage("inspection")}
+                    >
+                        <Card className={classes.programCard}>
+                            <div className={classes.programContent}>
+                                <div
+                                    className={classes.programIcon}
+                                    style={{ background: "#A7D397" }}
+                                >
+                                    <IconFolder24 />
+                                </div>
+                                <div className={classes.programText}>Inspection Reports</div>
+                            </div>
+                        </Card>
+                    </div>
+
+                </div>
+            </div>
+        </div>
+    );
+}
