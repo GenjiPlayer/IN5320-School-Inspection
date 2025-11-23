@@ -1,0 +1,126 @@
+/* ================================
+   GLOBAL WRAPPER
+================================ */
+.pageWrapper {
+    font-family: "Roboto", sans-serif;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ================================
+   HEADER
+================================ */
+.pageHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.pageHeader h2 {
+    margin: 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1e1e1e;
+}
+
+/* ================================
+   SEARCH CARD
+================================ */
+.searchCard {
+    width: 100%;
+    background: white;
+    padding: 14px;
+    border-radius: 14px;
+    box-shadow: var(--elevation-e100);
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.addButton {
+    width: 100% !important;
+    max-width: 100% !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    margin-top: 8px !important;
+    padding: 0 !important; 
+    border-radius: 0 !important;  
+}
+
+
+/* ================================
+   LOADING
+================================ */
+.loadingWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+}
+
+/* ================================
+   REPORT LIST
+================================ */
+.reportList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+/* ================================
+   REPORT CARD
+================================ */
+.reportCard {
+    padding: 16px;
+    border-radius: 16px;
+    background: #ffffff;
+    box-shadow: var(--elevation-e100);
+}
+
+.reportContent {
+    display: flex;
+    align-items: center;
+    gap: 14px;
+}
+
+/* ICON BUBBLE */
+.iconCircle {
+    width: 46px;
+    height: 46px;
+    background: #e7f1ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.reportText {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+}
+
+.schoolName {
+    margin: 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.dateRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    color: #4a5568;
+    margin-top: 2px;
+}
+
+/* SHOW MORE */
+.moreButton {
+    font-size: 14px;
+    color: #1a3fb0;
+    cursor: pointer;
+    user-select: none;
+}

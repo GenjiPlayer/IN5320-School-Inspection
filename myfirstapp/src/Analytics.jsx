@@ -1,62 +1,62 @@
-import React, { useState, useEffect } from 'react';
-import Highcharts from 'highcharts';
-import 'highcharts/highcharts-more';
-import HighchartsReact from 'highcharts-react-official';
+import React, { useState, useEffect } from "react";
+import Highcharts from "highcharts";
+import "highcharts/highcharts-more";
+import HighchartsReact from "highcharts-react-official";
 import {
     Card,
     CircularLoader,
     NoticeBox,
     SingleSelectField,
     SingleSelectOption,
-    AlertBar,
-} from '@dhis2/ui';
+    IconWarningFilled24,
+    IconInfoFilled24,
+    IconCheckmarkCircle24
+} from "@dhis2/ui";
+
+import classes from "./Analytics.module.css";
 
 export default function Analytics() {
     // State
     const [schools, setSchools] = useState([]);
-    const [selectedSchool, setSelectedSchool] = useState('');
+    const [selectedSchool, setSelectedSchool] = useState("");
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
     const [events, setEvents] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [clusterData, setClusterData] = useState(null);
+    const [openMetric, setOpenMetric] = useState(null); // hvilken indikator som er "details"-åpen
 
-    // ========== CONFIGURATION ==========
-    const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS';
+    // ========== CONFIG ==========
+    const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 
     const DATA_ELEMENTS = {
-        TOILETS: 'slYohGwjQme',
-        SEATS: 'fgUU2XNkGvI',
-        BOOKS: 'm9k3VefvGQw',
-        CLASSROOMS: 'mlbyc3CWNyb'
+        TOILETS: "slYohGwjQme",
+        SEATS: "fgUU2XNkGvI",
+        BOOKS: "m9k3VefvGQw",
+        CLASSROOMS: "mlbyc3CWNyb",
     };
 
-    // Standards with thresholds
     const STANDARDS = {
         toilets: {
             min: 15,
-            label: 'Total Toilets',
-            warning: 'Limited sanitation capacity',
-            errorIcon: true
+            label: "Toilet Capacity",
+            warning: "Limited sanitation capacity",
         },
         seats: {
             min: 50,
-            label: 'Total Seats',
-            warning: 'Insufficient seating',
-            errorIcon: false
+            label: "Seating Availability",
+            warning: "Insufficient seating",
         },
         books: {
             min: 100,
-            label: 'Total Books',
-            warning: 'Insufficient textbooks',
-            errorIcon: false
+            label: "Textbook Availability",
+            warning: "Insufficient textbooks",
         },
         classrooms: {
             max: 10,
-            label: 'Total Classrooms',
-            warning: 'Capacity OK',
-            successIcon: true
-        }
+            label: "Classroom Capacity",
+            warning: "Capacity OK",
+        },
     };
 
     // ========== 1. FETCH SCHOOLS ==========
@@ -67,11 +67,11 @@ export default function Analytics() {
     const fetchSchools = async () => {
         try {
             const res = await fetch(
-                'https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name&pageSize=1000',
+                "https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name&pageSize=1000",
                 {
                     headers: {
-                        Authorization: 'Basic ' + btoa('admin:district'),
-                    }
+                        Authorization: "Basic " + btoa("admin:district"),
+                    },
                 }
             );
 
@@ -83,7 +83,7 @@ export default function Analytics() {
                 setSelectedSchool(schoolList[0].id);
             }
         } catch (err) {
-            setError('Failed to fetch schools: ' + err.message);
+            setError("Failed to fetch schools: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -95,6 +95,7 @@ export default function Analytics() {
             fetchEvents();
             fetchClusterData();
         }
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSchool, schools]);
 
     const fetchEvents = async () => {
@@ -106,8 +107,8 @@ export default function Analytics() {
                 `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${selectedSchool}&fields=*`,
                 {
                     headers: {
-                        Authorization: 'Basic ' + btoa('admin:district'),
-                    }
+                        Authorization: "Basic " + btoa("admin:district"),
+                    },
                 }
             );
 
@@ -118,13 +119,10 @@ export default function Analytics() {
             const data = await res.json();
             const eventList = data.events || [];
 
-            console.log('📊 Fetched events:', eventList);
             setEvents(eventList);
             processEvents(eventList);
-
         } catch (err) {
-            setError('Failed to fetch events: ' + err.message);
-            console.error('Fetch error:', err);
+            setError("Failed to fetch events: " + err.message);
         } finally {
             setLoading(false);
         }
@@ -138,8 +136,8 @@ export default function Analytics() {
                         `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&fields=*`,
                         {
                             headers: {
-                                Authorization: 'Basic ' + btoa('admin:district'),
-                            }
+                                Authorization: "Basic " + btoa("admin:district"),
+                            },
                         }
                     );
                     const data = await res.json();
@@ -149,78 +147,94 @@ export default function Analytics() {
 
             processClusterData(allSchoolsData.flat());
         } catch (err) {
-            console.error('Failed to fetch cluster data:', err);
+            console.error("Failed to fetch cluster data:", err);
         }
     };
 
+    
     // ========== 3. PROCESS EVENTS INTO CHART DATA ==========
     const processEvents = (eventList) => {
-        const grouped = {};
+    const grouped = {};
 
-        eventList.forEach(event => {
-            const eventDate = new Date(event.occurredAt || event.createdAt);
-            const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+    eventList.forEach((event) => {
+        const eventDate = new Date(event.occurredAt || event.createdAt);
+        const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, "0")}`;
 
-            if (!grouped[month] || eventDate > grouped[month].date) {
-                const resources = {
-                    toilets: 0,
-                    seats: 0,
-                    books: 0,
-                    classrooms: 0
-                };
+        if (!grouped[month] || eventDate > grouped[month].date) {
+            const resources = {
+                toilets: 0,
+                seats: 0,
+                books: 0,
+                classrooms: 0,
+                learners: 0, // Antall elever (dersom det er tilgjengelig i dataene)
+            };
 
-                event.dataValues?.forEach(dv => {
-                    const value = parseInt(dv.value) || 0;
+            event.dataValues?.forEach((dv) => {
+                const value = parseInt(dv.value, 10) || 0;
 
-                    if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
-                        resources.toilets = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
-                        resources.seats = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
-                        resources.books = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
-                        resources.classrooms = value;
-                    }
-                });
+                if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
+                    resources.toilets = value;
+                } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
+                    resources.seats = value;
+                } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
+                    resources.books = value;
+                } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
+                    resources.classrooms = value;
+                } else if (dv.dataElement === DATA_ELEMENTS.LEARNERS) {
+                    resources.learners = value;  // Antar at dette er antall elever (må legges til hvis det finnes)
+                }
+            });
 
-                grouped[month] = {
-                    date: eventDate,
-                    ...resources
-                };
-            }
-        });
+            // Beregn forholdet
+            const toiletRatio = calculateRatio(resources.toilets, resources.learners);
+            const seatRatio = calculateRatio(resources.seats, resources.learners);
+            const bookRatio = calculateRatio(resources.books, resources.learners);
+            const classroomRatio = calculateRatio(resources.classrooms, resources.learners);
 
+               // Legg til forholdene i dataene for videre prosessering
+            grouped[month] = {
+                date: eventDate,
+                toiletRatio,
+                seatRatio,
+                bookRatio,
+                classroomRatio,
+                learners: resources.learners,
+                ...resources, // Legg til de originale ressursene også
+            };
+        }
+    });
         const sortedMonths = Object.keys(grouped).sort();
-        const processed = sortedMonths.map(month => ({
+        const processed = sortedMonths.map((month) => ({
             month,
             toilets: grouped[month].toilets,
             seats: grouped[month].seats,
             books: grouped[month].books,
-            classrooms: grouped[month].classrooms
+            classrooms: grouped[month].classrooms,
         }));
 
-        console.log('📊 Processed chart data:', processed);
         setChartData(processed);
     };
 
     const processClusterData = (eventList) => {
         const grouped = {};
 
-        eventList.forEach(event => {
+        eventList.forEach((event) => {
             const eventDate = new Date(event.occurredAt || event.createdAt);
-            const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, '0')}`;
+            const month = `${eventDate.getFullYear()}-${String(
+                eventDate.getMonth() + 1
+            ).padStart(2, "0")}`;
 
             if (!grouped[month]) {
                 grouped[month] = {
                     toilets: [],
                     seats: [],
                     books: [],
-                    classrooms: []
+                    classrooms: [],
                 };
             }
 
-            event.dataValues?.forEach(dv => {
-                const value = parseInt(dv.value) || 0;
+            event.dataValues?.forEach((dv) => {
+                const value = parseInt(dv.value, 10) || 0;
 
                 if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
                     grouped[month].toilets.push(value);
@@ -234,11 +248,10 @@ export default function Analytics() {
             });
         });
 
-        console.log('📊 Cluster data:', grouped);
         setClusterData(grouped);
     };
 
-    // ========== 4. CALCULATE STATISTICS ==========
+    // ========== HELPERS ==========
     const calculateAverage = (values) => {
         if (!values || values.length === 0) return 0;
         const sum = values.reduce((a, b) => a + b, 0);
@@ -247,13 +260,13 @@ export default function Analytics() {
 
     const calculateStdDev = (values, average) => {
         if (!values || values.length === 0) return 0;
-        const squareDiffs = values.map(value => Math.pow(value - average, 2));
+        const squareDiffs = values.map((value) => Math.pow(value - average, 2));
         const avgSquareDiff = calculateAverage(squareDiffs);
         return Math.sqrt(avgSquareDiff);
     };
 
-    // ========== 5. CHECK IF STANDARD IS MET ==========
     const checkStandard = (value, standard) => {
+        if (value === null || value === undefined) return false;
         if (standard.min !== undefined) {
             return value >= standard.min;
         } else if (standard.max !== undefined) {
@@ -262,230 +275,304 @@ export default function Analytics() {
         return true;
     };
 
-    // ========== 6. CREATE HIGHCHARTS CONFIG WITH DEVIATION ==========
-    const createChartConfig = (title, dataKey, color, standard) => {
-        if (!chartData || chartData.length === 0) {
-            return null;
+    //KALKULERER RATIOER
+const calculateRatio = (numItems, numLearners) => {
+    if (numLearners === 0) {
+        return 0; // Unngå deling med null
+    }
+    return numItems / numLearners;
+};
+
+    // Status-klassifisering for liste (Critical / Limited / Adequate)
+  const classifyStatus = (value, standard, ratioType = "min") => {
+    if (value === null || value === undefined) {
+        return { label: "No data", severity: "none" };
+    }
+
+    let minValue = standard.min;
+    let maxValue = standard.max;
+
+    // For ratio calculations, treat the ratio separately
+    if (ratioType === "ratio") {
+        if (value > minValue) {
+            return { label: "Critical", severity: "critical" };
+        } else if (value > minValue * 0.75) {
+            return { label: "Limited", severity: "limited" };
         }
+        return { label: "Adequate", severity: "adequate" };
+    }
 
-        const categories = chartData.map(d => d.month);
-        const data = chartData.map(d => d[dataKey]);
-        const latestValue = data[data.length - 1];
+    // For normal values like seat availability, toilet availability, etc.
+    if (minValue !== undefined) {
+        if (value < minValue * 0.5) {
+            return { label: "Critical", severity: "critical" };
+        } else if (value < minValue) {
+            return { label: "Limited", severity: "limited" };
+        }
+        return { label: "Adequate", severity: "adequate" };
+    }
 
-        // Calculate cluster statistics for each month
-        const clusterAverages = [];
-        const upperBands = [];
-        const lowerBands = [];
+    if (maxValue !== undefined) {
+        if (value > maxValue * 1.5) {
+            return { label: "Critical", severity: "critical" };
+        } else if (value > maxValue) {
+            return { label: "Limited", severity: "limited" };
+        }
+        return { label: "Adequate", severity: "adequate" };
+    }
 
-        categories.forEach(month => {
-            if (clusterData && clusterData[month]) {
-                const values = clusterData[month][dataKey];
-                const avg = calculateAverage(values);
-                const stdDev = calculateStdDev(values, avg);
+    return { label: "OK", severity: "adequate" };
+};
 
-                clusterAverages.push(parseFloat(avg.toFixed(2)));
-                upperBands.push(parseFloat((avg + stdDev).toFixed(2)));
-                lowerBands.push(parseFloat((avg - stdDev).toFixed(2)));
-            } else {
-                const avg = calculateAverage(data);
-                clusterAverages.push(avg);
-                upperBands.push(avg);
-                lowerBands.push(avg);
-            }
-        });
 
-        const isBelowStandard = !checkStandard(latestValue, standard);
+    // ========== CHART CONFIG ==========
+// ========== CHART CONFIG ==========
+const createChartConfig = (title, dataKey, color, standard) => {
+    if (!chartData || chartData.length === 0) {
+        return null;
+    }
 
-        return {
-            chart: {
-                type: 'line',
-                height: 350,
+    const categories = chartData.map((d) => d.month);
+    const data = chartData.map((d) => d[dataKey]);
+    const latestValue = data[data.length - 1];
+
+    const clusterAverages = [];
+    const upperBands = [];
+    const lowerBands = [];
+
+    categories.forEach((month) => {
+        if (clusterData && clusterData[month]) {
+            const values = clusterData[month][dataKey];
+            const avg = calculateAverage(values);
+            const stdDev = calculateStdDev(values, avg);
+
+            clusterAverages.push(parseFloat(avg.toFixed(2)));
+            upperBands.push(parseFloat((avg + stdDev).toFixed(2)));
+            lowerBands.push(parseFloat((avg - stdDev).toFixed(2)));
+        } else {
+            const avg = calculateAverage(data);
+            clusterAverages.push(avg);
+            upperBands.push(avg);
+            lowerBands.push(avg);
+        }
+    });
+
+    const isBelowStandard = !checkStandard(latestValue, standard);
+
+    // Plot lines for min/max depending on standard
+    const plotLines = [];
+
+    // Add minimum requirement line (dashed) if applicable
+    if (standard.min !== undefined) {
+        plotLines.push({
+            color: '#dc3545', // Red color for minimum
+            dashStyle: 'Dash',
+            value: standard.min,
+            width: 2,
+            label: {
+                text: 'min',
                 style: {
-                    fontFamily: 'Roboto, sans-serif'
-                }
-            },
-            title: {
-                text: title,
+                    color: '#dc3545',
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                },
                 align: 'left',
+                verticalAlign: 'middle',
+                x: 0,
+                y: -5,
+            },
+        });
+    }
+
+    // Add maximum requirement line (dashed) if applicable
+    if (standard.max !== undefined) {
+        plotLines.push({
+            color: '#dc3545',
+            dashStyle: 'Dash',
+            value: standard.max,
+            width: 2,
+            label: {
+                text: 'max',
                 style: {
-                    fontSize: '16px',
-                    fontWeight: 'bold'
-                }
-            },
-            subtitle: {
-                text: `<span style="background-color: ${isBelowStandard ? '#ff9800' : '#4caf50'}; color: white; padding: 5px 15px; border-radius: 4px; font-weight: bold;">${latestValue}</span>`,
-                align: 'right',
-                useHTML: true,
-                y: 25
-            },
-            xAxis: {
-                categories: categories,
-                title: {
-                    text: 'Month'
-                },
-                labels: {
-                    rotation: -45
-                }
-            },
-            yAxis: {
-                title: {
-                    text: 'Current Total'
-                },
-                plotLines: standard.min !== undefined ? [{
                     color: '#dc3545',
-                    dashStyle: 'Dash',
-                    value: standard.min,
-                    width: 2,
-                    label: {
-                        text: 'min',
-                        style: { color: '#dc3545', fontWeight: 'bold' }
-                    }
-                }] : standard.max !== undefined ? [{
-                    color: '#dc3545',
-                    dashStyle: 'Dash',
-                    value: standard.max,
-                    width: 2,
-                    label: {
-                        text: 'max',
-                        style: { color: '#dc3545', fontWeight: 'bold' }
-                    }
-                }] : []
+                    fontWeight: 'bold',
+                    fontSize: '12px',
+                },
+                align: 'left',
+                verticalAlign: 'middle',
+                x: 0,
+                y: -5,
             },
-            tooltip: {
-                shared: true,
-                crosshairs: true,
-                headerFormat: '<b>{point.x}</b><br/>',
-                pointFormat: '{series.name}: <b>{point.y}</b><br/>'
+        });
+    }
+
+    // Check if the latest value is below the standard and set the appropriate color
+    const severity = classifyStatus(latestValue, standard, "ratio").severity;
+
+    // Customize colors based on severity
+    const seriesColor = severity === "critical" ? "#f44336" : severity === "limited" ? "#ff9800" : color;
+
+    return {
+        chart: {
+            type: "line",
+            height: 260,
+            style: {
+                fontFamily: "Roboto, sans-serif",
             },
-            legend: {
-                enabled: true
-            },
-            credits: {
-                enabled: false
-            },
-            series: [{
+        },
+        title: { text: "" },
+        xAxis: {
+            categories,
+            tickLength: 0,
+        },
+        yAxis: {
+            title: { text: null },
+            gridLineColor: "#e5e7eb",
+            plotLines: plotLines, // Here we add the plotLines (min/max)
+        },
+        tooltip: {
+            shared: true,
+        },
+        legend: {
+            enabled: true,
+        },
+        credits: { enabled: false },
+        series: [
+            {
                 name: title,
-                data: data,
-                color: color,
+                data,
+                color: seriesColor,  // Use color based on severity
                 marker: {
                     radius: 4,
-                    symbol: 'circle'
+                    symbol: "circle",
                 },
                 lineWidth: 2,
-                zIndex: 3
-            }, {
-                name: 'Average across cluster',
+                zIndex: 3,
+            },
+            {
+                name: "Average across cluster",
                 data: clusterAverages,
-                color: '#2196f3',
-                dashStyle: 'Dash',
+                color: "#2196f3",
+                dashStyle: "Dash",
                 lineWidth: 2,
-                marker: {
-                    enabled: false
-                },
-                zIndex: 2
-            }, {
-                name: '±1 standard deviation',
+                marker: { enabled: false },
+                zIndex: 2,
+            },
+            {
+                name: "±1 standard deviation",
                 data: upperBands.map((upper, i) => [lowerBands[i], upper]),
-                type: 'arearange',
+                type: "arearange",
                 lineWidth: 0,
-                color: '#2196f3',
-                fillOpacity: 0.3,
-                zIndex: 0,
-                marker: {
-                    enabled: false
-                }
-            }],
-            plotOptions: {
-                line: {
-                    dataLabels: {
-                        enabled: true,
-                        formatter: function() {
-                            if (this.point.index === this.series.data.length - 1) {
-                                return this.y;
-                            }
-                            return null;
-                        }
-                    },
-                    enableMouseTracking: true
-                },
-                arearange: {
-                    enableMouseTracking: false
-                }
-            }
-        };
+                color: "#2196f3",
+                fillOpacity: 0.2,
+                zIndex: 1,
+                marker: { enabled: false },
+            },
+        ],
     };
+};
 
-    // ========== 7. RENDER CHART WITH ALERT ==========
-    const renderChart = (title, dataKey, color, standard) => {
-        const config = createChartConfig(title, dataKey, color, standard);
-
-        if (!config) {
-            return null;
-        }
-
-        const latestValue = chartData[chartData.length - 1][dataKey];
-        const isBelowStandard = !checkStandard(latestValue, standard);
-        const isAboveStandard = standard.successIcon && checkStandard(latestValue, standard);
-
-        return (
-            <div key={dataKey} style={{ marginBottom: '20px' }}>
-                {isBelowStandard && standard.errorIcon && (
-                    <AlertBar critical>
-                        {standard.warning}
-                    </AlertBar>
-                )}
-                {isBelowStandard && !standard.errorIcon && (
-                    <AlertBar warning>
-                        {standard.warning}
-                    </AlertBar>
-                )}
-                {isAboveStandard && (
-                    <AlertBar success>
-                        {standard.warning}
-                    </AlertBar>
-                )}
-                <Card style={{ marginTop: (isBelowStandard || isAboveStandard) ? '10px' : '0', padding: '20px' }}>
-                    <HighchartsReact
-                        highcharts={Highcharts}
-                        options={config}
-                    />
-                </Card>
-            </div>
-        );
-    };
-
-    // ========== 8. RENDER MAIN COMPONENT ==========
-    if (loading && !chartData) {
-        return (
-            <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
-                <CircularLoader />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <div style={{ padding: '20px' }}>
-                <NoticeBox error title="Error">
-                    {error}
-                </NoticeBox>
-            </div>
-        );
-    }
-
+// ========== RENDER ==========
+if (loading && !chartData) {
     return (
-        <div style={{ padding: '20px' }}>
-            <h1>School Resources Dashboard</h1>
-            <p>Jambalaya Cluster - Resource Inspection Metrics</p>
+        <div className={classes.loadingWrapper}>
+            <CircularLoader />
+        </div>
+    );
+}
 
-            {/* School Selector */}
-            <div style={{ marginBottom: '30px', maxWidth: '400px' }}>
+if (error) {
+    return (
+        <div className={classes.pageWrapper}>
+            <NoticeBox error title="Error">
+                {error}
+            </NoticeBox>
+        </div>
+    );
+}
+
+const currentSchool = schools.find((s) => s.id === selectedSchool) || null;
+const latestEntry =
+    chartData && chartData.length > 0 ? chartData[chartData.length - 1] : null;
+
+const metrics = latestEntry
+    ? [
+          {
+              key: "toilets",
+              label: "Toilet Ratio",
+              color: "#4caf50",
+              standard: STANDARDS.toilets,
+              value: latestEntry.toilets,
+          },
+          {
+              key: "seats",
+              label: "Seating Availability",
+              color: "#ff9800",
+              standard: STANDARDS.seats,
+              value: latestEntry.seats,
+          },
+          {
+              key: "books",
+              label: "Textbook Availability",
+              color: "#ffb74d",
+              standard: STANDARDS.books,
+              value: latestEntry.books,
+          },
+          {
+              key: "classrooms",
+              label: "Classroom Capacity",
+              color: "#9c27b0",
+              standard: STANDARDS.classrooms,
+              value: latestEntry.classrooms,
+          },
+      ]
+    : [];
+
+const problemMetrics = metrics.filter((m) => {
+    const s = classifyStatus(m.value, m.standard);
+    return s.severity === "critical" || s.severity === "limited";
+});
+
+const activeMetric = openMetric && metrics.find((m) => m.key === openMetric);
+
+const activeConfig =
+    activeMetric &&
+    createChartConfig(
+        activeMetric.label,
+        activeMetric.key,
+        activeMetric.color,
+        activeMetric.standard
+    );
+
+const renderStatusDot = (severity) => {
+    if (severity === "critical") return classes.statusDotRed;
+    if (severity === "limited") return classes.statusDotOrange;
+    if (severity === "adequate") return classes.statusDotGreen;
+    return classes.statusDotGrey;
+};
+
+return (
+    <div className={classes.pageWrapper}>
+        {/* HEADER / TITLE */}
+        <div className={classes.pageHeader}>
+            <h2>Analytics</h2>
+        </div>
+
+        {/* SCHOOL HEADER + SELECTOR */}
+        <Card className={classes.schoolCard}>
+            <div className={classes.schoolTitleRow}>
+                <h3 className={classes.schoolName}>
+                    {currentSchool ? currentSchool.name : "Select a school"}
+                </h3>
+            </div>
+
+            <div className={classes.schoolSelectWrapper}>
                 <SingleSelectField
-                    label="Select School"
+                    label="Select school"
                     selected={selectedSchool}
                     onChange={({ selected }) => setSelectedSchool(selected)}
                 >
-                    {schools.map(school => (
+                    {schools.map((school) => (
                         <SingleSelectOption
                             key={school.id}
                             value={school.id}
@@ -494,24 +581,165 @@ export default function Analytics() {
                     ))}
                 </SingleSelectField>
             </div>
+        </Card>
 
-            {loading ? (
-                <div style={{ display: 'flex', justifyContent: 'center', padding: '50px' }}>
-                    <CircularLoader />
-                </div>
-            ) : chartData && chartData.length > 0 ? (
-                <>
-                    {renderChart('Total Toilets', 'toilets', '#ff9800', STANDARDS.toilets)}
-                    {renderChart('Total Seats', 'seats', '#4caf50', STANDARDS.seats)}
-                    {renderChart('Total Books', 'books', '#2196f3', STANDARDS.books)}
-                    {renderChart('Total Classrooms', 'classrooms', '#9c27b0', STANDARDS.classrooms)}
-                </>
-            ) : (
-                <NoticeBox warning title="No Data">
-                    No resource inspection events found for this school.
-                    Submit some inspections first using the Inspection form.
-                </NoticeBox>
-            )}
+       {/* STATUS LIST */}
+<Card className={classes.statusCard}>
+    {metrics.length === 0 && (
+        <div className={classes.noDataText}>
+            No resource inspection events found for this school.
+            Submit some inspections first using the Inspection form.
         </div>
-    );
+    )}
+
+    {/* Map each metric with an icon and expandable details */}
+    {metrics.map((metric) => {
+        const status = classifyStatus(metric.value, metric.standard); // Get the severity
+        const isExpanded = openMetric === metric.key;
+
+        return (
+            <div key={metric.key} className={`${classes.statusRow} ${isExpanded ? 'expanded' : ''}`}>
+                {/* Status icon based on severity */}
+                <div className={classes.statusIcon}>
+                    {status.severity === 'critical' && (
+                        <IconWarningFilled24 className={classes.statusIconCritical} />
+                    )}
+                    {status.severity === 'limited' && (
+                        <IconInfoFilled24 className={classes.statusIconWarning} />
+                    )}
+                    {status.severity === 'adequate' && (
+                        <IconCheckmarkCircle24 className={classes.statusIconOK} />
+                    )}
+                </div>
+
+                <div className={classes.statusTextBlock}>
+                    <div className={classes.statusTitle}>
+                        {metric.label} – {status.label}
+                    </div>
+                    <div className={classes.statusSubtitle}>
+                        Latest value: <strong>{metric.value ?? "No data"}</strong>
+                    </div>
+                </div>
+
+                {/* Button to toggle details */}
+                <button
+                    type="button"
+                    className={classes.detailsButton}
+                    onClick={() => setOpenMetric(isExpanded ? null : metric.key)}
+                >
+                    details ▾
+                </button>
+
+                {/* Show expanded content if button is clicked */}
+                {isExpanded && (
+                    <div className={classes.statusDetailContent}>
+                        <p>Target: {metric.standard.min ?? "No target defined"}</p>
+                        <p>More details here...</p>
+
+                        {/* Show chart for the metric */}
+                        {activeConfig && (
+                            <div className={classes.chartWrapper}>
+                                <HighchartsReact
+                                    highcharts={Highcharts}
+                                    options={activeConfig}
+                                />
+                            </div>
+                        )}
+
+                        {/* Show recommendation based on status */}
+                        <div className={classes.recommendationWrapper}>
+                            <h4>Recommendation</h4>
+                            <div className={classes.recommendationText}>
+                                {(() => {
+                                    const status = classifyStatus(
+                                        activeMetric?.value,
+                                        activeMetric?.standard
+                                    );
+                                    if (status.severity === "critical") {
+                                        return (
+                                            <p>
+                                                {activeMetric?.label} is{" "}
+                                                <strong>critically below</strong> the
+                                                suggested standard. Consider prioritising
+                                                additional resources or targeted
+                                                interventions at this school.
+                                            </p>
+                                        );
+                                    }
+                                    if (status.severity === "limited") {
+                                        return (
+                                            <p>
+                                                {activeMetric?.label} is{" "}
+                                                <strong>below the suggested level</strong>.
+                                                Plan follow-up actions to gradually
+                                                improve this indicator over the coming
+                                                term.
+                                            </p>
+                                        );
+                                    }
+                                    if (status.severity === "adequate") {
+                                        return (
+                                            <p>
+                                                {activeMetric?.label} currently meets the
+                                                suggested standard. Monitor changes
+                                                over time and maintain this level of
+                                                provision.
+                                            </p>
+                                        );
+                                    }
+                                    return (
+                                        <p>
+                                            No clear recommendation can be generated
+                                            because there is not enough data for this
+                                            indicator.
+                                        </p>
+                                    );
+                                })()}
+                            </div>
+                        </div>
+                    </div>
+                )}
+            </div>
+        );
+    })}
+</Card>
+
+
+        {/* SUMMARY SECTION */}
+        {metrics.length > 0 && (
+            <div className={classes.summaryWrapper}>
+                <h3>Summary</h3>
+                <p>
+                    <strong>
+                        {currentSchool ? currentSchool.name : "This school"}
+                    </strong>{" "}
+                    shows the following areas needing attention:
+                </p>
+
+                {problemMetrics.length > 0 ? (
+                    <ul className={classes.summaryList}>
+                        {problemMetrics.map((m) => (
+                            <li key={m.key}>{m.label}</li>
+                        ))}
+                    </ul>
+                ) : (
+                    <p>
+                        All tracked indicators meet the basic target levels
+                        in the latest inspection.
+                    </p>
+                )}
+
+                <div className={classes.followUpRow}>
+                    <input type="checkbox" defaultChecked />
+                    <span>Mark for follow-up</span>
+                </div>
+
+                <div className={classes.nextVisitRow}>
+                    <span>Next visitation:</span>
+                    <strong> (set date here)</strong>
+                </div>
+            </div>
+        )}
+    </div>
+);
 }
