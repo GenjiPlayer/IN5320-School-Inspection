@@ -5,11 +5,11 @@
     box-sizing: border-box;
     display: flex;
     flex-direction: column;
-    height: 100%; /* Sørger for at containeren kan bruke hele høyden */
-    overflow-y: auto; /* Tillater vertikal rulling */
+    height: 100vh;
+    overflow-y: auto;
 }
 
-/* Page header */
+/* Header */
 .pageHeader {
     display: flex;
     justify-content: flex-start; /* Align content to the start */
@@ -60,7 +60,7 @@
     flex-wrap: wrap; /* Ensures wrapping on smaller screens */
 }
 
-/* Status icon colors */
+/* Status Icons */
 .statusIconOK {
     font-size: 28px;
     color: #4caf50 !important; /* Green for OK */
@@ -133,8 +133,7 @@
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     margin-top: 16px; /* Space between text and chart */
     width: 100%; /* Ensure the chart fills the container */
-    max-height: 400px; /* Begrens høyden på grafene */
-    overflow-y: auto; /* Tillater vertikal rulling på grafene */
+    height: auto;
 }
 
 /* Title for the chart */

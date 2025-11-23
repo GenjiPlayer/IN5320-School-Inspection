@@ -10,13 +10,14 @@ import {
     SingleSelectOption,
     IconWarningFilled24,
     IconInfoFilled24,
-    IconCheckmarkCircle24
+    IconCheckmarkCircle24,
+    IconArrowLeft24,
+    Button
 } from "@dhis2/ui";
-
 import classes from "./Analytics.module.css";
 
-export default function Analytics() {
-    // State
+export default function Analytics({ setActivePage }) {
+    // State for analytics page
     const [schools, setSchools] = useState([]);
     const [selectedSchool, setSelectedSchool] = useState("");
     const [loading, setLoading] = useState(true);
@@ -24,7 +25,7 @@ export default function Analytics() {
     const [events, setEvents] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [clusterData, setClusterData] = useState(null);
-    const [openMetric, setOpenMetric] = useState(null); // hvilken indikator som er "details"-åpen
+    const [openMetric, setOpenMetric] = useState(null);
 
     // ========== CONFIG ==========
     const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
@@ -249,6 +250,10 @@ export default function Analytics() {
         });
 
         setClusterData(grouped);
+    };
+
+    const handleBackButtonClick = () => {
+        setActivePage("dashboard"); // Navigate back to dashboard
     };
 
     // ========== HELPERS ==========
@@ -555,7 +560,14 @@ return (
     <div className={classes.pageWrapper}>
         {/* HEADER / TITLE */}
         <div className={classes.pageHeader}>
-            <h2>Analytics</h2>
+            {/* Legg til tilbake-knappen */}
+               <Button
+        small
+        icon={<IconArrowLeft24 />}
+        onClick={() => setActivePage("dashboard")}
+        className={classes.backButton}
+    />
+    <h2>Analytics</h2>
         </div>
 
         {/* SCHOOL HEADER + SELECTOR */}

@@ -1,9 +1,11 @@
+/* Global styles */
 :global {
     html, body, #dhis2-app-root, #root {
         margin: 0;
         padding: 0;
-        height: 100%;
+        height: 100%; /* Full høyde på hele dokumentet */
         background: #2D6693;
+        overflow-y: auto; /* Tillater rulling på hele dokumentet */
     }
 }
 
@@ -46,9 +48,10 @@
     background: #EFF6FA;
     padding: 12px;
     border-radius: 16px 16px 0 0;
-    overflow-y: auto;
+    overflow-y: auto; /* Tillater rulling i hovedinnholdet */
 }
 
+/* Container for the content of the page */
 .containerCard {
     display: flex;
     flex-direction: column;
@@ -210,4 +213,3 @@
     color: #1a3fb0 !important;
     font-weight: 700 !important;
 }
-

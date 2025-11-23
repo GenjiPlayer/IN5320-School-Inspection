@@ -14,8 +14,10 @@
     "@dhis2/app-runtime": "^3.14.6",
     "highcharts": "^12.4.0",
     "highcharts-react-official": "^3.2.3",
+    "leaflet": "^1.9.4",
     "react": "18",
-    "react-dom": "18"
+    "react-dom": "18",
+    "react-leaflet": "^5.0.0"
   },
   "devDependencies": {
     "@dhis2/cli-app-scripts": "^12.8.0"

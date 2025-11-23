@@ -26,7 +26,8 @@ import InspectionReports from "./InspectionReports.jsx";
 import Analytics from "./Analytics.jsx";
 import SchoolPlanner from "./SchoolPlanner.jsx";
 import SchoolRegistry from "./SchoolRegistry.jsx";
-
+import ClusterAnalytics from "./ClusterAnalytics.jsx";
+import VisitationPlanner from "./VisitationPlanner.jsx";
 
 /* ===========================
       HEADER
@@ -43,7 +44,6 @@ function Header() {
         </div>
     );
 }
-
 
 /* ===========================
       FOOTER
@@ -81,7 +81,6 @@ function Footer({ activePage, setActivePage }) {
     );
 }
 
-
 /* ===========================
       MAIN APP
 =========================== */
@@ -92,19 +91,18 @@ export default function App() {
         switch (activePage) {
             case "inspection":
                 return <Inspection setActivePage={setActivePage} />;
-
             case "analytics":
-                return <Analytics />;
-
+                return <Analytics setActivePage={setActivePage} />;
             case "planner":
-                return <SchoolPlanner />;
-
+                return <SchoolPlanner setActivePage={setActivePage} />;
             case "registry":
                 return <SchoolRegistry setActivePage={setActivePage} />;
-
             case "inspectionReports":
                 return <InspectionReports setActivePage={setActivePage} />;
-
+            case "clusterAnalytics":
+                return <ClusterAnalytics setActivePage={setActivePage} />;
+            case "visitationPlanner":
+                return <VisitationPlanner setActivePage={setActivePage} />;  
             default:
                 return <Dashboard setActivePage={setActivePage} />;
         }
@@ -113,12 +111,11 @@ export default function App() {
     return (
         <div className={classes.container}>
             <Header />
-            <main className={classes.main}>{renderPage()}</main>
+            <main className={classes.main}>{renderPage()}</main> {/* Ensure this is scrollable */}
             <Footer activePage={activePage} setActivePage={setActivePage} />
         </div>
     );
 }
-
 
 /* ===========================
       DASHBOARD
@@ -164,7 +161,6 @@ function Dashboard({ setActivePage }) {
                 New Inspection
             </Button>
 
-
             {/* PROGRAM CARDS */}
             <div className={classes.programWrapper}>
                 <div className={classes.programList}>
@@ -202,7 +198,7 @@ function Dashboard({ setActivePage }) {
                     {/* VISITATION PLANNER */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => setActivePage("planner")}
+                        onClick={() => setActivePage("visitationPlanner")}
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
@@ -217,7 +213,7 @@ function Dashboard({ setActivePage }) {
                     {/* ANALYTICS */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => setActivePage("analytics")}
+                        onClick={() => setActivePage("clusterAnalytics")} // Endre fra "analytics" til "clusterAnalytics"
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>

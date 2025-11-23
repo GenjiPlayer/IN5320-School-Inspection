@@ -1,0 +1,408 @@
+/* === Overall Layout === */
+.plannerContainer {
+    display: flex;
+    flex-direction: column;
+    padding: 16px;
+    gap: 12px;
+    background: #f5f5f5;
+    box-sizing: border-box;
+    height: auto;          /* <-- viktig! */
+    overflow: visible;     /* <-- viktig */
+}
+
+.pageHeader {
+    display: flex;
+    align-items: center;      /* <- sørger for vertikal sentrering */
+    gap: 12px;                /* mellomrom mellom pil og tittel */    
+}
+
+
+/* === Header Container === */
+.headerContainer {
+    display: flex;
+    gap: 12px;
+    align-items: flex-end;
+}
+
+/* === Search Bar === */
+.searchContainer {
+    flex: 1;
+    position: relative;
+}
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 25px;
+    font-size: 15px;
+    box-sizing: border-box;
+    outline: none;
+}
+
+/* === Search Suggestions === */
+.suggestionsDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 8px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 300px;
+    overflow-y: auto;
+        display: flex;
+    flex-direction: column;
+}
+
+.suggestionItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestionItem:last-child {
+    border-bottom: none;
+}
+
+.suggestionItem:hover {
+    background: #f8f9fa;
+}
+
+.suggestionIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.suggestionName {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.suggestionMeta {
+    font-size: 12px;
+    color: #888;
+    flex-shrink: 0;
+}
+
+/* === Filter Modal Sections === */
+.filterSection {
+    margin-bottom: 24px;
+}
+
+.filterSection h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+/* === Map Column === */
+.mapWrapper {
+    width: 100%;
+    height: 40vh;      
+    max-height: 380px; 
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: none;
+    position: relative;
+    background: white;
+}
+
+/* Optional: top-left floating mini UI (filters / legend) */
+.mapOverlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ffffffcc;
+    padding: 10px 14px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
+/* === Filter Badges === */
+.filterBadges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0 4px;
+}
+
+.badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: white;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e0e0e0;
+    white-space: nowrap;
+}
+
+/* === School List Container === */
+.schoolListContainer {
+    width: 100%;
+    margin-top: 12px;
+    overflow: visible;   /* kritisk */
+    flex: unset;         /* fjerner felles scroll */
+}
+
+
+
+/* === School Card (matching Registry.module.css) === */
+.schoolCard {
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 20px;
+}
+.schoolCardContent {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* === Left Icon Bubble === */
+.schoolIcon {
+    width: 46px;
+    height: 46px;
+    background: #e7f1ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.schoolIcon svg {
+    width: 22px;
+    height: 22px;
+    color: #2d6cdf;
+}
+
+/* === Right Side Content === */
+.schoolRight {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
+.schoolName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+    line-height: 1.35;
+    word-break: break-word;
+}
+
+/* === Status Row === */
+.statusRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
+
+.textGray {
+    color: #6a7280;
+}
+
+/* === Show More / Less === */
+.showMore {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a3fb0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.showMoreIcon {
+    transition: transform 0.25s ease;
+}
+
+.rotateUp {
+    transform: rotate(180deg);
+}
+
+/* === Details Section === */
+.detailsWrapper {
+    margin-top: 12px;
+    padding-top: 8px;
+    border-top: 1px solid #e7edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+.detailLine {
+    display: flex;
+    gap: 8px;
+    font-size: 14px;
+    align-items: center;
+    flex-wrap: wrap;
+}
+
+.detailLabel {
+    color: #6a7280;
+    font-weight: 500;
+}
+
+.detailValue {
+    color: #1f2937;
+    font-weight: 400;
+    flex: 1;
+    word-break: break-word;
+}
+
+/* === Action Buttons === */
+.actionButtons {
+    margin-top: 8px;
+    display: flex;
+    gap: 8px;
+}
+
+.actionButtonDHIS2 {
+    width: 100% !important;
+    max-width: 100% !important;
+    box-sizing: border-box !important;
+    display: flex !important;
+    justify-content: flex-start !important;
+    align-items: center !important;
+    gap: 10px !important;
+    padding: 12px 14px !important;
+    margin: 0 !important;
+    border-radius: 6px !important;
+}
+
+/* === Filter Block === */
+.filterBlock {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+    margin-top: 12px;
+    padding-bottom: 12px;
+    border-bottom: 1px solid #eee;
+}
+
+.filterLabel {
+    font-size: 13px;
+    font-weight: 600;
+    color: #444;
+    margin-bottom: 4px;
+}
+
+/* Filter badges */
+.rangeBadges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rangeBadge {
+    padding: 8px 12px;
+    border-radius: 6px;
+    background: white;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: 0.15s;
+    border: 1px solid #e0e0e0;
+}
+
+.rangeBadge:hover {
+    background: #f0f6ff;
+}
+
+.rangeBadgeActive {
+    background: #2563eb;
+    color: white;
+    border-color: #2563eb;
+}
+
+/* === Bottom Actions === */
+.bottomActions {
+    display: flex;
+    justify-content: space-between;
+    margin-top: 16px;
+    padding-top: 12px;
+    border-top: 1px solid #eee;
+}
+
+/* === List Row Instead of Cards === */
+.listRow {
+    width: 100%;
+    padding: 16px 14px;
+    background: #ffffff;
+    border-bottom: 1px solid #e5e7eb;
+    display: flex;
+    flex-direction: column;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.listRow:hover {
+    background: #f9fafb;
+}
+
+.listRowExpanded {
+    background: #f0f6ff;
+}
+
+.listRowHeader {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+}
+
+.listRowName {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.listRowSub {
+    font-size: 13px;
+    color: #6b7280;
+    margin-top: 3px;
+}
+
+.listRowChevron {
+    font-size: 20px;
+    color: #2563eb;
+    transition: transform 0.25s ease;
+}
+
+.listRowChevron.rotate {
+    transform: rotate(180deg);
+}
+
+/* Details area */
+.listDetails {
+    padding-top: 12px;
+    margin-top: 12px;
+    border-top: 1px solid #e5e7eb;
+}
+
+.listDetailLine {
+    font-size: 14px;
+    margin-bottom: 6px;
+}
