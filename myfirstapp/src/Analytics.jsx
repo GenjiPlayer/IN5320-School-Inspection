@@ -8,16 +8,16 @@ import {
     NoticeBox,
     SingleSelectField,
     SingleSelectOption,
-    IconWarningFilled24,
     IconInfoFilled24,
+    IconWarningFilled24,
     IconCheckmarkCircle24,
-    IconArrowLeft24,
-    Button
+    IconStarFilled16
 } from "@dhis2/ui";
+
 import classes from "./Analytics.module.css";
 
-export default function Analytics({ setActivePage }) {
-    // State for analytics page
+export default function Analytics() {
+    // State
     const [schools, setSchools] = useState([]);
     const [selectedSchool, setSelectedSchool] = useState("");
     const [loading, setLoading] = useState(true);
@@ -25,7 +25,7 @@ export default function Analytics({ setActivePage }) {
     const [events, setEvents] = useState([]);
     const [chartData, setChartData] = useState(null);
     const [clusterData, setClusterData] = useState(null);
-    const [openMetric, setOpenMetric] = useState(null);
+    const [openMetric, setOpenMetric] = useState(null); // hvilken indikator som er "details"-åpen
 
     // ========== CONFIG ==========
     const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
@@ -152,58 +152,45 @@ export default function Analytics({ setActivePage }) {
         }
     };
 
-    
     // ========== 3. PROCESS EVENTS INTO CHART DATA ==========
     const processEvents = (eventList) => {
-    const grouped = {};
+        const grouped = {};
 
-    eventList.forEach((event) => {
-        const eventDate = new Date(event.occurredAt || event.createdAt);
-        const month = `${eventDate.getFullYear()}-${String(eventDate.getMonth() + 1).padStart(2, "0")}`;
+        eventList.forEach((event) => {
+            const eventDate = new Date(event.occurredAt || event.createdAt);
+            const month = `${eventDate.getFullYear()}-${String(
+                eventDate.getMonth() + 1
+            ).padStart(2, "0")}`;
 
-        if (!grouped[month] || eventDate > grouped[month].date) {
-            const resources = {
-                toilets: 0,
-                seats: 0,
-                books: 0,
-                classrooms: 0,
-                learners: 0, // Antall elever (dersom det er tilgjengelig i dataene)
-            };
+            if (!grouped[month] || eventDate > grouped[month].date) {
+                const resources = {
+                    toilets: 0,
+                    seats: 0,
+                    books: 0,
+                    classrooms: 0,
+                };
 
-            event.dataValues?.forEach((dv) => {
-                const value = parseInt(dv.value, 10) || 0;
+                event.dataValues?.forEach((dv) => {
+                    const value = parseInt(dv.value, 10) || 0;
 
-                if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
-                    resources.toilets = value;
-                } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
-                    resources.seats = value;
-                } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
-                    resources.books = value;
-                } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
-                    resources.classrooms = value;
-                } else if (dv.dataElement === DATA_ELEMENTS.LEARNERS) {
-                    resources.learners = value;  // Antar at dette er antall elever (må legges til hvis det finnes)
-                }
-            });
+                    if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
+                        resources.toilets = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
+                        resources.seats = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
+                        resources.books = value;
+                    } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
+                        resources.classrooms = value;
+                    }
+                });
 
-            // Beregn forholdet
-            const toiletRatio = calculateRatio(resources.toilets, resources.learners);
-            const seatRatio = calculateRatio(resources.seats, resources.learners);
-            const bookRatio = calculateRatio(resources.books, resources.learners);
-            const classroomRatio = calculateRatio(resources.classrooms, resources.learners);
+                grouped[month] = {
+                    date: eventDate,
+                    ...resources,
+                };
+            }
+        });
 
-               // Legg til forholdene i dataene for videre prosessering
-            grouped[month] = {
-                date: eventDate,
-                toiletRatio,
-                seatRatio,
-                bookRatio,
-                classroomRatio,
-                learners: resources.learners,
-                ...resources, // Legg til de originale ressursene også
-            };
-        }
-    });
         const sortedMonths = Object.keys(grouped).sort();
         const processed = sortedMonths.map((month) => ({
             month,
@@ -252,10 +239,6 @@ export default function Analytics({ setActivePage }) {
         setClusterData(grouped);
     };
 
-    const handleBackButtonClick = () => {
-        setActivePage("dashboard"); // Navigate back to dashboard
-    };
-
     // ========== HELPERS ==========
     const calculateAverage = (values) => {
         if (!values || values.length === 0) return 0;
@@ -280,59 +263,35 @@ export default function Analytics({ setActivePage }) {
         return true;
     };
 
-    //KALKULERER RATIOER
-const calculateRatio = (numItems, numLearners) => {
-    if (numLearners === 0) {
-        return 0; // Unngå deling med null
-    }
-    return numItems / numLearners;
-};
-
     // Status-klassifisering for liste (Critical / Limited / Adequate)
-  const classifyStatus = (value, standard, ratioType = "min") => {
-    if (value === null || value === undefined) {
-        return { label: "No data", severity: "none" };
-    }
-
-    let minValue = standard.min;
-    let maxValue = standard.max;
-
-    // For ratio calculations, treat the ratio separately
-    if (ratioType === "ratio") {
-        if (value > minValue) {
-            return { label: "Critical", severity: "critical" };
-        } else if (value > minValue * 0.75) {
-            return { label: "Limited", severity: "limited" };
+    const classifyStatus = (value, standard) => {
+        if (value === null || value === undefined) {
+            return { label: "No data", severity: "none" };
         }
-        return { label: "Adequate", severity: "adequate" };
-    }
 
-    // For normal values like seat availability, toilet availability, etc.
-    if (minValue !== undefined) {
-        if (value < minValue * 0.5) {
-            return { label: "Critical", severity: "critical" };
-        } else if (value < minValue) {
-            return { label: "Limited", severity: "limited" };
+        if (standard.min !== undefined) {
+            if (value < standard.min * 0.5) {
+                return { label: "Critical", severity: "critical" };
+            } else if (value < standard.min) {
+                return { label: "Limited", severity: "limited" };
+            }
+            return { label: "Adequate", severity: "adequate" };
         }
-        return { label: "Adequate", severity: "adequate" };
-    }
 
-    if (maxValue !== undefined) {
-        if (value > maxValue * 1.5) {
-            return { label: "Critical", severity: "critical" };
-        } else if (value > maxValue) {
-            return { label: "Limited", severity: "limited" };
+        if (standard.max !== undefined) {
+            if (value > standard.max * 1.5) {
+                return { label: "Critical", severity: "critical" };
+            } else if (value > standard.max) {
+                return { label: "Limited", severity: "limited" };
+            }
+            return { label: "Adequate", severity: "adequate" };
         }
-        return { label: "Adequate", severity: "adequate" };
-    }
 
-    return { label: "OK", severity: "adequate" };
-};
-
+        return { label: "OK", severity: "adequate" };
+    };
 
     // ========== CHART CONFIG ==========
-// ========== CHART CONFIG ==========
-const createChartConfig = (title, dataKey, color, standard) => {
+    const createChartConfig = (title, dataKey, color, standard) => {
     if (!chartData || chartData.length === 0) {
         return null;
     }
@@ -381,10 +340,10 @@ const createChartConfig = (title, dataKey, color, standard) => {
                     fontWeight: 'bold',
                     fontSize: '12px',
                 },
-                align: 'left',
-                verticalAlign: 'middle',
-                x: 0,
-                y: -5,
+            align: 'left', 
+            verticalAlign: 'middle', 
+            x: 0,
+            y: -5,
             },
         });
     }
@@ -403,19 +362,13 @@ const createChartConfig = (title, dataKey, color, standard) => {
                     fontWeight: 'bold',
                     fontSize: '12px',
                 },
-                align: 'left',
-                verticalAlign: 'middle',
-                x: 0,
-                y: -5,
+            align: 'left', 
+            verticalAlign: 'middle', 
+            x: 0,
+            y: -5,
             },
         });
     }
-
-    // Check if the latest value is below the standard and set the appropriate color
-    const severity = classifyStatus(latestValue, standard, "ratio").severity;
-
-    // Customize colors based on severity
-    const seriesColor = severity === "critical" ? "#f44336" : severity === "limited" ? "#ff9800" : color;
 
     return {
         chart: {
@@ -446,7 +399,7 @@ const createChartConfig = (title, dataKey, color, standard) => {
             {
                 name: title,
                 data,
-                color: seriesColor,  // Use color based on severity
+                color,
                 marker: {
                     radius: 4,
                     symbol: "circle",
@@ -477,281 +430,295 @@ const createChartConfig = (title, dataKey, color, standard) => {
     };
 };
 
-// ========== RENDER ==========
-if (loading && !chartData) {
-    return (
-        <div className={classes.loadingWrapper}>
-            <CircularLoader />
-        </div>
-    );
-}
-
-if (error) {
-    return (
-        <div className={classes.pageWrapper}>
-            <NoticeBox error title="Error">
-                {error}
-            </NoticeBox>
-        </div>
-    );
-}
-
-const currentSchool = schools.find((s) => s.id === selectedSchool) || null;
-const latestEntry =
-    chartData && chartData.length > 0 ? chartData[chartData.length - 1] : null;
-
-const metrics = latestEntry
-    ? [
-          {
-              key: "toilets",
-              label: "Toilet Ratio",
-              color: "#4caf50",
-              standard: STANDARDS.toilets,
-              value: latestEntry.toilets,
-          },
-          {
-              key: "seats",
-              label: "Seating Availability",
-              color: "#ff9800",
-              standard: STANDARDS.seats,
-              value: latestEntry.seats,
-          },
-          {
-              key: "books",
-              label: "Textbook Availability",
-              color: "#ffb74d",
-              standard: STANDARDS.books,
-              value: latestEntry.books,
-          },
-          {
-              key: "classrooms",
-              label: "Classroom Capacity",
-              color: "#9c27b0",
-              standard: STANDARDS.classrooms,
-              value: latestEntry.classrooms,
-          },
-      ]
-    : [];
-
-const problemMetrics = metrics.filter((m) => {
-    const s = classifyStatus(m.value, m.standard);
-    return s.severity === "critical" || s.severity === "limited";
-});
-
-const activeMetric = openMetric && metrics.find((m) => m.key === openMetric);
-
-const activeConfig =
-    activeMetric &&
-    createChartConfig(
-        activeMetric.label,
-        activeMetric.key,
-        activeMetric.color,
-        activeMetric.standard
-    );
-
-const renderStatusDot = (severity) => {
-    if (severity === "critical") return classes.statusDotRed;
-    if (severity === "limited") return classes.statusDotOrange;
-    if (severity === "adequate") return classes.statusDotGreen;
-    return classes.statusDotGrey;
-};
-
-return (
-    <div className={classes.pageWrapper}>
-        {/* HEADER / TITLE */}
-        <div className={classes.pageHeader}>
-            {/* Legg til tilbake-knappen */}
-               <Button
-        small
-        icon={<IconArrowLeft24 />}
-        onClick={() => setActivePage("dashboard")}
-        className={classes.backButton}
-    />
-    <h2>Analytics</h2>
-        </div>
-
-        {/* SCHOOL HEADER + SELECTOR */}
-        <Card className={classes.schoolCard}>
-            <div className={classes.schoolTitleRow}>
-                <h3 className={classes.schoolName}>
-                    {currentSchool ? currentSchool.name : "Select a school"}
-                </h3>
-            </div>
-
-            <div className={classes.schoolSelectWrapper}>
-                <SingleSelectField
-                    label="Select school"
-                    selected={selectedSchool}
-                    onChange={({ selected }) => setSelectedSchool(selected)}
-                >
-                    {schools.map((school) => (
-                        <SingleSelectOption
-                            key={school.id}
-                            value={school.id}
-                            label={school.name}
-                        />
-                    ))}
-                </SingleSelectField>
-            </div>
-        </Card>
-
-       {/* STATUS LIST */}
-<Card className={classes.statusCard}>
-    {metrics.length === 0 && (
-        <div className={classes.noDataText}>
-            No resource inspection events found for this school.
-            Submit some inspections first using the Inspection form.
-        </div>
-    )}
-
-    {/* Map each metric with an icon and expandable details */}
-    {metrics.map((metric) => {
-        const status = classifyStatus(metric.value, metric.standard); // Get the severity
-        const isExpanded = openMetric === metric.key;
-
+    // ========== RENDER ==========
+    if (loading && !chartData) {
         return (
-            <div key={metric.key} className={`${classes.statusRow} ${isExpanded ? 'expanded' : ''}`}>
-                {/* Status icon based on severity */}
-                <div className={classes.statusIcon}>
-                    {status.severity === 'critical' && (
-                        <IconWarningFilled24 className={classes.statusIconCritical} />
-                    )}
-                    {status.severity === 'limited' && (
-                        <IconInfoFilled24 className={classes.statusIconWarning} />
-                    )}
-                    {status.severity === 'adequate' && (
-                        <IconCheckmarkCircle24 className={classes.statusIconOK} />
-                    )}
-                </div>
-
-                <div className={classes.statusTextBlock}>
-                    <div className={classes.statusTitle}>
-                        {metric.label} – {status.label}
-                    </div>
-                    <div className={classes.statusSubtitle}>
-                        Latest value: <strong>{metric.value ?? "No data"}</strong>
-                    </div>
-                </div>
-
-                {/* Button to toggle details */}
-                <button
-                    type="button"
-                    className={classes.detailsButton}
-                    onClick={() => setOpenMetric(isExpanded ? null : metric.key)}
-                >
-                    details ▾
-                </button>
-
-                {/* Show expanded content if button is clicked */}
-                {isExpanded && (
-                    <div className={classes.statusDetailContent}>
-                        <p>Target: {metric.standard.min ?? "No target defined"}</p>
-                        <p>More details here...</p>
-
-                        {/* Show chart for the metric */}
-                        {activeConfig && (
-                            <div className={classes.chartWrapper}>
-                                <HighchartsReact
-                                    highcharts={Highcharts}
-                                    options={activeConfig}
-                                />
-                            </div>
-                        )}
-
-                        {/* Show recommendation based on status */}
-                        <div className={classes.recommendationWrapper}>
-                            <h4>Recommendation</h4>
-                            <div className={classes.recommendationText}>
-                                {(() => {
-                                    const status = classifyStatus(
-                                        activeMetric?.value,
-                                        activeMetric?.standard
-                                    );
-                                    if (status.severity === "critical") {
-                                        return (
-                                            <p>
-                                                {activeMetric?.label} is{" "}
-                                                <strong>critically below</strong> the
-                                                suggested standard. Consider prioritising
-                                                additional resources or targeted
-                                                interventions at this school.
-                                            </p>
-                                        );
-                                    }
-                                    if (status.severity === "limited") {
-                                        return (
-                                            <p>
-                                                {activeMetric?.label} is{" "}
-                                                <strong>below the suggested level</strong>.
-                                                Plan follow-up actions to gradually
-                                                improve this indicator over the coming
-                                                term.
-                                            </p>
-                                        );
-                                    }
-                                    if (status.severity === "adequate") {
-                                        return (
-                                            <p>
-                                                {activeMetric?.label} currently meets the
-                                                suggested standard. Monitor changes
-                                                over time and maintain this level of
-                                                provision.
-                                            </p>
-                                        );
-                                    }
-                                    return (
-                                        <p>
-                                            No clear recommendation can be generated
-                                            because there is not enough data for this
-                                            indicator.
-                                        </p>
-                                    );
-                                })()}
-                            </div>
-                        </div>
-                    </div>
-                )}
+            <div className={classes.loadingWrapper}>
+                <CircularLoader />
             </div>
         );
-    })}
-</Card>
+    }
 
+    if (error) {
+        return (
+            <div className={classes.pageWrapper}>
+                <NoticeBox error title="Error">
+                    {error}
+                </NoticeBox>
+            </div>
+        );
+    }
 
-        {/* SUMMARY SECTION */}
-        {metrics.length > 0 && (
-            <div className={classes.summaryWrapper}>
-                <h3>Summary</h3>
-                <p>
-                    <strong>
-                        {currentSchool ? currentSchool.name : "This school"}
-                    </strong>{" "}
-                    shows the following areas needing attention:
-                </p>
+    const currentSchool =
+        schools.find((s) => s.id === selectedSchool) || null;
+    const latestEntry =
+        chartData && chartData.length > 0
+            ? chartData[chartData.length - 1]
+            : null;
 
-                {problemMetrics.length > 0 ? (
-                    <ul className={classes.summaryList}>
-                        {problemMetrics.map((m) => (
-                            <li key={m.key}>{m.label}</li>
+    const metrics = latestEntry
+        ? [
+              {
+                  key: "toilets",
+                  label: "Toilet Ratio",
+                  color: "#4caf50",
+                  standard: STANDARDS.toilets,
+                  value: latestEntry.toilets,
+              },
+              {
+                  key: "seats",
+                  label: "Seating Availability",
+                  color: "#ff9800",
+                  standard: STANDARDS.seats,
+                  value: latestEntry.seats,
+              },
+              {
+                  key: "books",
+                  label: "Textbook Availability",
+                  color: "#ffb74d",
+                  standard: STANDARDS.books,
+                  value: latestEntry.books,
+              },
+              {
+                  key: "classrooms",
+                  label: "Classroom Capacity",
+                  color: "#9c27b0",
+                  standard: STANDARDS.classrooms,
+                  value: latestEntry.classrooms,
+              },
+          ]
+        : [];
+
+    const problemMetrics = metrics.filter((m) => {
+        const s = classifyStatus(m.value, m.standard);
+        return s.severity === "critical" || s.severity === "limited";
+    });
+
+    const activeMetric =
+        openMetric && metrics.find((m) => m.key === openMetric);
+
+    const activeConfig =
+        activeMetric &&
+        createChartConfig(
+            activeMetric.label,
+            activeMetric.key,
+            activeMetric.color,
+            activeMetric.standard
+        );
+
+    const renderStatusDot = (severity) => {
+        if (severity === "critical") return classes.statusDotRed;
+        if (severity === "limited") return classes.statusDotOrange;
+        if (severity === "adequate") return classes.statusDotGreen;
+        return classes.statusDotGrey;
+    };
+
+    return (
+        <div className={classes.pageWrapper}>
+            {/* HEADER / TITLE */}
+            <div className={classes.pageHeader}>
+                <h2>Analytics</h2>
+            </div>
+
+            {/* SCHOOL HEADER + SELECTOR */}
+            <Card className={classes.schoolCard}>
+                <div className={classes.schoolTitleRow}>
+                    <h3 className={classes.schoolName}>
+                        {currentSchool ? currentSchool.name : "Select a school"}
+                    </h3>
+                </div>
+
+                <div className={classes.schoolSelectWrapper}>
+                    <SingleSelectField
+                        label="Select school"
+                        selected={selectedSchool}
+                        onChange={({ selected }) => setSelectedSchool(selected)}
+                    >
+                        {schools.map((school) => (
+                            <SingleSelectOption
+                                key={school.id}
+                                value={school.id}
+                                label={school.name}
+                            />
                         ))}
-                    </ul>
-                ) : (
-                    <p>
-                        All tracked indicators meet the basic target levels
-                        in the latest inspection.
-                    </p>
+                    </SingleSelectField>
+                </div>
+            </Card>
+
+            {/* STATUS LIST */}
+            <Card className={classes.statusCard}>
+                {metrics.length === 0 && (
+                    <div className={classes.noDataText}>
+                        No resource inspection events found for this school.
+                        Submit some inspections first using the Inspection form.
+                    </div>
                 )}
 
-                <div className={classes.followUpRow}>
-                    <input type="checkbox" defaultChecked />
-                    <span>Mark for follow-up</span>
-                </div>
+                {metrics.map((metric) => {
+    const status = classifyStatus(metric.value, metric.standard);
+    const isExpanded = openMetric === metric.key; // Check if the row is expanded
+    return (
+        <div key={metric.key} className={`${classes.statusRow} ${isExpanded ? 'expanded' : ''}`}>
+            {/* Icon for status */}
+            <div className={classes.statusIcon}>
+{status.severity === 'critical' && <IconWarningFilled24 style={{ color: '#f44336' }} />}
+{status.severity === 'limited' && <IconInfoFilled24 style={{ color: '#ff9800' }} />}
+{status.severity === 'adequate' && <IconCheckmarkCircle24 style={{ color: '#4caf50' }} />}
 
-                <div className={classes.nextVisitRow}>
-                    <span>Next visitation:</span>
-                    <strong> (set date here)</strong>
+                {/* Default icon if severity is none */}
+            </div>
+
+            <div className={classes.statusTextBlock}>
+                <div className={classes.statusTitle}>
+                    {metric.label} – {status.label}
+                </div>
+                <div className={classes.statusSubtitle}>
+                    Latest value: <strong>{metric.value ?? "No data"}</strong>
                 </div>
             </div>
-        )}
-    </div>
-);
+
+            <button
+                type="button"
+                className={classes.detailsButton}
+                onClick={() => setOpenMetric(isExpanded ? null : metric.key)} // Toggle expansion
+            >
+                details ▾
+            </button>
+
+            {/* Show details when expanded */}
+            {isExpanded && (
+                <div className={classes.statusDetailContent}>
+                    <p>Target: {metric.standard.min ?? "No target defined"}</p>
+                    <p>...</p>
+                </div>
+            )}
+        </div>
+    );
+})}
+
+            </Card>
+
+            {/* DETAIL VIEW WITH CHART */}
+            {activeMetric && (
+                <Card className={classes.detailCard}>
+                    <div className={classes.detailHeader}>
+                        <span className={classes.detailBadge}>
+                            {activeMetric.label}:{" "}
+                            {activeMetric.value ?? "No data"}{" "}
+                            {activeMetric.standard.min !== undefined &&
+                                `(Target ≥ ${activeMetric.standard.min})`}
+                            {activeMetric.standard.max !== undefined &&
+                                `(Target ≤ ${activeMetric.standard.max})`}
+                        </span>
+                    </div>
+
+                    {activeConfig ? (
+                        <div className={classes.chartWrapper}>
+                            <HighchartsReact
+                                highcharts={Highcharts}
+                                options={activeConfig}
+                            />
+                        </div>
+                    ) : (
+                        <div className={classes.noDataText}>
+                            Not enough data to render chart for this metric.
+                        </div>
+                    )}
+
+                    {/* Simple explanatory text + recommendation */}
+                    <div className={classes.detailTextBlock}>
+                        <p>
+                            This chart compares the latest value for{" "}
+                            <strong>{activeMetric.label}</strong> at this
+                            school with the average across the Jambalaya
+                            cluster, including ±1 standard deviation.
+                        </p>
+
+                        <h4>Recommendation</h4>
+                        {(() => {
+                            const status = classifyStatus(
+                                activeMetric.value,
+                                activeMetric.standard
+                            );
+                            if (status.severity === "critical") {
+                                return (
+                                    <p>
+                                        {activeMetric.label} is{" "}
+                                        <strong>critically below</strong> the
+                                        suggested standard. Consider prioritising
+                                        additional resources or targeted
+                                        interventions at this school.
+                                    </p>
+                                );
+                            }
+                            if (status.severity === "limited") {
+                                return (
+                                    <p>
+                                        {activeMetric.label} is{" "}
+                                        <strong>below the suggested level</strong>.
+                                        Plan follow-up actions to gradually
+                                        improve this indicator over the coming
+                                        term.
+                                    </p>
+                                );
+                            }
+                            if (status.severity === "adequate") {
+                                return (
+                                    <p>
+                                        {activeMetric.label} currently meets the
+                                        suggested standard. Monitor changes
+                                        over time and maintain this level of
+                                        provision.
+                                    </p>
+                                );
+                            }
+                            return (
+                                <p>
+                                    No clear recommendation can be generated
+                                    because there is not enough data for this
+                                    indicator.
+                                </p>
+                            );
+                        })()}
+                    </div>
+                </Card>
+            )}
+
+            {/* SUMMARY CARD */}
+            {metrics.length > 0 && (
+                <Card className={classes.summaryCard}>
+                    <h3>Summary</h3>
+                    <p>
+                        <strong>
+                            {currentSchool ? currentSchool.name : "This school"}
+                        </strong>{" "}
+                        shows the following areas needing attention:
+                    </p>
+
+                    {problemMetrics.length > 0 ? (
+                        <ul className={classes.summaryList}>
+                            {problemMetrics.map((m) => (
+                                <li key={m.key}>{m.label}</li>
+                            ))}
+                        </ul>
+                    ) : (
+                        <p>
+                            All tracked indicators meet the basic target levels
+                            in the latest inspection.
+                        </p>
+                    )}
+
+                    <div className={classes.followUpRow}>
+                        <input type="checkbox" defaultChecked />
+                        <span>Mark for follow-up</span>
+                    </div>
+
+                    <div className={classes.nextVisitRow}>
+                        <span>Next visitation:</span>
+                        <strong> (set date here)</strong>
+                    </div>
+                </Card>
+            )}
+        </div>
+    );
 }

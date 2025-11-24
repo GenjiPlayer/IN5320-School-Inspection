@@ -457,7 +457,7 @@ export default function Inspection({ setActivePage }) {
 
                     <div className={classes.formSection}>
                         <SingleSelectField
-                            label="School *"
+                            label="School"
                             placeholder="Select a school"
                             selected={formData.schoolId}
                             onChange={({ selected }) => handleFieldChange("schoolId", selected)}
@@ -476,7 +476,7 @@ export default function Inspection({ setActivePage }) {
                         </SingleSelectField>
 
                         <InputField
-                            label="Inspection Date *"
+                            label="Inspection Date"
                             type="date"
                             value={formData.inspectionDate}
                             onChange={({ value }) => handleFieldChange("inspectionDate", value)}
@@ -512,7 +512,7 @@ export default function Inspection({ setActivePage }) {
                         <h4 className={classes.subsectionTitle}>Learner Enrollment</h4>
                         <div className={classes.formRow}>
                             <InputField
-                                label="Boys Enrolled *"
+                                label="Boys Enrolled"
                                 type="number"
                                 min="0"
                                 value={formData.boysEnrolled}
@@ -523,7 +523,7 @@ export default function Inspection({ setActivePage }) {
                                 required
                             />
                             <InputField
-                                label="Girls Enrolled *"
+                                label="Girls Enrolled"
                                 type="number"
                                 min="0"
                                 value={formData.girlsEnrolled}
@@ -545,7 +545,7 @@ export default function Inspection({ setActivePage }) {
                         <h4 className={classes.subsectionTitle}>Teaching Staff</h4>
                         <div className={classes.formRow}>
                             <InputField
-                                label="Male Teachers *"
+                                label="Male Teachers"
                                 type="number"
                                 min="0"
                                 value={formData.maleTeachers}
@@ -556,7 +556,7 @@ export default function Inspection({ setActivePage }) {
                                 required
                             />
                             <InputField
-                                label="Female Teachers *"
+                                label="Female Teachers"
                                 type="number"
                                 min="0"
                                 value={formData.femaleTeachers}
@@ -602,7 +602,7 @@ export default function Inspection({ setActivePage }) {
                     <div className={classes.formSection}>
                         <div className={classes.formRow}>
                             <InputField
-                                label="Classrooms *"
+                                label="Classrooms"
                                 type="number"
                                 min="1"
                                 value={formData.classrooms}
@@ -614,7 +614,7 @@ export default function Inspection({ setActivePage }) {
                                 helpText="Total number of classrooms"
                             />
                             <InputField
-                                label="Seats/Desks *"
+                                label="Seats/Desks"
                                 type="number"
                                 min="0"
                                 value={formData.seats}
@@ -629,7 +629,7 @@ export default function Inspection({ setActivePage }) {
 
                         <div className={classes.formRow}>
                             <InputField
-                                label="Toilets *"
+                                label="Toilets"
                                 type="number"
                                 min="1"
                                 value={formData.toilets}
@@ -641,7 +641,7 @@ export default function Inspection({ setActivePage }) {
                                 helpText="Total number of toilets"
                             />
                             <InputField
-                                label="Textbooks *"
+                                label="Textbooks"
                                 type="number"
                                 min="0"
                                 value={formData.textbooks}
@@ -680,7 +680,7 @@ export default function Inspection({ setActivePage }) {
 
                     <div className={classes.formSection}>
                         <SingleSelectField
-                            label="Electricity Supply *"
+                            label="Electricity Supply"
                             placeholder="Select..."
                             selected={formData.electricity}
                             onChange={({ selected }) => handleFieldChange("electricity", selected)}
@@ -694,7 +694,7 @@ export default function Inspection({ setActivePage }) {
                         </SingleSelectField>
 
                         <SingleSelectField
-                            label="Handwashing Facilities *"
+                            label="Handwashing Facilities"
                             placeholder="Select..."
                             selected={formData.handwashing}
                             onChange={({ selected }) => handleFieldChange("handwashing", selected)}
@@ -708,7 +708,7 @@ export default function Inspection({ setActivePage }) {
                         </SingleSelectField>
 
                         <SingleSelectField
-                            label="Computer Lab *"
+                            label="Computer Lab"
                             placeholder="Select..."
                             selected={formData.computerLab}
                             onChange={({ selected }) => handleFieldChange("computerLab", selected)}
