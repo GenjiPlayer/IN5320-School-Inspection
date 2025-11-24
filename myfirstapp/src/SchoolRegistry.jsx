@@ -1,18 +1,18 @@
-import React, { useState, useEffect } from "react";
+import React, { useState, useEffect, useRef } from "react";
 import {
     Card,
     Button,
     InputField,
-    IconArrowLeft24,
     IconChevronDown24,
     IconHome24,
     IconCalendar24,
     IconAdd24,
     IconFlag24,
-    IconInfoFilled24,
+    IconError24,
     IconClockHistory24,
     CircularLoader,
     NoticeBox,
+    IconEdit24
 } from "@dhis2/ui";
 
 import classes from "./SchoolRegistry.module.css";
@@ -22,6 +22,7 @@ export default function SchoolRegistry({
     setHeaderColor,
     setHeaderTitle,
 }) {
+
     const [search, setSearch] = useState("");
     const [schools, setSchools] = useState([]);
     const [visitData, setVisitData] = useState([]);
@@ -29,55 +30,46 @@ export default function SchoolRegistry({
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const searchRef = useRef(null);
+    const [showSuggestions, setShowSuggestions] = useState(false);
+
     const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 
-    /* ----------------------------
-       SET HEADER ON PAGE LOAD
-    ----------------------------- */
     useEffect(() => {
         setHeaderColor("#FB8C00");
         setHeaderTitle("School Registry");
-    }, [setHeaderColor, setHeaderTitle]);
-
-    /* ----------------------------
-       FETCH ON LOAD
-    ----------------------------- */
-    useEffect(() => {
-        fetchSchools();
     }, []);
 
-    const toggleOpen = (id) => {
-        setOpenSchoolId((prev) => (prev === id ? null : id));
-    };
+    useEffect(() => {
+        function handleOutside(e) {
+            if (searchRef.current && !searchRef.current.contains(e.target)) {
+                setShowSuggestions(false);
+            }
+        }
+        document.addEventListener("mousedown", handleOutside);
+        return () => document.removeEventListener("mousedown", handleOutside);
+    }, []);
 
-    /* ----------------------------
-       FETCH SCHOOL LIST
-    ----------------------------- */
+    useEffect(() => { fetchSchools(); }, []);
+
     const fetchSchools = async () => {
         try {
             const res = await fetch(
                 "https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name&pageSize=200",
-                {
-                    headers: {
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                }
+                { headers: { Authorization: "Basic " + btoa("admin:district") } }
             );
 
             const json = await res.json();
-            const schoolList = json.organisationUnits || [];
-            setSchools(schoolList);
+            const list = json.organisationUnits || [];
+            setSchools(list);
+            await fetchLastVisits(list);
 
-            await fetchLastVisits(schoolList);
         } catch (err) {
-            setError(`Failed to fetch schools: ${err.message || err}`);
+            setError(`Failed to fetch schools: ${err.message}`);
             setLoading(false);
         }
     };
 
-    /* ----------------------------
-       FETCH LATEST VISITS
-    ----------------------------- */
     const fetchLastVisits = async (list) => {
         const results = [];
 
@@ -85,11 +77,7 @@ export default function SchoolRegistry({
             try {
                 const res = await fetch(
                     `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${s.id}&order=occurredAt:desc&pageSize=1`,
-                    {
-                        headers: {
-                            Authorization: "Basic " + btoa("admin:district"),
-                        },
-                    }
+                    { headers: { Authorization: "Basic " + btoa("admin:district") } }
                 );
 
                 const json = await res.json();
@@ -101,8 +89,9 @@ export default function SchoolRegistry({
                     lastVisitDate:
                         lastEvent?.occurredAt || lastEvent?.eventDate || null,
                 });
-            } catch (e) {
-                console.error("Event fetch failed for", s.name);
+
+            } catch {
+                console.warn("Failed visit fetch for", s.name);
             }
         }
 
@@ -110,32 +99,37 @@ export default function SchoolRegistry({
         setLoading(false);
     };
 
-    /* ----------------------------
-       HELPERS
-    ----------------------------- */
     const isOverdue = (date) => {
         if (!date) return true;
-        const diff = (Date.now() - new Date(date)) / (1000 * 60 * 60 * 24);
-        return diff > 90;
+        const days = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24);
+        return days > 90;
     };
 
-    const sortedData = [...visitData].sort((a, b) => {
-        const aO = isOverdue(a.lastVisitDate);
-        const bO = isOverdue(b.lastVisitDate);
-        if (aO && !bO) return -1;
-        if (!aO && bO) return 1;
-        return (
-            new Date(b.lastVisitDate || 0) - new Date(a.lastVisitDate || 0)
-        );
+    const sorted = [...visitData].sort((a, b) => {
+        const ao = isOverdue(a.lastVisitDate);
+        const bo = isOverdue(b.lastVisitDate);
+        if (ao !== bo) return ao ? -1 : 1;
+        return new Date(b.lastVisitDate || 0) - new Date(a.lastVisitDate || 0);
     });
 
-    const filtered = sortedData.filter((s) =>
+    const filtered = sorted.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    /* ----------------------------
-       LOADING + ERROR
-    ----------------------------- */
+    const suggestions =
+        showSuggestions
+            ? sorted.filter((s) =>
+                  s.name.toLowerCase().includes(search.toLowerCase())
+              )
+            : [];
+
+    const selectSuggestion = (school) => {
+        setSearch(school.name);
+        setOpenSchoolId(school.id);
+        setShowSuggestions(false);
+    };
+
+
     if (loading) {
         return (
             <div className={classes.loadingWrapper}>
@@ -152,175 +146,177 @@ export default function SchoolRegistry({
         );
     }
 
-    /* ----------------------------
-       UI
-    ----------------------------- */
+
     return (
         <div className={classes.container}>
-            {/* HEADER */}
-            <div className={classes.pageHeader}>
-                <Button
-                    small
-                    icon={<IconArrowLeft24 />}
-                    onClick={() => setActivePage("dashboard")}
-                />
-            </div>
 
-            {/* SEARCH + ADD SCHOOL */}
+            {/* SEARCH AREA */}
             <Card className={classes.searchCard}>
-                <InputField
-                    placeholder="Search for school"
-                    value={search}
-                    onChange={({ value }) => setSearch(value)}
-                />
+                <div className={classes.searchRow}>
 
-                <Button
-                    primary
-                    icon={<IconAdd24 />}
-                    className={classes.searchAddBtn}
-                    onClick={() => console.log("Add school clicked")}
-                >
-                    Add new school
-                </Button>
+                    <div ref={searchRef} className={classes.searchWrapper}>
+                        <div className={classes.searchInputContainer}>
+                            <InputField
+                                placeholder="Search for school..."
+                                value={search}
+                                onChange={({ value }) => {
+                                    setSearch(value);
+                                    setShowSuggestions(true);
+                                }}
+                                onFocus={() => setShowSuggestions(true)}
+                            />
+
+                            {search.length > 0 && (
+                                <button
+                                    className={classes.clearButton}
+                                    onClick={() => {
+                                        setSearch("");
+                                        setShowSuggestions(false);
+                                        searchRef.current?.querySelector("input")?.focus();
+                                    }}
+                                >
+                                    ✕
+                                </button>
+                            )}
+                        </div>
+
+                        {showSuggestions && suggestions.length > 0 && (
+                            <div className={classes.suggestionsDropdown}>
+                                {suggestions.map((s) => (
+                                    <div
+                                        key={s.id}
+                                        className={classes.suggestionItem}
+                                        onClick={() => selectSuggestion(s)}
+                                    >
+                                        {s.name}
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
+
+                    <Button
+                        className={classes.editIconButton}
+                        secondary
+                        icon={<IconEdit24 />}
+                    />
+                </div>
             </Card>
 
             {/* SCHOOL LIST */}
             <div className={classes.schoolList}>
-                {filtered.map((school) => (
-                    <Card key={school.id} className={classes.schoolCard}>
-                        <div className={classes.schoolCardContent}>
-                            {/* LEFT ICON */}
-                            <div className={classes.schoolIcon}>
-                                <IconHome24 />
-                            </div>
+                {filtered.map((school) => {
+                    const isOpen = openSchoolId === school.id;
 
-                            {/* RIGHT SIDE */}
-                            <div className={classes.schoolRight}>
-                                {/* NAME */}
-                                <div className={classes.schoolName}>
-                                    {school.name}
+                    return (
+                        <Card key={school.id} className={classes.schoolCard}>
+                            
+                            <div className={classes.schoolCardContent}>
+
+                                <div className={classes.schoolIcon}>
+                                    <IconHome24 />
                                 </div>
 
-                                {/* STATUS */}
-                                {isOverdue(school.lastVisitDate) ? (
-                                    <div className={classes.statusRow}>
-                                        <IconInfoFilled24
-                                            className={classes.iconRed}
+                                <div className={classes.schoolRight}>
+
+                                    <div className={classes.schoolName}>{school.name}</div>
+
+                                    {isOverdue(school.lastVisitDate) ? (
+                                        <div className={classes.statusRow}>
+                                            <IconError24 />
+                                            <span className={classes.textRed}>Inspection overdue</span>
+                                        </div>
+                                    ) : (
+                                        <div className={classes.statusRow}>
+                                            <IconFlag24 />
+                                            <span className={classes.textOrange}>Marked for follow-up</span>
+                                        </div>
+                                    )}
+
+                                    <div className={classes.nextInspectionRow}>
+                                        <IconCalendar24 />
+                                        {school.lastVisitDate
+                                            ? new Date(school.lastVisitDate).toLocaleDateString()
+                                            : "No visits recorded"}
+                                    </div>
+
+                                    <div
+                                        className={classes.showMore}
+                                        onClick={() =>
+                                            setOpenSchoolId(isOpen ? null : school.id)
+                                        }
+                                    >
+                                        <IconChevronDown24
+                                            className={`${classes.showMoreIcon} ${
+                                                isOpen ? classes.rotateUp : ""
+                                            }`}
                                         />
-                                        <span className={classes.textRed}>
-                                            Inspection overdue
-                                        </span>
+                                        {isOpen ? "Show less" : "Show more"}
                                     </div>
-                                ) : (
-                                    <div className={classes.statusRow}>
-                                        <IconFlag24
-                                            className={classes.iconOrange}
-                                        />
-                                        <span className={classes.textOrange}>
-                                            Marked for follow-up
-                                        </span>
-                                    </div>
-                                )}
 
-                                {/* NEXT INSPECTION */}
-                                <div className={classes.nextInspectionRow}>
-                                    <IconCalendar24 />
-                                    {school.lastVisitDate
-                                        ? "Next inspection " +
-                                          new Date(
-                                              school.lastVisitDate
-                                          ).toLocaleDateString()
-                                        : "No visits recorded"}
+                                    {isOpen && (
+                                        <>
+                                            <div className={classes.detailsWrapper}>
+                                                <div className={classes.detailLine}>
+                                                    <span className={classes.detailLabel}>Last visitation:</span>
+                                                    <span className={classes.detailValue}>
+                                                        {school.lastVisitDate
+                                                            ? new Date(school.lastVisitDate).toLocaleDateString()
+                                                            : "No visits recorded"}
+                                                    </span>
+                                                </div>
+
+                                                <div className={classes.detailLine}>
+                                                    <span className={classes.detailLabel}>Phone:</span>
+                                                    <span className={classes.detailValue}>+234 123 111 6785</span>
+                                                </div>
+
+                                                <div className={classes.detailLine}>
+                                                    <span className={classes.detailLabel}>Address:</span>
+                                                    <span className={classes.detailValue}>
+                                                        Street Streetname 12, District
+                                                    </span>
+                                                </div>
+                                            </div>
+
+                                            {/* ACTION BUTTONS */}
+                                            <div className={classes.actionsSection}>
+                                 <Button
+    primary
+    icon={<IconAdd24 />}
+    className={classes.actionButtonDHIS2}
+    onClick={() => {
+        setActivePage("inspection");
+    }}
+>
+    New school inspection
+</Button>
+
+
+                                                <Button
+                                                    secondary
+                                                    icon={<IconCalendar24 />}
+                                                    className={classes.actionButtonDHIS2}
+                                                >
+                                                    Schedule visitation
+                                                </Button>
+
+                                                <Button
+                                                    secondary
+                                                    icon={<IconClockHistory24 />}
+                                                    className={classes.actionButtonDHIS2}
+                                                >
+                                                    Previous reports
+                                                </Button>
+                                            </div>
+                                        </>
+                                    )}
+
                                 </div>
-
-                                {/* SHOW MORE */}
-                                <div
-                                    className={classes.showMore}
-                                    onClick={() => toggleOpen(school.id)}
-                                >
-                                    <IconChevronDown24
-                                        className={`${classes.showMoreIcon} ${
-                                            openSchoolId === school.id
-                                                ? classes.rotateUp
-                                                : ""
-                                        }`}
-                                    />
-                                    {openSchoolId === school.id
-                                        ? "Show less"
-                                        : "Show more"}
-                                </div>
-
-                                {/* DETAILS SECTION */}
-                                {openSchoolId === school.id && (
-                                    <div className={classes.detailsWrapper}>
-                                        <div className={classes.detailLine}>
-                                            <span className={classes.detailLabel}>
-                                                Date of last visitation:
-                                            </span>
-                                            <span className={classes.detailValue}>
-                                                {school.lastVisitDate
-                                                    ? new Date(
-                                                          school.lastVisitDate
-                                                      ).toLocaleDateString()
-                                                    : "No visits recorded"}
-                                            </span>
-                                        </div>
-
-                                        <div className={classes.detailLine}>
-                                            <span className={classes.detailLabel}>
-                                                Phone:
-                                            </span>
-                                            <span className={classes.detailValue}>
-                                                +234 123 111 6785
-                                            </span>
-                                        </div>
-
-                                        <div className={classes.detailLine}>
-                                            <span className={classes.detailLabel}>
-                                                Address:
-                                            </span>
-                                            <span className={classes.detailValue}>
-                                                Street Streetname 12, District
-                                            </span>
-                                        </div>
-
-                                        {/* DHIS2 BUTTONS */}
-                                        <Button
-                                            primary
-                                            icon={<IconAdd24 />}
-                                            className={classes.actionButtonDHIS2}
-                                        >
-                                            New school inspection
-                                        </Button>
-
-                                        <Button
-                                            icon={<IconAdd24 />}
-                                            className={classes.actionButtonDHIS2}
-                                        >
-                                            New resource count
-                                        </Button>
-
-                                        <Button
-                                            secondary
-                                            icon={<IconCalendar24 />}
-                                            className={classes.actionButtonDHIS2}
-                                        >
-                                            Schedule visitation
-                                        </Button>
-
-                                        <Button
-                                            secondary
-                                            icon={<IconClockHistory24 />}
-                                            className={classes.actionButtonDHIS2}
-                                        >
-                                            Previous reports
-                                        </Button>
-                                    </div>
-                                )}
                             </div>
-                        </div>
-                    </Card>
-                ))}
+                        </Card>
+                    );
+                })}
             </div>
         </div>
     );

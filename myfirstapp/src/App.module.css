@@ -79,9 +79,9 @@
 }
 
 .appHeader h1 {
-    font-size: 28px;
+    font-size: 24px;
     font-weight: 400;
-    line-height: 36px;
+    line-height: 32px;
     margin: 0;
 }
 
@@ -201,14 +201,14 @@
 }
 
 .programIconYellow { background: #FB8C00; }
-.programIconGreen { background: #A5D6A7; }
+.programIconGreen { background: #43A047; }
 .programIconPink { background: #F45B55; }
 .programIconTeal { background: #00897B; }
 
-.programIconYellow svg { color: #FFF3E0; }
-.programIconGreen svg { color: #1B5E20; }
-.programIconPink svg { color: #FFE3E2; }
-.programIconTeal svg { color: #E0F2F1; }
+.programIconYellow svg { color: #ffffff; }
+.programIconGreen svg { color: #ffffff; }
+.programIconPink svg { color: #ffffff; }
+.programIconTeal svg { color: #ffffff; }
 
 .programText {
     font-size: 20px;

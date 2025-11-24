@@ -260,9 +260,9 @@ function Dashboard({
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
-                            setHeaderColor("#FB8C00");
-                            setHeaderTextColor("#4A2E00");
-                            setHeaderIconColor("#4A2E00");
+                            setHeaderColor("#E65100");
+                            setHeaderTextColor("#FFFFFF");
+                            setHeaderIconColor("#FFFFFF");
                             setHeaderTitle("School Registry");
                             setActivePage("registry");
                         }}
@@ -281,9 +281,9 @@ function Dashboard({
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
-                            setHeaderColor("#A5D6A7");
-                            setHeaderTextColor("#000000ff");
-                            setHeaderIconColor("#000000ff");
+                            setHeaderColor("#43A047");
+                            setHeaderTextColor("#FFFFFF");
+                            setHeaderIconColor("#FFFFFF");
                             setHeaderTitle("Inspection Reports");
                             setActivePage("inspectionReports");
                         }}
