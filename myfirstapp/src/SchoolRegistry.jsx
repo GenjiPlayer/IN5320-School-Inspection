@@ -16,7 +16,7 @@ import {
     NoticeBox,
 } from "@dhis2/ui";
 
-import classes from "./Registry.module.css";
+import classes from "./SchoolRegistry.module.css";
 
 export default function SchoolRegistry({ setActivePage }) {
     const [search, setSearch] = useState("");

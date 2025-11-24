@@ -1,211 +1,626 @@
-/* Main page container */
+/* =========================================
+   GLOBAL STYLES
+========================================= */
+:global(body) {
+    overflow-x: hidden !important;
+}
+
+/* =========================================
+   PAGE WRAPPER
+========================================= */
 .pageWrapper {
-    padding: 16px;
-    max-width: 100%;
-    box-sizing: border-box;
-    display: flex;
-    flex-direction: column;
-    height: 100vh;
-    overflow-y: auto;
-}
-
-/* Header */
-.pageHeader {
-    display: flex;
-    justify-content: flex-start; /* Align content to the start */
-    align-items: center; /* Vertically center the items */
-    gap: 16px; /* Space between the back button and title */
-    margin-bottom: 16px;
-    font-size: 22px;
-    font-weight: bold;
-    flex-wrap: wrap; /* Ensure the header content wraps if necessary */
-}
-
-/* Optional: Style the back button specifically */
-.backButton {
-    margin-right: 16px; /* Adjust spacing between button and title */
-}
-
-/* School card */
-.schoolCard {
-    margin-bottom: 20px;
-    padding: 20px;
-    background-color: #f4f6f9;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    font-family: "Roboto", sans-serif;
     width: 100%;
     max-width: 100%;
+    box-sizing: border-box;
+    padding: 16px 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 20px;
+    overflow-x: hidden;
 }
 
-/* Status card */
-.statusCard {
-    padding: 20px;
-    background-color: #ffffff;
-    margin-bottom: 20px;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    transition: max-height 0.3s ease-in-out;
-    position: relative;
+/* =========================================
+   LOADING
+========================================= */
+.loadingWrapper {
     display: flex;
-    flex-direction: column; /* Ensure content is stacked vertically */
-}
-
-/* Status row */
-.statusRow {
-    display: flex;
-    justify-content: space-between;
+    justify-content: center;
     align-items: center;
-    margin-bottom: 16px;
-    gap: 16px;
-    flex-wrap: wrap; /* Ensures wrapping on smaller screens */
+    padding: 80px 0;
+    min-height: 300px;
 }
 
-/* Status Icons */
-.statusIconOK {
-    font-size: 28px;
-    color: #4caf50 !important; /* Green for OK */
-}
-
-.statusIconWarning {
-    font-size: 28px;
-    color: #ff9800 !important; /* Orange for Warning */
-}
-
-.statusIconCritical {
-    font-size: 28px;
-    color: #f44336 !important; /* Red for Critical */
-}
-
-/* Status text block */
-.statusTextBlock {
+/* =========================================
+   PAGE HEADER
+========================================= */
+.pageHeader {
     display: flex;
-    flex-direction: column;
-    justify-content: flex-start;
-    width: 80%; /* Adjust width for text */
+    align-items: center;
+    gap: 12px;
+    padding-bottom: 4px;
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Title of each status */
-.statusTitle {
-    font-weight: bold;
-    font-size: 18px;
-    margin-bottom: 6px;
+.pageHeader h2 {
+    margin: 0;
+    font-size: 22px;
+    font-weight: 600;
+    color: #1e1e1e;
 }
 
-/* Subtitle text */
-.statusSubtitle {
-    font-size: 14px;
-    color: #888;
-    margin-top: 6px;
-}
-
-/* Button to show details */
-.detailsButton {
-    background: none;
-    border: none;
-    color: #2196f3;
-    cursor: pointer;
-    font-size: 16px;
-    font-weight: bold;
-    padding: 0;
-    text-align: right;
-}
-
-/* Expanded Status Card */
-.statusCard.expanded {
-    max-height: 1000px;
-    overflow: visible;
-}
-
-/* Expanded content (chart and recommendation) */
-.statusDetailContent {
-    display: flex;
-    flex-direction: column;
-    gap: 16px;
-    margin-top: 12px;
-    width: 100%; /* Ensure it takes the full width */
-}
-
-/* Chart container wrapper */
-.chartWrapper {
-    padding: 24px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
-    margin-top: 16px; /* Space between text and chart */
-    width: 100%; /* Ensure the chart fills the container */
-    height: auto;
-}
-
-/* Title for the chart */
-.chartTitle {
-    font-size: 18px;
-    font-weight: bold;
-    margin-bottom: 12px;
-}
-
-/* Recommendation wrapper */
-.recommendationWrapper {
-    padding: 16px;
-    background-color: #ffffff;
-    border-radius: 8px;
-    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-}
-
-/* Recommendation text */
-.recommendationText {
-    font-size: 16px;
-    color: #333;
-    margin-top: 12px;
-}
-
-/* Summary wrapper */
-.summaryWrapper {
-    margin-top: 24px;
+/* =========================================
+   VIEW MODE CARD
+========================================= */
+.viewModeCard {
+    background: #ffffff;
+    border-radius: 16px;
     padding: 20px;
-    background-color: white;
-    border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
 }
 
-/* Summary title */
-.summaryWrapper h3 {
+.viewModeButtons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* =========================================
+   SELECTOR CARD
+========================================= */
+.selectorCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.selectorRow {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.mainSelector {
+    flex: 1;
+    min-width: 250px;
+}
+
+.comparisonSection {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e7edf5;
+}
+
+.comparisonLabel {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+/* =========================================
+   INFO CARD (Cluster Summary)
+========================================= */
+.infoCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.clusterTitle {
+    margin: 0 0 16px 0;
     font-size: 20px;
-    font-weight: bold;
-    margin-bottom: 16px;
+    font-weight: 600;
+    color: #1a2b49;
 }
 
-/* Next visit section */
-.nextVisitWrapper {
-    margin-top: 12px;
-    font-size: 16px;
+.clusterStats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 100px;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #6a7280;
     font-weight: 500;
 }
 
-/* Follow-up checkbox */
-.followUpRow {
+.statValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2b49;
+}
+
+/* =========================================
+   METRICS CONTAINER
+========================================= */
+.metricsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* =========================================
+   METRIC CARD
+========================================= */
+.metricCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+    transition: box-shadow 0.3s ease;
+}
+
+.metricCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.metricHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.metricIconWrapper {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
     display: flex;
     align-items: center;
-    padding: 16px;
+    justify-content: center;
+    background: #f4f6f9;
+    border-radius: 12px;
+}
+
+.metricTextBlock {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metricLabel {
     font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+    line-height: 1.3;
 }
 
-/* Adjust details button for hovering */
-.detailsButton:hover {
-    color: #1565c0; /* Darker blue when hovered */
+.metricValue {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a2b49;
+    line-height: 1.2;
 }
 
-/* Fixing "details" button positioning */
-.statusRow .detailsButton {
-    margin-left: auto; /* Push the details button to the right */
+.metricStatus {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6a7280;
 }
 
-/* Adding spacing between status rows */
-.statusRow {
-    margin-bottom: 24px; /* Increased space between rows */
+.metricStandard {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2196f3;
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
 }
 
-/* Text styling for the recommendation in the expanded view */
-.recommendationWrapper p {
+.metricDescription {
+    font-size: 14px;
+    color: #4a5568;
     line-height: 1.5;
-    margin-top: 10px;
+    margin: 0 0 16px 0;
+}
+
+/* =========================================
+   STATUS ICONS
+========================================= */
+.iconGood svg {
+    color: #4caf50 !important;
+    width: 28px;
+    height: 28px;
+}
+
+.iconWarning svg {
+    color: #ff9800 !important;
+    width: 28px;
+    height: 28px;
+}
+
+.iconCritical svg {
+    color: #f44336 !important;
+    width: 28px;
+    height: 28px;
+}
+
+/* =========================================
+   DETAILS BUTTON
+========================================= */
+.detailsButton {
+    margin-top: 8px;
+}
+
+/* =========================================
+   EXPANDED CONTENT
+========================================= */
+.expandedContent {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e7edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* =========================================
+   CHART WRAPPER
+========================================= */
+.chartWrapper {
+    width: 100%;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Make charts responsive on mobile */
+@media (max-width: 768px) {
+    .chartWrapper {
+        padding: 16px 12px;
+    }
+}
+
+/* =========================================
+   RECOMMENDATION CARD (DHIS2 Style)
+========================================= */
+.recommendationCard {
+    background: #ffffff;
+    border-radius: 3px;
+    padding: 16px;
+    box-sizing: border-box;
+    border: 1px solid #e0e0e0;
+}
+
+.recommendationTitle {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212934;
+}
+
+.recommendationText {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #494949;
+}
+
+.recommendationText p {
+    margin: 0;
+}
+
+/* =========================================
+   FACILITY CARD
+========================================= */
+.facilityCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.08);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.facilityTitle {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.facilityList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.facilityRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    background: #fafbfc;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+}
+
+.facilityRow:hover {
+    background: #f4f6f9;
+}
+
+.facilityIconWrapper {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.facilityInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.facilityLabel {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.facilityValue {
+    font-size: 13px;
+    color: #6a7280;
+    font-weight: 500;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+/* Tablets */
+@media (max-width: 1024px) {
+    .pageWrapper {
+        padding: 14px 10px;
+        gap: 18px;
+    }
+
+    .clusterStats {
+        gap: 12px;
+    }
+
+    .metricCard {
+        padding: 18px;
+    }
+
+    .metricValue {
+        font-size: 24px;
+    }
+
+    .selectorRow {
+        flex-direction: column;
+    }
+
+    .mainSelector {
+        min-width: 100%;
+    }
+}
+
+/* Mobile devices */
+@media (max-width: 768px) {
+    .pageWrapper {
+        padding: 12px 8px;
+        gap: 16px;
+    }
+
+    .pageHeader h2 {
+        font-size: 20px;
+    }
+
+    .clusterTitle {
+        font-size: 18px;
+    }
+
+    .clusterStats {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .statItem {
+        min-width: 100%;
+    }
+
+    .metricCard {
+        padding: 16px;
+    }
+
+    .metricHeader {
+        gap: 12px;
+    }
+
+    .metricIconWrapper {
+        width: 40px;
+        height: 40px;
+    }
+
+    .metricLabel {
+        font-size: 15px;
+    }
+
+    .metricValue {
+        font-size: 22px;
+    }
+
+    .metricStandard {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+
+    .metricDescription {
+        font-size: 13px;
+    }
+
+    .chartWrapper {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .facilityCard {
+        padding: 16px;
+    }
+
+    .facilityRow {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .facilityIconWrapper {
+        width: 36px;
+        height: 36px;
+    }
+
+    .selectorCard {
+        padding: 16px;
+    }
+
+    .comparisonSection {
+        gap: 10px;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+    .pageWrapper {
+        padding: 10px 6px;
+        gap: 14px;
+    }
+
+    .pageHeader h2 {
+        font-size: 18px;
+    }
+
+    .clusterTitle {
+        font-size: 16px;
+    }
+
+    .statValue {
+        font-size: 20px;
+    }
+
+    .metricValue {
+        font-size: 20px;
+    }
+
+    .infoCard,
+    .metricCard,
+    .facilityCard,
+    .selectorCard {
+        border-radius: 12px;
+        padding: 14px;
+    }
+
+    .expandedContent {
+        gap: 20px;
+    }
+
+    .chartWrapper {
+        padding: 14px 10px;
+    }
+
+    .recommendationBox {
+        padding: 14px;
+    }
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+/* Focus states for keyboard navigation */
+.detailsButton:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .metricCard,
+    .infoCard,
+    .facilityCard,
+    .selectorCard {
+        border: 1px solid #1a2b49;
+    }
+
+    .iconGood svg {
+        color: #2e7d32 !important;
+    }
+
+    .iconWarning svg {
+        color: #f57c00 !important;
+    }
+
+    .iconCritical svg {
+        color: #c62828 !important;
+    }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .metricCard,
+    .expandedContent,
+    .facilityRow {
+        transition: none;
+    }
+}
+
+
+/* =========================================
+   PRINT STYLES
+========================================= */
+@media print {
+    .pageWrapper {
+        padding: 0;
+    }
+
+    .detailsButton {
+        display: none;
+    }
+
+    .expandedContent {
+        display: block !important;
+        animation: none;
+    }
+
+    .metricCard {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #e7edf5;
+    }
 }
