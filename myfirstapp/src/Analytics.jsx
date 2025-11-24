@@ -23,12 +23,14 @@ export default function Analytics() {
 
     // ========== CONFIGURATION ==========
     const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS';
+    const STUDENT_PROGRAM_ID = 'wQaiD2V27Dp';
+
 
     const DATA_ELEMENTS = {
         TOILETS: 'slYohGwjQme',
         SEATS: 'fgUU2XNkGvI',
         BOOKS: 'm9k3VefvGQw',
-        CLASSROOMS: 'mlbyc3CWNyb'
+        CLASSROOMS: 'mlbyc3CWNyb',
     };
 
     // Standards with thresholds
@@ -56,7 +58,7 @@ export default function Analytics() {
             label: 'Total Classrooms',
             warning: 'Capacity OK',
             successIcon: true
-        }
+        },
     };
 
     // ========== 1. FETCH SCHOOLS ==========
@@ -89,6 +91,28 @@ export default function Analytics() {
         }
     };
 
+    const fetchStudents = async (schoolId) => {
+    try {
+        const res = await fetch(
+            `https://research.im.dhis2.org/in5320g20/api/tracker/enrollments?program=${STUDENT_PROGRAM_ID}&orgUnit=${schoolId}&fields=trackedEntity`,
+            {
+                headers: {
+                    Authorization: "Basic " + btoa("admin:district"),
+                },
+            }
+        );
+
+        const data = await res.json();
+
+        // Each enrollment corresponds to one student
+        return data.enrollments || [];
+
+    } catch (err) {
+        console.error("Failed to fetch students:", err);
+        return [];
+    }
+};
+
     // ========== 2. FETCH EVENTS WHEN SCHOOL CHANGES ==========
     useEffect(() => {
         if (selectedSchool && schools.length > 0) {
@@ -98,37 +122,36 @@ export default function Analytics() {
     }, [selectedSchool, schools]);
 
     const fetchEvents = async () => {
-        setLoading(true);
-        setError(null);
+    setLoading(true);
+    setError(null);
 
-        try {
-            const res = await fetch(
-                `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${selectedSchool}&fields=*`,
-                {
-                    headers: {
-                        Authorization: 'Basic ' + btoa('admin:district'),
-                    }
+    try {
+        const res = await fetch(
+            `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${selectedSchool}&fields=*`,
+            {
+                headers: {
+                    Authorization: 'Basic ' + btoa('admin:district'),
                 }
-            );
-
-            if (!res.ok) {
-                throw new Error(`HTTP ${res.status}: ${res.statusText}`);
             }
+        );
 
-            const data = await res.json();
-            const eventList = data.events || [];
+        if (!res.ok) throw new Error(`HTTP ${res.status}`);
 
-            console.log('📊 Fetched events:', eventList);
-            setEvents(eventList);
-            processEvents(eventList);
+        const data = await res.json();
+        const eventList = data.events || [];
 
-        } catch (err) {
-            setError('Failed to fetch events: ' + err.message);
-            console.error('Fetch error:', err);
-        } finally {
-            setLoading(false);
-        }
-    };
+        const studentList = await fetchStudents(selectedSchool);
+        const studentCount = studentList.length;
+
+        processEvents(eventList, studentCount);
+
+    } catch (err) {
+        setError('Failed to fetch events: ' + err.message);
+    } finally {
+        setLoading(false);
+    }
+};
+
 
     const fetchClusterData = async () => {
         try {
@@ -154,7 +177,7 @@ export default function Analytics() {
     };
 
     // ========== 3. PROCESS EVENTS INTO CHART DATA ==========
-    const processEvents = (eventList) => {
+    const processEvents = (eventList, studentCount) => {
         const grouped = {};
 
         eventList.forEach(event => {
@@ -173,15 +196,19 @@ export default function Analytics() {
                     const value = parseInt(dv.value) || 0;
 
                     if (dv.dataElement === DATA_ELEMENTS.TOILETS) {
-                        resources.toilets = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.SEATS) {
-                        resources.seats = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
-                        resources.books = value;
-                    } else if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
-                        resources.classrooms = value;
+                        resources.toilets = Math.max(resources.toilets, value);
+                    }
+                    if (dv.dataElement === DATA_ELEMENTS.SEATS) {
+                        resources.seats = Math.max(resources.seats, value);
+                    }
+                    if (dv.dataElement === DATA_ELEMENTS.BOOKS) {
+                        resources.books = Math.max(resources.books, value);
+                    }
+                    if (dv.dataElement === DATA_ELEMENTS.CLASSROOMS) {
+                        resources.classrooms = Math.max(resources.classrooms, value);
                     }
                 });
+
 
                 grouped[month] = {
                     date: eventDate,
@@ -196,7 +223,8 @@ export default function Analytics() {
             toilets: grouped[month].toilets,
             seats: grouped[month].seats,
             books: grouped[month].books,
-            classrooms: grouped[month].classrooms
+            classrooms: grouped[month].classrooms,
+            students: studentCount
         }));
 
         console.log('📊 Processed chart data:', processed);
@@ -505,6 +533,7 @@ export default function Analytics() {
                     {renderChart('Total Seats', 'seats', '#4caf50', STANDARDS.seats)}
                     {renderChart('Total Books', 'books', '#2196f3', STANDARDS.books)}
                     {renderChart('Total Classrooms', 'classrooms', '#9c27b0', STANDARDS.classrooms)}
+                    {renderChart('Total Students', 'students', '#e91e63', {})}
                 </>
             ) : (
                 <NoticeBox warning title="No Data">
