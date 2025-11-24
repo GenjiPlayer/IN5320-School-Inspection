@@ -1,38 +1,87 @@
-/* Global styles */
+/* ===========================
+   GLOBAL STYLES
+=========================== */
 :global {
-    html, body, #dhis2-app-root, #root {
+    html,
+    body,
+    #dhis2-app-root,
+    #root {
         margin: 0;
         padding: 0;
-        height: 100%; /* Full høyde på hele dokumentet */
-        background: #2D6693;
-        overflow-y: auto; /* Tillater rulling på hele dokumentet */
+        height: 100%;
+        background: #2d6693;
+        overflow-y: auto;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+            sans-serif;
     }
 }
 
-/* MAIN LAYOUT */
+/* ===========================
+   MAIN LAYOUT
+=========================== */
 .container {
     display: flex;
     flex-direction: column;
     height: 100%;
     width: 100%;
-    background: #2D6693;
 }
 
-/* HEADER */
+.appWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding-top: 0;
+}
+
+/* ===========================
+   HEADER
+=========================== */
+
+.appHeader svg * {
+    fill: var(--header-icon-color) !important;
+}
+
+.headerLogo {
+    width: 28px;
+    height: auto;
+    gap: 8 px;
+}
+
+.headerIconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: auto;
+    cursor: pointer;
+}
+
+.headerIconButton svg {
+    width: 28px;
+    height: auto;
+}
+
+.headerIconButton:active {
+    opacity: 0.6;
+}
+
 .appHeader {
     position: sticky;
     top: 0;
     z-index: 999;
-    background: #2D6693;
+    background: #2d6693;
     padding: 20px 18px;
     display: flex;
     align-items: center;
+    transition: background-color 0.2s ease;
+    border-top: 2px solid #EFF6FA;
 }
 
 .appHeader h1 {
-    color: white;
     font-size: 28px;
-    font-weight: 600;
+    font-weight: 400;
+    line-height: 36px;
     margin: 0;
 }
 
@@ -42,77 +91,71 @@
     gap: 8px;
 }
 
-/* MAIN CONTENT */
-.main {
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.backIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.backIcon svg {
+    width: 40px;
+    height: auto;
+}
+
+.backIcon:hover {
+    background: none;
+}
+
+.backIcon:active {
+    opacity: 0.6;
+}
+
+/* ===========================
+   MAIN CONTENT
+=========================== */
+
+.mainWrapper {
     flex: 1;
     background: #EFF6FA;
     padding: 12px;
     border-radius: 16px 16px 0 0;
-    overflow-y: auto; /* Tillater rulling i hovedinnholdet */
+    overflow-y: auto;
+    margin-top: 4px;
 }
 
-/* Container for the content of the page */
+.main {
+    flex: 1;
+    padding: 12px;
+    border-radius: 16px 16px 0 0;
+}
+
 .containerCard {
     display: flex;
     flex-direction: column;
     gap: 12px;
 }
 
-/* TODAY SCHEDULE */
-.scheduleCard {
-    background: white;
-    border-radius: 16px;
-    padding: 16px;
-    box-shadow: var(--elevation-e200);
-}
-
-.scheduleHeaderRow {
-    display: flex;
-    justify-content: space-between;
-    margin-bottom: 8px;
-}
-
-.cardHeader {
-    font-size: 22px;
-}
-
-.scheduleItem {
-    display: flex;
-    align-items: center;
-    background: #F5F9FF;
-    padding: 16px;
-    border-radius: 16px;
-    box-shadow: var(--elevation-e100);
-}
-
-.scheduleIcon {
-    width: 48px;
-    height: 48px;
-    border-radius: 12px;
-    background: #CFEAFF;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    margin-right: 16px;
-}
-
-.schoolName {
-    font-size: 16px;
-    font-weight: 600;
-}
-
-.schoolAddress,
-.schoolTime {
-    font-size: 14px;
-    color: #444;
-}
-
-/* NEW INSPECTION BUTTON */
+/* ===========================
+   NEW INSPECTION BUTTON
+=========================== */
 .newInspectionBtn {
-    margin: 4px 0 8px;
+    margin: 16px 0 16px;
+    font-family: inherit;
 }
 
-/* PROGRAM CARDS */
+/* ===========================
+   PROGRAM CARDS
+=========================== */
 .programWrapper {
     margin-top: 8px;
 }
@@ -120,7 +163,7 @@
 .programList {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 8px;
 }
 
 .programCardWrapper {
@@ -130,7 +173,7 @@
 .programCard {
     display: flex;
     align-items: center;
-    background: #fff;
+    background: #ffffff;
     border-radius: 14px;
     padding: 16px;
     min-height: 80px;
@@ -151,31 +194,36 @@
 .programIcon {
     width: 48px;
     height: 48px;
-    border-radius: 14px;
+    border-radius: 16px;
     display: flex;
     align-items: center;
     justify-content: center;
-    filter: none !important;
-    opacity: 1 !important;
 }
 
-.programIcon svg {
-    filter: none !important;
-    opacity: 1 !important;
-}
+.programIconYellow { background: #FB8C00; }
+.programIconGreen { background: #A5D6A7; }
+.programIconPink { background: #F45B55; }
+.programIconTeal { background: #00897B; }
 
-/* Program text */
+.programIconYellow svg { color: #FFF3E0; }
+.programIconGreen svg { color: #1B5E20; }
+.programIconPink svg { color: #FFE3E2; }
+.programIconTeal svg { color: #E0F2F1; }
+
 .programText {
-    font-size: 18px;
-    font-weight: 500;
-    color: #333;
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 300;
+    color: #333333;
 }
 
-/* FOOTER */
+/* ===========================
+   FOOTER
+=========================== */
 .footerNav {
     position: sticky;
     bottom: 0;
-    background: #fff;
+    background: #ffffff;
     padding: 16px 0;
     border-top: 1px solid #e1e5ea;
 }
@@ -187,6 +235,7 @@
     align-items: center;
     padding: 8px 12px;
     gap: 28px;
+    font-weight: 300;
 }
 
 .footerButton,
@@ -206,10 +255,22 @@
 .footerButton svg,
 .footerButtonActive svg {
     margin-bottom: 2px;
-    transform: scale(0.9);
 }
 
 .footerButtonActive {
-    color: #1a3fb0 !important;
-    font-weight: 700 !important;
+    color: #0a55ab !important;
+    font-weight: 500 !important;
+}
+
+.footerButton:focus,
+.footerButton:active,
+.footerButton:focus-visible,
+.footerButtonActive:focus,
+.footerButtonActive:active,
+.footerButtonActive:focus-visible,
+.footerNav button:focus,
+.footerNav button:active,
+.footerNav button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }

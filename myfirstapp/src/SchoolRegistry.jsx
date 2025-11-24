@@ -1,4 +1,3 @@
-
 import React, { useState, useEffect } from "react";
 import {
     Card,
@@ -18,7 +17,11 @@ import {
 
 import classes from "./SchoolRegistry.module.css";
 
-export default function SchoolRegistry({ setActivePage }) {
+export default function SchoolRegistry({
+    setActivePage,
+    setHeaderColor,
+    setHeaderTitle,
+}) {
     const [search, setSearch] = useState("");
     const [schools, setSchools] = useState([]);
     const [visitData, setVisitData] = useState([]);
@@ -28,6 +31,17 @@ export default function SchoolRegistry({ setActivePage }) {
 
     const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 
+    /* ----------------------------
+       SET HEADER ON PAGE LOAD
+    ----------------------------- */
+    useEffect(() => {
+        setHeaderColor("#FB8C00");
+        setHeaderTitle("School Registry");
+    }, [setHeaderColor, setHeaderTitle]);
+
+    /* ----------------------------
+       FETCH ON LOAD
+    ----------------------------- */
     useEffect(() => {
         fetchSchools();
     }, []);
@@ -142,7 +156,7 @@ export default function SchoolRegistry({ setActivePage }) {
        UI
     ----------------------------- */
     return (
-        <div className={classes.pageWrapper}>
+        <div className={classes.container}>
             {/* HEADER */}
             <div className={classes.pageHeader}>
                 <Button
@@ -150,7 +164,6 @@ export default function SchoolRegistry({ setActivePage }) {
                     icon={<IconArrowLeft24 />}
                     onClick={() => setActivePage("dashboard")}
                 />
-                <h2>School Registry</h2>
             </div>
 
             {/* SEARCH + ADD SCHOOL */}
@@ -241,14 +254,10 @@ export default function SchoolRegistry({ setActivePage }) {
                                 {openSchoolId === school.id && (
                                     <div className={classes.detailsWrapper}>
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Date of last visitation:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 {school.lastVisitDate
                                                     ? new Date(
                                                           school.lastVisitDate
@@ -258,27 +267,19 @@ export default function SchoolRegistry({ setActivePage }) {
                                         </div>
 
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Phone:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 +234 123 111 6785
                                             </span>
                                         </div>
 
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Address:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 Street Streetname 12, District
                                             </span>
                                         </div>
@@ -287,18 +288,14 @@ export default function SchoolRegistry({ setActivePage }) {
                                         <Button
                                             primary
                                             icon={<IconAdd24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             New school inspection
                                         </Button>
 
                                         <Button
                                             icon={<IconAdd24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             New resource count
                                         </Button>
@@ -306,9 +303,7 @@ export default function SchoolRegistry({ setActivePage }) {
                                         <Button
                                             secondary
                                             icon={<IconCalendar24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             Schedule visitation
                                         </Button>
@@ -316,9 +311,7 @@ export default function SchoolRegistry({ setActivePage }) {
                                         <Button
                                             secondary
                                             icon={<IconClockHistory24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             Previous reports
                                         </Button>

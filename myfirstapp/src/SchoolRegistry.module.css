@@ -19,6 +19,8 @@
     flex-direction: column;
     gap: 16px;
     overflow-x: hidden;
+    border-radius: 16px 16px 0 0;
+    background: #eff6fa; /* blir overskrevet av inline style */
 }
 
 /* =========================================

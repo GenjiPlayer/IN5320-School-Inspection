@@ -1,3 +1,5 @@
+//BRUKER IKKE FAKTISK API DATA!!!
+
 import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import "highcharts/highcharts-more";
