@@ -7,9 +7,6 @@ import {
     IconEditItems24,
     IconHome24,
     IconUserGroup24,
-    IconArrowRight24,
-    IconArrowLeft24,
-    IconLocation24,
     IconAdd24,
     IconVisualizationColumn24,
     IconClock24,
@@ -124,42 +121,6 @@ function Dashboard({ setActivePage }) {
     return (
         <div className={classes.containerCard}>
 
-            {/* TODAY'S SCHEDULE */}
-            <Card className={classes.scheduleCard}>
-                <div className={classes.scheduleHeaderRow}>
-                    <div className={classes.cardHeader}>Today’s Schedule</div>
-                    <div>
-                        <Button small icon={<IconArrowLeft24 />} />
-                        <Button small icon={<IconArrowRight24 />} />
-                    </div>
-                </div>
-
-                <div className={classes.scheduleItem}>
-                    <div className={classes.scheduleIcon}>
-                        <IconLocation24 />
-                    </div>
-
-                    <div>
-                        <div className={classes.schoolName}>Campama LBS</div>
-                        <div className={classes.schoolAddress}>
-                            Schoolstreet 231, district
-                        </div>
-                        <div className={classes.schoolTime}>08:15 – 10:00</div>
-                    </div>
-                </div>
-            </Card>
-
-
-            {/* NEW INSPECTION BUTTON */}
-            <Button
-                primary
-                large
-                icon={<IconAdd24 />}
-                className={classes.newInspectionBtn}
-                onClick={() => setActivePage("inspection")}
-            >
-                New Inspection
-            </Button>
 
             {/* PROGRAM CARDS */}
             <div className={classes.programWrapper}>
@@ -224,6 +185,18 @@ function Dashboard({ setActivePage }) {
                             </div>
                         </Card>
                     </div>
+
+                               {/* NEW INSPECTION BUTTON */}
+            <Button
+                primary
+                large
+                icon={<IconAdd24 />}
+                className={classes.newInspectionBtn}
+                onClick={() => setActivePage("inspection")}
+            >
+                New Inspection
+            </Button>
+
 
                 </div>
             </div>
