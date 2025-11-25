@@ -64,19 +64,21 @@ export default function Inspection({ setActivePage }) {
     const [formData, setFormData] = useState({
         schoolId: "",
         inspectionDate: new Date().toISOString().split("T")[0],
-        boysEnrolled: "",
-        girlsEnrolled: "",
-        maleTeachers: "",
-        femaleTeachers: "",
-        classrooms: "",
-        seats: "",
-        toilets: "",
-        textbooks: "",
         electricity: "",
         handwashing: "",
         computerLab: "",
         observations: "",
     });
+
+    const [formDataResource, setResourceData] = useState({
+        schoolId:  "",
+        inspetionDate: new Date().toISOString().split("T")[0],
+        classrooms: "",
+        seats: "",
+        toilets: "",
+        textbooks: "",
+
+    })
 
 
 
@@ -341,14 +343,6 @@ export default function Inspection({ setActivePage }) {
         setFormData({
             schoolId: "",
             inspectionDate: new Date().toISOString().split("T")[0],
-            boysEnrolled: "",
-            girlsEnrolled: "",
-            maleTeachers: "",
-            femaleTeachers: "",
-            classrooms: "",
-            seats: "",
-            toilets: "",
-            textbooks: "",
             electricity: "",
             handwashing: "",
             computerLab: "",
