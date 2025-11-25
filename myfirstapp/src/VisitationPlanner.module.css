@@ -6,19 +6,38 @@
    MAIN PLANNER LAYOUT – ALWAYS MATCHES VIEWPORT HEIGHT
 ============================================================ */
 .plannerContainer {
-    position: fixed;
-    top: var(--dhis2-header-height);
-    left: 0;
-    right: 0;
-    bottom: var(--dhis2-footer-height);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    background: #F45B55;
+    padding: 16px;
+    gap: 12px;
+    background: #f5f5f5;
+    box-sizing: border-box;
+    height: auto;          /* <-- viktig! */
+    overflow: visible;     /* <-- viktig */
 }
+
+.pageHeader {
+    display: flex;
+    align-items: center;
+    gap: 12px;               
+}
+
 /* ============================================================
    MAP SECTION – FLEXIBLE HEIGHT (NO ABSOLUTE!)
 ============================================================ */
+/* === Map Column === */
+.mapWrapper {
+    width: 100%;
+    height: 40vh;      
+    max-height: 380px; 
+    flex-shrink: 0;
+    border-radius: 12px;
+    overflow: hidden;
+    border: none;
+    position: relative;
+    background: white;
+}
+
 .mapSection {
     flex: 0 0 60%;
     min-height: 200px;
@@ -29,6 +48,19 @@
         background: transparent;
     top: 80px;
 }
+
+/* Optional: top-left floating mini UI (filters / legend) */
+.mapOverlay {
+    position: absolute;
+    top: 12px;
+    left: 12px;
+    background: #ffffffcc;
+    padding: 10px 14px;
+    border-radius: 8px;
+    backdrop-filter: blur(4px);
+    box-shadow: 0 2px 8px rgba(0,0,0,0.1);
+}
+
 /* Force leaflet to fill container */
 .mapSection :global(.leaflet-container) {
     width: 100% !important;
@@ -75,48 +107,130 @@
 
 /* ============================================================
    FLOATING SEARCH BAR
-============================================================ */.searchBarFloating {
+============================================================
+*/
+
+.headerContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
+.searchContainer {
+    flex: 1;
+    position: relative;
+}
+
+.searchBarFloating {
     position: absolute;
     top: 16px; 
     left: 16px;
     right: 16px;
     z-index: 999;
-        display: flex;     
+    display: flex;     
     flex-direction: row;
     align-items: center;
     gap: 12px;
 }
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 25px;
+    font-size: 15px;
+    box-sizing: border-box;
+    outline: none;
+}
+
 .searchWrapper {
     flex: 1;
     position: relative;
 }
 
-/* Search dropdown */
+/* === Search Suggestions === */
 .suggestionsDropdown {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
     margin-top: 8px;
-    background: #ffffff;
-    border-radius: 4px;
-    box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.08),
-        0 4px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1001;
-    max-height: 280px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 300px;
     overflow-y: auto;
-    pointer-events: auto;
+        display: flex;
+    flex-direction: column;
 }
 
 .suggestionItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 12px 16px;
     cursor: pointer;
     transition: background 0.15s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestionItem:last-child {
+    border-bottom: none;
 }
 
 .suggestionItem:hover {
-    background: #f4f6f8;
+    background: #f8f9fa;
+}
+
+.suggestionIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.suggestionName {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.suggestionMeta {
+    font-size: 12px;
+    color: #888;
+    flex-shrink: 0;
+}
+
+/* === Filter Modal Sections === */
+.filterSection {
+    margin-bottom: 24px;
+}
+
+.filterSection h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
+/* === Filter Badges === */
+.filterBadges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+    padding: 0 4px;
+}
+
+.badge {
+    padding: 8px 16px;
+    border-radius: 20px;
+    background: white;
+    color: #2563eb;
+    font-size: 13px;
+    font-weight: 500;
+    border: 1px solid #e0e0e0;
+    white-space: nowrap;
 }
 
 /* ============================================================
@@ -139,6 +253,14 @@
 /* ============================================================
    SCHOOL LIST – ONLY SCROLLABLE AREA
 ============================================================ */
+.schoolListContainer {
+    width: 100%;
+    margin-top: 12px;
+    overflow: visible;   /* kritisk */
+    flex: unset;         /* fjerner felles scroll */
+}
+
+
 .schoolListScrollable {
     overflow-y: auto;
     overflow-x: hidden;
@@ -168,14 +290,36 @@
    SCHOOL CARDS
 ============================================================ */
 .schoolCard {
-    border-radius: 8px;
-    cursor: pointer;
-    background: #ffffff;
-    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
-    transition: box-shadow 0.2s ease;
-    margin-bottom: 12px;
-    margin-top: 12px;
+    width: 100%;
+    max-width: 100%;
+    padding: 20px 20px;
 }
+.schoolCardContent {
+    display: flex;
+    gap: 16px;
+    align-items: flex-start;
+    width: 100%;
+    overflow-x: hidden;
+}
+
+/* === Left Icon Bubble === */
+.schoolIcon {
+    width: 46px;
+    height: 46px;
+    background: #e7f1ff;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    flex-shrink: 0;
+}
+
+.schoolIcon svg {
+    width: 22px;
+    height: 22px;
+    color: #2d6cdf;
+}
+
 
 .schoolCard:last-child {
     margin-bottom: 12px;
@@ -192,14 +336,23 @@
     align-items: center;
 }
 
+/* === Right Side Content === */
+.schoolRight {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 0;
+}
+
 .schoolName {
     font-size: 16px;
-    font-weight: 500;
-    color: #212934;
-    display: flex;
-    align-items: center;
-    gap: 8px;
+    font-weight: 600;
+    color: #1a2b49;
+    line-height: 1.35;
+    word-break: break-word;
 }
+
 
 .urgentBadge {
     display: inline-block;
@@ -226,6 +379,28 @@
 .chevronRotate {
     transform: rotate(180deg);
 }
+
+/* === Show More / Less === */
+.showMore {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+    margin-top: 4px;
+    font-size: 14px;
+    font-weight: 500;
+    color: #1a3fb0;
+    cursor: pointer;
+    user-select: none;
+}
+
+.showMoreIcon {
+    transition: transform 0.25s ease;
+}
+
+.rotateUp {
+    transform: rotate(180deg);
+}
+
 
 /* ============================================================
    EXPANDED SCHOOL DETAILS
@@ -266,7 +441,17 @@
     margin-top: 8px;
 }
 
+/* === Status Row === */
+.statusRow {
+    display: flex;
+    align-items: center;
+    gap: 6px;
+    font-size: 14px;
+}
 
+.textGray {
+    color: #6a7280;
+}
 
 /* ============================================================
    EMPTY STATE

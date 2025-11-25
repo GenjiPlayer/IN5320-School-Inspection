@@ -15,7 +15,7 @@ import {
     IconSync24,
     IconSettings24,
     IconArrowLeft24,
-    LogoIconWhite
+    LogoIconWhite,
 } from "@dhis2/ui";
 
 import classes from "./App.module.css";
@@ -80,7 +80,6 @@ function Footer({ activePage, setActivePage }) {
     return (
         <footer className={classes.footerNav}>
             <ButtonStrip middle>
-
                 <Button
                     className={
                         activePage === "dashboard"
@@ -105,7 +104,6 @@ function Footer({ activePage, setActivePage }) {
                 <Button className={classes.footerButton} icon={<IconEditItems24 />} small>
                     Notes
                 </Button>
-
             </ButtonStrip>
         </footer>
     );
@@ -119,10 +117,11 @@ export default function App() {
 
     const [headerColor, setHeaderColor] = useState("#2D6693");
     const [headerTitle, setHeaderTitle] = useState("School Inspection");
+
     const [headerTextColor, setHeaderTextColor] = useState("#FFFFFF");
     const [headerIconColor, setHeaderIconColor] = useState("#FFFFFF");
 
-    function renderPage() {
+        function renderPage() {
         switch (activePage) {
 
             case "registry":
@@ -201,7 +200,6 @@ export default function App() {
                         setHeaderTitle={setHeaderTitle}
                     />
                 );
-
             default:
                 return (
                     <Dashboard
@@ -259,7 +257,9 @@ function Dashboard({
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
-                            setHeaderColor("#E65100");
+                            setHeaderColor("#FB8C00");
+                            setHeaderTextColor("#4A2E00");
+                            setHeaderIconColor("#4A2E00");
                             setHeaderTitle("School Registry");
                             setActivePage("registry");
                         }}
@@ -273,12 +273,13 @@ function Dashboard({
                             </div>
                         </Card>
                     </div>
-
-                    {/* INSPECTION REPORTS */}
+{/* INSPECTION REPORTS */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
-                            setHeaderColor("#43A047");
+                            setHeaderColor("#A5D6A7");
+                            setHeaderTextColor("#000000ff");
+                            setHeaderIconColor("#000000ff");
                             setHeaderTitle("Inspection Reports");
                             setActivePage("inspectionReports");
                         }}
@@ -330,8 +331,8 @@ function Dashboard({
                             </div>
                         </Card>
                     </div>
-
-                    {/* NEW INSPECTION */}
+                    
+{/* NEW INSPECTION */}
                     <Button
                         primary
                         large
