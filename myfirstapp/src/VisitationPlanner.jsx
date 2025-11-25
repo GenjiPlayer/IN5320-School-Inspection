@@ -13,7 +13,8 @@ import {
     NoticeBox,
     IconHome24,
     IconChevronDown24,
-    IconFilter24 
+    IconFilter24,
+    IconCross16
 } from "@dhis2/ui";
 
 export default function VisitationPlanner({ setActivePage }) {
@@ -30,7 +31,6 @@ export default function VisitationPlanner({ setActivePage }) {
     });
     const [showSuggestions, setShowSuggestions] = useState(false);
     const [selectedSchool, setSelectedSchool] = useState(null);
-    const [activeRange, setActiveRange] = useState(null); // 0–30 / 30–90 / 90+
 
     // API data state
     const [allSchools, setAllSchools] = useState([]);
@@ -231,11 +231,6 @@ export default function VisitationPlanner({ setActivePage }) {
         ],
     };
 
-    const ranges = [
-        { id: "0-30", label: "0–30" },
-        { id: "30-90", label: "30–90" },
-        { id: "90+", label: "90+" },
-    ];
 
     const handleFilterToggle = (category, filterId) => {
         setSelectedFilters((prev) => {
@@ -258,6 +253,19 @@ export default function VisitationPlanner({ setActivePage }) {
             resources: [],
             context: [],
         });
+    };
+
+    const removeFilter = (category, filterId) => {
+        setSelectedFilters((prev) => ({
+            ...prev,
+            [category]: prev[category].filter((id) => id !== filterId),
+        }));
+    };
+
+    const clearSearch = () => {
+        setSearchQuery("");
+        setSelectedSchool(null);
+        setShowSuggestions(false);
     };
 
     // Get search suggestions based on search query
@@ -284,22 +292,9 @@ export default function VisitationPlanner({ setActivePage }) {
         (a, b) => b.lastVisitDays - a.lastVisitDays
     );
 
-    // Filtering logic: Days range + modal filters
+    // Filtering logic: Modal filters only
     const filteredSchools = sortedSchools.filter((school) => {
-        // 1) Range filter (0–30 / 30–90 / 90+)
-        let matchesRange = true;
-        if (activeRange === "0-30") {
-            matchesRange = school.lastVisitDays <= 30;
-        } else if (activeRange === "30-90") {
-            matchesRange =
-                school.lastVisitDays > 30 &&
-                school.lastVisitDays <= 90;
-        } else if (activeRange === "90+") {
-            matchesRange = school.lastVisitDays > 90;
-        }
-        if (!matchesRange) return false;
-
-        // 2) Modal filters
+        // Modal filters
         const hasAnyModalFilter =
             selectedFilters.status.length > 0 ||
             selectedFilters.performance.length > 0 ||
@@ -360,7 +355,6 @@ export default function VisitationPlanner({ setActivePage }) {
             selectedFilters.context.length === 0;
 
         return (
-            matchesRange &&
             matchesStatus &&
             matchesPerformance &&
             matchesResources &&
@@ -400,22 +394,33 @@ export default function VisitationPlanner({ setActivePage }) {
                 {/* Search Bar and Filter Button - Floating on top of map */}
                 <div className={classes.searchBarFloating}>
                     <div className={classes.searchWrapper} ref={searchRef}>
-                        <Input
-                            className={classes.searchInput}
-                            type="text"
-                            placeholder="Search schools..."
-                            value={searchQuery}
-                            onChange={({ value }) => {
-                                setSearchQuery(value);
-                                setShowSuggestions(true);
-                                if (!value.trim()) {
-                                    setSelectedSchool(null);
-                                }
-                            }}
-                            onFocus={() => {
-                                setShowSuggestions(true);
-                            }}
-                        />
+                        <div className={classes.searchInputWrapper}>
+                            <Input
+                                className={classes.searchInput}
+                                type="text"
+                                placeholder="Search schools..."
+                                value={searchQuery}
+                                onChange={({ value }) => {
+                                    setSearchQuery(value);
+                                    setShowSuggestions(true);
+                                    if (!value.trim()) {
+                                        setSelectedSchool(null);
+                                    }
+                                }}
+                                onFocus={() => {
+                                    setShowSuggestions(true);
+                                }}
+                            />
+                            {searchQuery && (
+                                <button
+                                    className={classes.clearButton}
+                                    onClick={clearSearch}
+                                    aria-label="Clear search"
+                                >
+                                    <IconCross16 />
+                                </button>
+                            )}
+                        </div>
                         {/* Search Suggestions Dropdown */}
                         {showSuggestions &&
                             searchSuggestions.length > 0 && (
@@ -458,11 +463,12 @@ export default function VisitationPlanner({ setActivePage }) {
                                 </div>
                             )}
                     </div>
-                    <Button className={classes.filterButton}
+                    <Button
+                        className={classes.filterButton}
                         small
                         onClick={() => setFilterModalOpen(true)}
                         icon={<IconFilter24 />}
-                    ></Button>
+                    />
                 </div>
 
             {/* Filter Modal */}
@@ -571,7 +577,7 @@ export default function VisitationPlanner({ setActivePage }) {
                 </Modal>
             )}
 
-                {/* MAP - Extends to top of wrapper */}
+                {/* MAP - Fixed at top, extends behind search bar */}
                 <div className={classes.mapWrapper}>
                     <MapView
                         schools={filteredSchools}
@@ -579,35 +585,7 @@ export default function VisitationPlanner({ setActivePage }) {
                     />
                 </div>
 
-                {/* Range filter (0–30 / 30–90 / 90+) */}
-                <div className={classes.filterBlock}>
-                    <div className={classes.filterLabel}>
-                        Days since last visit
-                    </div>
-                    <div className={classes.rangeBadges}>
-                        {ranges.map((r) => (
-                            <div
-                                key={r.id}
-                                className={
-                                    activeRange === r.id
-                                        ? classes.rangeBadgeActive
-                                        : classes.rangeBadge
-                                }
-                                onClick={() =>
-                                    setActiveRange(
-                                        activeRange === r.id
-                                            ? null
-                                            : r.id
-                                    )
-                                }
-                            >
-                                {r.label}
-                            </div>
-                        ))}
-                    </div>
-                </div>
-
-                {/* Filter Badge Pills - only show selected filters */}
+                {/* Filter Badge Pills - with individual remove buttons */}
                 {(selectedFilters.status.length > 0 ||
                     selectedFilters.performance.length > 0 ||
                     selectedFilters.resources.length > 0 ||
@@ -623,7 +601,14 @@ export default function VisitationPlanner({ setActivePage }) {
                                     key={filterId}
                                     className={classes.badge}
                                 >
-                                    {filter?.label}
+                                    <span>{filter?.label}</span>
+                                    <button
+                                        className={classes.badgeClose}
+                                        onClick={() => removeFilter("status", filterId)}
+                                        aria-label={`Remove ${filter?.label}`}
+                                    >
+                                        <IconCross16 />
+                                    </button>
                                 </div>
                             );
                         })}
@@ -637,7 +622,14 @@ export default function VisitationPlanner({ setActivePage }) {
                                     key={filterId}
                                     className={classes.badge}
                                 >
-                                    {filter?.label}
+                                    <span>{filter?.label}</span>
+                                    <button
+                                        className={classes.badgeClose}
+                                        onClick={() => removeFilter("performance", filterId)}
+                                        aria-label={`Remove ${filter?.label}`}
+                                    >
+                                        <IconCross16 />
+                                    </button>
                                 </div>
                             );
                         })}
@@ -651,7 +643,14 @@ export default function VisitationPlanner({ setActivePage }) {
                                     key={filterId}
                                     className={classes.badge}
                                 >
-                                    {filter?.label}
+                                    <span>{filter?.label}</span>
+                                    <button
+                                        className={classes.badgeClose}
+                                        onClick={() => removeFilter("resources", filterId)}
+                                        aria-label={`Remove ${filter?.label}`}
+                                    >
+                                        <IconCross16 />
+                                    </button>
                                 </div>
                             );
                         })}
@@ -665,7 +664,14 @@ export default function VisitationPlanner({ setActivePage }) {
                                     key={filterId}
                                     className={classes.badge}
                                 >
-                                    {filter?.label}
+                                    <span>{filter?.label}</span>
+                                    <button
+                                        className={classes.badgeClose}
+                                        onClick={() => removeFilter("context", filterId)}
+                                        aria-label={`Remove ${filter?.label}`}
+                                    >
+                                        <IconCross16 />
+                                    </button>
                                 </div>
                             );
                         })}

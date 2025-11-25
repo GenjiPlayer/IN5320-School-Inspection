@@ -12,12 +12,12 @@
     padding: 16px;
     background: #f5f5f5;
     box-sizing: border-box;
-    min-height: 100vh;
-    overflow: visible;
+    height: 100vh;
+    overflow: hidden; /* Prevent outer scroll */
 }
 
 /* ============================================================
-   CONTENT WRAPPER – Rounded container holding all content
+   CONTENT WRAPPER – Rounded container with fixed map + scrollable list
 ============================================================ */
 .contentWrapper {
     position: relative;
@@ -27,6 +27,7 @@
     border-radius: 16px 16px 0 0;
     overflow: hidden;
     box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    height: 100%; /* Fill parent container */
 }
 
 .pageHeader {
@@ -36,19 +37,17 @@
 }
 
 /* ============================================================
-   MAP SECTION – Extends to top of wrapper, behind search bar
+   MAP SECTION – Fixed height, extends behind search bar
 ============================================================ */
 .mapWrapper {
     width: 100%;
-    height: 50vh;
-    min-height: 400px;
-    max-height: 600px;
-    flex-shrink: 0;
+    height: 45vh;
+    min-height: 350px;
+    max-height: 500px;
+    flex-shrink: 0; /* Map never shrinks */
     overflow: hidden;
     position: relative;
     background: white;
-    margin-top: -16px; /* Negative margin to extend behind search bar */
-    padding-top: 16px; /* Restore the space for visual alignment */
 }
 
 /* Optional: top-left floating mini UI (filters / legend) */
@@ -118,22 +117,52 @@
     z-index: 999;
     display: flex;
     flex-direction: row;
-    align-items: flex-start;
+    align-items: center;
     gap: 12px;
-    pointer-events: none; /* Allow map interaction except on search elements */
+    pointer-events: none;
 }
 
 .searchBarFloating > * {
-    pointer-events: auto; /* Re-enable interaction on child elements */
+    pointer-events: auto;
+}
+
+.searchWrapper {
+    flex: 1;
+    position: relative;
+}
+
+.searchInputWrapper {
+    position: relative;
+    width: 100%;
 }
 
 .searchInput {
     width: 100%;
 }
 
-.searchWrapper {
-    flex: 1;
-    position: relative;
+.clearButton {
+    position: absolute;
+    right: 8px;
+    top: 50%;
+    transform: translateY(-50%);
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 4px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #666;
+    transition: color 0.2s ease;
+    z-index: 10;
+}
+
+.clearButton:hover {
+    color: #333;
+}
+
+.clearButton:active {
+    color: #000;
 }
 
 /* === Search Suggestions === */
@@ -202,117 +231,75 @@
 }
 
 .filterButton {
-    width: 44px !important;
-    height: 42px !important;
-    min-width: 42px !important;
-    min-height: 42px !important;
-    padding: 0 !important;
-    border-radius: 6px !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
-    background: white !important;
-}
-
-/* override the internal DHIS2 button container */
-.filterButton :global(button) {
-    width: 42px !important;
-    height: 42px !important;
-    padding: 0 !important;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    border-radius: 6px !important;
+    flex-shrink: 0;
 }
 
 /* ============================================================
-   FILTER BLOCK – Range filter section
+   FILTER BADGES – Chips with remove buttons
 ============================================================ */
-.filterBlock {
-    padding: 16px;
-    background: white;
-    display: flex;
-    flex-direction: column;
-    gap: 12px;
-}
-
-.filterLabel {
-    font-size: 14px;
-    font-weight: 600;
-    color: #333;
-}
-
-.rangeBadges {
-    display: flex;
-    gap: 8px;
-    flex-wrap: wrap;
-}
-
-.rangeBadge,
-.rangeBadgeActive {
-    padding: 8px 16px;
-    border-radius: 20px;
-    font-size: 13px;
-    font-weight: 500;
-    cursor: pointer;
-    transition: all 0.2s ease;
-    user-select: none;
-}
-
-.rangeBadge {
-    background: #f5f5f5;
-    color: #666;
-    border: 1px solid #e0e0e0;
-}
-
-.rangeBadge:hover {
-    background: #ebebeb;
-    border-color: #d0d0d0;
-}
-
-.rangeBadgeActive {
-    background: #2563eb;
-    color: white;
-    border: 1px solid #2563eb;
-}
-
-/* === Filter Badges === */
 .filterBadges {
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    padding: 0 16px 16px 16px;
+    padding: 16px;
+    background: white;
+    flex-shrink: 0; /* Don't shrink, stays above scrollable list */
 }
 
 .badge {
-    padding: 8px 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+    padding: 6px 12px;
     border-radius: 20px;
-    background: white;
+    background: #e7f1ff;
     color: #2563eb;
     font-size: 13px;
     font-weight: 500;
-    border: 1px solid #e0e0e0;
+    border: 1px solid #d0e5ff;
     white-space: nowrap;
 }
 
+.badgeClose {
+    background: none;
+    border: none;
+    cursor: pointer;
+    padding: 2px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    color: #2563eb;
+    transition: color 0.2s ease;
+    margin-left: 4px;
+}
+
+.badgeClose:hover {
+    color: #1d4ed8;
+}
+
+.badgeClose:active {
+    color: #1e40af;
+}
+
 /* ============================================================
-   SCHOOL LIST – Scrollable section below map
+   SCHOOL LIST – The ONLY scrollable region
 ============================================================ */
 .schoolListContainer {
     width: 100%;
     background: white;
-    flex: 1;
+    flex: 1; /* Takes remaining space after fixed map */
     display: flex;
     flex-direction: column;
-    min-height: 300px;
+    overflow: hidden; /* Critical: container itself doesn't scroll */
+    min-height: 0; /* Allow flex child to shrink below content size */
 }
 
 .schoolListScrollable {
-    overflow-y: auto;
+    overflow-y: auto; /* ONLY this scrolls */
     overflow-x: hidden;
     padding: 16px;
     flex: 1;
+    height: 100%; /* Fill parent */
 }
 
 /* Optional scrollbar styling */
