@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Button,
     ButtonStrip,
@@ -14,6 +14,8 @@ import {
     IconFolder24,
     IconSync24,
     IconSettings24,
+    IconArrowLeft24,
+    LogoIconWhite,
 } from "@dhis2/ui";
 
 import classes from "./App.module.css";
@@ -29,14 +31,43 @@ import VisitationPlanner from "./VisitationPlanner.jsx";
 /* ===========================
       HEADER
 =========================== */
-function Header() {
+function Header({
+    headerColor,
+    headerTitle,
+    headerTextColor,
+    headerIconColor,
+    activePage,
+    setActivePage
+}) {
     return (
-        <div className={classes.appHeader}>
-            <h1>School Inspection</h1>
+        <div
+            className={classes.appHeader}
+            style={{
+                backgroundColor: headerColor,
+                "--header-icon-color": headerIconColor,
+                "--header-text-color": headerTextColor
+            }}
+        >
+            <div className={classes.headerLeft}>
+                {activePage === "dashboard" ? (
+                    <LogoIconWhite className={classes.headerLogo} />
+                ) : (
+                    <div
+                        className={classes.backIcon}
+                        onClick={() => setActivePage("dashboard")}
+                    >
+                        <IconArrowLeft24 />
+                    </div>
+                )}
+
+                <h1 style={{ color: "var(--header-text-color)" }}>
+                    {headerTitle}
+                </h1>
+            </div>
 
             <div className={classes.rightButtons}>
-                <Button small icon={<IconSync24 />} />
-                <Button small icon={<IconSettings24 />} />
+                <div className={classes.headerIconButton}><IconSync24 /></div>
+                <div className={classes.headerIconButton}><IconSettings24 /></div>
             </div>
         </div>
     );
@@ -84,36 +115,120 @@ function Footer({ activePage, setActivePage }) {
 export default function App() {
     const [activePage, setActivePage] = useState("dashboard");
 
-    function renderPage() {
+    const [headerColor, setHeaderColor] = useState("#2D6693");
+    const [headerTitle, setHeaderTitle] = useState("School Inspection");
+
+    const [headerTextColor, setHeaderTextColor] = useState("#FFFFFF");
+    const [headerIconColor, setHeaderIconColor] = useState("#FFFFFF");
+
+        function renderPage() {
         switch (activePage) {
-            case "inspection":
-                return <Inspection setActivePage={setActivePage} />;
-            case "analytics":
-                return <Analytics setActivePage={setActivePage} />;
-            case "planner":
-                return <SchoolPlanner setActivePage={setActivePage} />;
             case "registry":
-                return <SchoolRegistry setActivePage={setActivePage} />;
+                return (
+                    <SchoolRegistry
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
             case "inspectionReports":
-                return <InspectionReports setActivePage={setActivePage} />;
-            case "clusterAnalytics":
-                return <ClusterAnalytics setActivePage={setActivePage} />;
+                return (
+                    <InspectionReports
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
             case "visitationPlanner":
-                return <VisitationPlanner setActivePage={setActivePage} />;
+                return (
+                    <VisitationPlanner
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
+            case "clusterAnalytics":
+                return (
+                    <ClusterAnalytics
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
+            case "planner":
+                return (
+                    <SchoolPlanner
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
+            case "analytics":
+                return (
+                    <Analytics
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
+
+            case "inspection":
+                return (
+                    <Inspection
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
             default:
-                return <Dashboard setActivePage={setActivePage} />;
+                return (
+                    <Dashboard
+                        setActivePage={setActivePage}
+                        setHeaderColor={setHeaderColor}
+                        setHeaderTextColor={setHeaderTextColor}
+                        setHeaderIconColor={setHeaderIconColor}
+                        setHeaderTitle={setHeaderTitle}
+                    />
+                );
         }
     }
 
     return (
-        <div className={classes.container}>
-            <Header />
-            <main className={classes.main}>{renderPage()}</main> {/* Ensure this is scrollable */}
+        <div className={classes.appWrapper} style={{ backgroundColor: headerColor }}>
+            <Header
+                headerColor={headerColor}
+                headerTitle={headerTitle}
+                headerTextColor={headerTextColor}
+                headerIconColor={headerIconColor}
+                activePage={activePage}
+                setActivePage={setActivePage}
+            />
+
+            <div className={classes.mainWrapper}>{renderPage()}</div>
+
             <Footer activePage={activePage} setActivePage={setActivePage} />
         </div>
     );
 }
-
 /* ===========================
       DASHBOARD
 =========================== */
@@ -175,13 +290,14 @@ function Dashboard({ setActivePage }) {
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => setActivePage("clusterAnalytics")} // Endre fra "analytics" til "clusterAnalytics"
+                        
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
                                 <div className={classes.programIcon} style={{ background: "#4DB6AC" }}>
                                     <IconVisualizationColumn24 />
                                 </div>
-                                <div className={classes.programText}>Analytics</div>
+                                <div className={classes.programText}>Cluster Analytics</div>
                             </div>
                         </Card>
                     </div>
