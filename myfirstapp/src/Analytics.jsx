@@ -10,6 +10,9 @@ import {
     IconWarningFilled24,
     IconInfoFilled24,
     IconCheckmarkCircle24,
+    IconEdit24,
+    Button,
+    Checkbox
 } from "@dhis2/ui";
 
 import classes from "./Analytics.module.css";
@@ -710,59 +713,53 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                         <div className={classes.divider} />
 
-                        <div className={classes.summarySection}>
-                            <h3 className={classes.summaryTitle}>Summary</h3>
+ <div className={classes.summarySection}>
+    <div className={classes.summaryHeaderRow}>
+        <h3 className={classes.summaryTitle}>Summary</h3>
+    </div>
 
-                            <p className={classes.summaryText}>
-                                <strong>
-                                    {currentSchool ? currentSchool.name : "This school"}
-                                </strong>{" "}
-                                shows several areas needing improvement, particularly:
-                            </p>
+    <div className={classes.summaryCard}>
+        <p className={classes.summaryIntro}>
+            <strong>{currentSchool ? currentSchool.name : "This school"}</strong>
+            {" "}shows several areas needing improvement:
+        </p>
 
-                            {problemMetrics.length > 0 ? (
-                                <ul className={classes.summaryList}>
-                                    {problemMetrics.map((m) => (
-                                        <li key={m.key}>{m.label}</li>
-                                    ))}
-                                </ul>
-                            ) : (
-                                <p className={classes.summaryText}>
-                                    All tracked indicators currently meet basic target levels.
-                                </p>
-                            )}
+        {problemMetrics.length > 0 ? (
+            <ul className={classes.summaryList}>
+                {problemMetrics.map((m) => (
+                    <li key={m.key}>{m.label}</li>
+                ))}
+            </ul>
+        ) : (
+            <p className={classes.summaryText}>
+                All tracked indicators currently meet basic standards.
+            </p>
+        )}
 
-                            <div className={classes.checkboxRow}>
-                                <input
-                                    type="checkbox"
-                                    id="followUpCheckbox"
-                                    checked={followUp}
-                                    onChange={(e) => setFollowUp(e.target.checked)}
-                                    className={classes.checkbox}
-                                />
-                                <label htmlFor="followUpCheckbox">Mark for follow-up</label>
-                            </div>
+        <div className={classes.summaryDivider} />
 
-                            <div className={classes.nextVisitRow}>
-                                <span className={classes.nextVisitLabel}>
-                                    Next visitation:
-                                </span>
-                                <strong className={classes.nextVisitDate}>{nextVisit}</strong>
-                                <button
-                                    type="button"
-                                    className={classes.editButton}
-                                    onClick={() => {
-                                        const newDate = prompt(
-                                            "Set next visitation date:",
-                                            nextVisit
-                                        );
-                                        if (newDate) setNextVisit(newDate);
-                                    }}
-                                >
-                                    edit
-                                </button>
-                            </div>
-                        </div>
+       <div className={classes.followUpRow}>
+    <Checkbox
+        checked={followUp}
+        label="Mark for follow-up"
+        onChange={({ checked }) => setFollowUp(checked)}
+    />
+</div>
+
+        <div className={classes.visitationRow}>
+            <span className={classes.visitationLabel}>Next visitation:</span>
+            <span className={classes.visitationDate}>{nextVisit}</span>
+<Button
+    small
+    icon={<IconEdit24 />}
+    onClick={() => {
+        const newDate = prompt("Set next visitation date:", nextVisit);
+        if (newDate) setNextVisit(newDate);
+    }}
+/>
+        </div>
+    </div>
+</div>
                     </>
                 )}
             </Card>
