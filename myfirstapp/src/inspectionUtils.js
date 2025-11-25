@@ -18,6 +18,7 @@ export const EDUTOPIA_STANDARDS = {
 
 export const PROGRAM_CONFIG = {
     programId: "UxK2o06ScIe",
+    programIdResource: "uvpW17dnfUS",
     apiBase: "https://research.im.dhis2.org/in5320g20/api",
     credentials: btoa("admin:district"),
 };

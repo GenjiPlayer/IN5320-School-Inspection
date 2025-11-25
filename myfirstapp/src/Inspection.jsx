@@ -78,6 +78,8 @@ export default function Inspection({ setActivePage }) {
         observations: "",
     });
 
+
+
     // Validation
     const [errors, setErrors] = useState({});
     const [touched, setTouched] = useState({});
@@ -112,7 +114,7 @@ export default function Inspection({ setActivePage }) {
 
     // Fetch program stage and data elements
     useEffect(() => {
-        const fetchProgramConfig = async () => {
+        const fetchProgramConfigInspection = async () => {
             try {
                 const res = await fetch(
                     `${PROGRAM_CONFIG.apiBase}/programs/${PROGRAM_CONFIG.programId}?fields=programStages[id,programStageDataElements[dataElement[id,code]]]`,
@@ -142,7 +144,42 @@ export default function Inspection({ setActivePage }) {
                 setLoading(false);
             }
         };
-        fetchProgramConfig();
+        fetchProgramConfigInspection();
+    }, []);
+
+
+    useEffect(() => {
+        const fetchProgramConfigResources = async () => {
+            try {
+                const res = await fetch(
+                    `${PROGRAM_CONFIG.apiBase}/programs/${PROGRAM_CONFIG.programIdResource}?fields=programStages[id,programStageDataElements[dataElement[id,code]]]`,
+                    {
+                        headers: {
+                            Authorization: `Basic ${PROGRAM_CONFIG.credentials}`,
+                        },
+                    }
+                );
+                const data = await res.json();
+
+                const stageId = data.programStages[0].id;
+                setProgramStageId(stageId);
+
+                // Create mapping of codes to IDs
+                const mapping = {};
+                data.programStages[0].programStageDataElements.forEach((psde) => {
+                    const code = psde.dataElement.code;
+                    const id = psde.dataElement.id;
+                    mapping[code] = id;
+                });
+                setDataElementMap(mapping);
+
+                setLoading(false);
+            } catch (err) {
+                console.error("Error fetching program config:", err);
+                setLoading(false);
+            }
+        };
+        fetchProgramConfigResources();
     }, []);
 
     // ========================================
