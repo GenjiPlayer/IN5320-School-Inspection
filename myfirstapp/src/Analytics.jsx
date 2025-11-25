@@ -1,4 +1,4 @@
-// src/D2App/Analytics.jsx
+
 import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import "highcharts/highcharts-more";

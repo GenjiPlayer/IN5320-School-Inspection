@@ -199,7 +199,6 @@ export default function ClusterAnalytics({ setActivePage }) {
 
             // Fetch data for each school
             for (const school of schools) {
-                // Fetch learner data
                 const learnersRes = await fetch(
                     `${API_BASE}/analytics.json?dimension=dx:${LEARNER_DATA_ELEMENT}&dimension=ou:${school.id}&dimension=pe:2020`,
                     { headers: { Authorization: CREDENTIALS } }

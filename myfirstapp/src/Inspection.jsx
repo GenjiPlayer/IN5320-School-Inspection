@@ -26,9 +26,6 @@ import {
 } from "./inspectionUtils";
 
 export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalytics }) {
-    // ========================================
-    // STATE MANAGEMENT
-    // ========================================
 
     // Form step management (0-3)
     const [activeStep, setActiveStep] = useState(0);
@@ -67,10 +64,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
 
     // Success/error messages
     const [submitStatus, setSubmitStatus] = useState(null);
-
-    // ========================================
-    // DATA FETCHING
-    // ========================================
 
     // Fetch schools
     useEffect(() => {
@@ -156,9 +149,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
         fetchProgramConfigResources();
     }, []);
 
-    // ========================================
-    // COMPUTED VALUES
-    // ========================================
 
     // Calculate ratios in real-time
     const ratios = useMemo(() => calculateRatios(formData), [formData]);
@@ -183,9 +173,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
         return true;
     };
 
-    // ========================================
-    // EVENT HANDLERS
-    // ========================================
 
     const handleFieldChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
@@ -244,7 +231,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
         setSubmitStatus(null);
 
         try {
-            // ========== SUBMIT EVENT 1: School Inspection ==========
             const payload1 = buildEventPayload(formData, programStageId, dataElementMap);
 
             const res1 = await fetch(
@@ -266,7 +252,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
                 throw new Error("Failed to submit school inspection data");
             }
 
-            // ========== SUBMIT EVENT 2: Resource Inspection ==========
             const payload2 = buildResourceEventPayload(
                 formDataResource,
                 programStageIdResource,
@@ -294,7 +279,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
                 throw new Error("Failed to submit resource inspection data");
             }
 
-            // ========== SUCCESS ==========
             setSubmitStatus({
                 type: "success",
                 message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
@@ -354,9 +338,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
         setSubmitStatus(null);
     };
 
-    // ========================================
-    // LOADING STATE
-    // ========================================
 
     if (loading) {
         return (
@@ -365,10 +346,6 @@ export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalyt
             </div>
         );
     }
-
-    // ========================================
-    // RENDER COMPONENT
-    // ========================================
 
     return (
         <div className={classes.pageWrapper}>
