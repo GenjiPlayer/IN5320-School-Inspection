@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
     Button,
     ButtonStrip,
@@ -7,6 +7,9 @@ import {
     IconEditItems24,
     IconHome24,
     IconUserGroup24,
+    IconArrowRight24,
+    IconArrowLeft24,
+    IconLocation24,
     IconAdd24,
     IconVisualizationColumn24,
     IconClock24,
@@ -14,57 +17,29 @@ import {
     IconFolder24,
     IconSync24,
     IconSettings24,
-    IconArrowLeft24,
-    LogoIconWhite
 } from "@dhis2/ui";
 
 import classes from "./App.module.css";
+
 import Inspection from "./Inspection.jsx";
 import InspectionReports from "./InspectionReports.jsx";
 import Analytics from "./Analytics.jsx";
-import VisitationPlanner from "./VisitationPlanner";
+import SchoolPlanner from "./SchoolPlanner.jsx";
 import SchoolRegistry from "./SchoolRegistry.jsx";
+import ClusterAnalytics from "./ClusterAnalytics.jsx";
+import VisitationPlanner from "./VisitationPlanner.jsx";
 
 /* ===========================
       HEADER
 =========================== */
-function Header({
-                    headerColor,
-                    headerTitle,
-                    headerTextColor,
-                    headerIconColor,
-                    activePage,
-                    setActivePage
-                }) {
+function Header() {
     return (
-        <div
-            className={classes.appHeader}
-            style={{
-                backgroundColor: headerColor,
-                "--header-icon-color": headerIconColor,
-                "--header-text-color": headerTextColor
-            }}
-        >
-            <div className={classes.headerLeft}>
-                {activePage === "dashboard" ? (
-                    <LogoIconWhite className={classes.headerLogo} />
-                ) : (
-                    <div
-                        className={classes.backIcon}
-                        onClick={() => setActivePage("dashboard")}
-                    >
-                        <IconArrowLeft24 />
-                    </div>
-                )}
-
-                <h1 style={{ color: "var(--header-text-color)" }}>
-                    {headerTitle}
-                </h1>
-            </div>
+        <div className={classes.appHeader}>
+            <h1>School Inspection</h1>
 
             <div className={classes.rightButtons}>
-                <div className={classes.headerIconButton}><IconSync24 /></div>
-                <div className={classes.headerIconButton}><IconSettings24 /></div>
+                <Button small icon={<IconSync24 />} />
+                <Button small icon={<IconSettings24 />} />
             </div>
         </div>
     );
@@ -111,94 +86,32 @@ function Footer({ activePage, setActivePage }) {
 =========================== */
 export default function App() {
     const [activePage, setActivePage] = useState("dashboard");
-    const [headerColor, setHeaderColor] = useState("#2D6693");
-    const [headerTitle, setHeaderTitle] = useState("School Inspection");
-    const [headerTextColor, setHeaderTextColor] = useState("#FFFFFF");
-    const [headerIconColor, setHeaderIconColor] = useState("#FFFFFF");
 
     function renderPage() {
         switch (activePage) {
-            case "registry":
-                return (
-                    <SchoolRegistry
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
-            case "inspectionReports":
-                return (
-                    <InspectionReports
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
-            case "planner":
-                return (
-                    <VisitationPlanner
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
-            case "analytics":
-                return (
-                    <Analytics
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
             case "inspection":
-                return (
-                    <Inspection
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
+                return <Inspection setActivePage={setActivePage} />;
+            case "analytics":
+                return <Analytics setActivePage={setActivePage} />;
+            case "planner":
+                return <SchoolPlanner setActivePage={setActivePage} />;
+            case "registry":
+                return <SchoolRegistry setActivePage={setActivePage} />;
+            case "inspectionReports":
+                return <InspectionReports setActivePage={setActivePage} />;
+            case "clusterAnalytics":
+                return <ClusterAnalytics setActivePage={setActivePage} />;
+            case "visitationPlanner":
+                return <VisitationPlanner setActivePage={setActivePage} />;
             default:
-                return (
-                    <Dashboard
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
+                return <Dashboard setActivePage={setActivePage} />;
         }
     }
 
     return (
-        <div className={classes.appWrapper} style={{ backgroundColor: headerColor }}>
-            <Header
-                headerColor={headerColor}
-                headerTitle={headerTitle}
-                headerTextColor={headerTextColor}
-                headerIconColor={headerIconColor}
-                activePage={activePage}
-                setActivePage={setActivePage}
-            />
-
-            <div className={classes.mainWrapper}>{renderPage()}</div>
-
+        <div className={classes.container}>
+            <Header />
+            <main className={classes.main}>{renderPage()}</main> {/* Ensure this is scrollable */}
             <Footer activePage={activePage} setActivePage={setActivePage} />
         </div>
     );
@@ -207,39 +120,59 @@ export default function App() {
 /* ===========================
       DASHBOARD
 =========================== */
-function Dashboard({
-                       setActivePage,
-                       setHeaderColor,
-                       setHeaderTextColor,
-                       setHeaderIconColor,
-                       setHeaderTitle
-                   }) {
-    useEffect(() => {
-        setHeaderColor("#2D6693");
-        setHeaderTextColor("#FFFFFF");
-        setHeaderIconColor("#FFFFFF");
-        setHeaderTitle("School Inspection");
-    }, [setHeaderColor, setHeaderTextColor, setHeaderIconColor, setHeaderTitle]);
-
+function Dashboard({ setActivePage }) {
     return (
         <div className={classes.containerCard}>
+
+            {/* TODAY'S SCHEDULE */}
+            <Card className={classes.scheduleCard}>
+                <div className={classes.scheduleHeaderRow}>
+                    <div className={classes.cardHeader}>Today’s Schedule</div>
+                    <div>
+                        <Button small icon={<IconArrowLeft24 />} />
+                        <Button small icon={<IconArrowRight24 />} />
+                    </div>
+                </div>
+
+                <div className={classes.scheduleItem}>
+                    <div className={classes.scheduleIcon}>
+                        <IconLocation24 />
+                    </div>
+
+                    <div>
+                        <div className={classes.schoolName}>Campama LBS</div>
+                        <div className={classes.schoolAddress}>
+                            Schoolstreet 231, district
+                        </div>
+                        <div className={classes.schoolTime}>08:15 – 10:00</div>
+                    </div>
+                </div>
+            </Card>
+
+
+            {/* NEW INSPECTION BUTTON */}
+            <Button
+                primary
+                large
+                icon={<IconAdd24 />}
+                className={classes.newInspectionBtn}
+                onClick={() => setActivePage("inspection")}
+            >
+                New Inspection
+            </Button>
+
+            {/* PROGRAM CARDS */}
             <div className={classes.programWrapper}>
                 <div className={classes.programList}>
 
                     {/* SCHOOL REGISTRY */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => {
-                            setHeaderColor("#FB8C00");
-                            setHeaderTextColor("#FFFFFF");
-                            setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("School Registry");
-                            setActivePage("registry");
-                        }}
+                        onClick={() => setActivePage("registry")}
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
-                                <div className={`${classes.programIcon} ${classes.programIconOrange}`}>
+                                <div className={classes.programIcon} style={{ background: "#FFCC80" }}>
                                     <IconHome24 />
                                 </div>
                                 <div className={classes.programText}>School Registry</div>
@@ -250,17 +183,11 @@ function Dashboard({
                     {/* INSPECTION REPORTS */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => {
-                            setHeaderColor("#43A047");
-                            setHeaderTextColor("#FFFFFF");
-                            setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("Inspection Reports");
-                            setActivePage("inspectionReports");
-                        }}
+                        onClick={() => setActivePage("inspectionReports")}
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
-                                <div className={`${classes.programIcon} ${classes.programIconGreen}`}>
+                                <div className={classes.programIcon} style={{ background: "#A5D6A7" }}>
                                     <IconFolder24 />
                                 </div>
                                 <div className={classes.programText}>Inspection Reports</div>
@@ -268,23 +195,17 @@ function Dashboard({
                         </Card>
                     </div>
 
-                    {/* SCHOOL PLANNER */}
+                    {/* VISITATION PLANNER */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => {
-                            setHeaderColor("#F45B55");
-                            setHeaderTextColor("#FFFFFF");
-                            setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("School Visit Planner");
-                            setActivePage("planner");
-                        }}
+                        onClick={() => setActivePage("visitationPlanner")}
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
-                                <div className={`${classes.programIcon} ${classes.programIconPink}`}>
+                                <div className={classes.programIcon} style={{ background: "#FFA2A2" }}>
                                     <IconClock24 />
                                 </div>
-                                <div className={classes.programText}>School Visit Planner</div>
+                                <div className={classes.programText}>Visitation Planner</div>
                             </div>
                         </Card>
                     </div>
@@ -292,40 +213,17 @@ function Dashboard({
                     {/* ANALYTICS */}
                     <div
                         className={classes.programCardWrapper}
-                        onClick={() => {
-                            setHeaderColor("#00897B");
-                            setHeaderTextColor("#FFFFFF");
-                            setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("School Analytics");
-                            setActivePage("analytics");
-                        }}
+                        onClick={() => setActivePage("clusterAnalytics")} // Endre fra "analytics" til "clusterAnalytics"
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
-                                <div className={`${classes.programIcon} ${classes.programIconTeal}`}>
+                                <div className={classes.programIcon} style={{ background: "#4DB6AC" }}>
                                     <IconVisualizationColumn24 />
                                 </div>
-                                <div className={classes.programText}>School Analytics</div>
+                                <div className={classes.programText}>Analytics</div>
                             </div>
                         </Card>
                     </div>
-
-                    {/* NEW INSPECTION */}
-                    <Button
-                        primary
-                        large
-                        icon={<IconAdd24 />}
-                        className={classes.newInspectionBtn}
-                        onClick={() => {
-                            setHeaderColor("#2D6693");
-                            setHeaderTextColor("#FFFFFF");
-                            setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("New Inspection");
-                            setActivePage("inspection");
-                        }}
-                    >
-                        New Inspection
-                    </Button>
 
                 </div>
             </div>
