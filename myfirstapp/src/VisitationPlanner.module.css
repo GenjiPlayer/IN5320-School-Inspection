@@ -1,19 +1,32 @@
 :root {
-    --dhis2-header-height: 64px; /* juster ved behov */
+    --dhis2-header-height: 64px;
     --dhis2-footer-height: 56px;
 }
+
 /* ============================================================
-   MAIN PLANNER LAYOUT – ALWAYS MATCHES VIEWPORT HEIGHT
+   MAIN PLANNER CONTAINER – Outer wrapper with background
 ============================================================ */
 .plannerContainer {
     display: flex;
     flex-direction: column;
     padding: 16px;
-    gap: 12px;
     background: #f5f5f5;
     box-sizing: border-box;
-    height: auto;          /* <-- viktig! */
-    overflow: visible;     /* <-- viktig */
+    min-height: 100vh;
+    overflow: visible;
+}
+
+/* ============================================================
+   CONTENT WRAPPER – Rounded container holding all content
+============================================================ */
+.contentWrapper {
+    position: relative;
+    display: flex;
+    flex-direction: column;
+    background: white;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
 }
 
 .pageHeader {
@@ -23,30 +36,19 @@
 }
 
 /* ============================================================
-   MAP SECTION – FLEXIBLE HEIGHT (NO ABSOLUTE!)
+   MAP SECTION – Extends to top of wrapper, behind search bar
 ============================================================ */
-/* === Map Column === */
 .mapWrapper {
     width: 100%;
-    height: 40vh;      
-    max-height: 380px; 
+    height: 50vh;
+    min-height: 400px;
+    max-height: 600px;
     flex-shrink: 0;
-    border-radius: 12px;
     overflow: hidden;
-    border: none;
     position: relative;
     background: white;
-}
-
-.mapSection {
-    flex: 0 0 60%;
-    min-height: 200px;
-    max-height: 60vh;
-    position: relative;
-    border-radius: 16px 16px 0 0;
-    overflow: hidden;
-        background: transparent;
-    top: 80px;
+    margin-top: -16px; /* Negative margin to extend behind search bar */
+    padding-top: 16px; /* Restore the space for visual alignment */
 }
 
 /* Optional: top-left floating mini UI (filters / legend) */
@@ -62,7 +64,7 @@
 }
 
 /* Force leaflet to fill container */
-.mapSection :global(.leaflet-container) {
+.mapWrapper :global(.leaflet-container) {
     width: 100% !important;
     height: 100% !important;
     cursor: grab;
@@ -106,42 +108,27 @@
 }
 
 /* ============================================================
-   FLOATING SEARCH BAR
-============================================================
-*/
-
-.headerContainer {
-    display: flex;
-    flex-direction: row;
-    align-items: center;
-    gap: 12px;
-    width: 100%;
-}
-
-.searchContainer {
-    flex: 1;
-    position: relative;
-}
-
+   FLOATING SEARCH BAR – Positioned on top of map
+============================================================ */
 .searchBarFloating {
     position: absolute;
-    top: 16px; 
+    top: 16px;
     left: 16px;
     right: 16px;
     z-index: 999;
-    display: flex;     
+    display: flex;
     flex-direction: row;
-    align-items: center;
+    align-items: flex-start;
     gap: 12px;
+    pointer-events: none; /* Allow map interaction except on search elements */
+}
+
+.searchBarFloating > * {
+    pointer-events: auto; /* Re-enable interaction on child elements */
 }
 
 .searchInput {
     width: 100%;
-    padding: 12px 16px;
-    border-radius: 25px;
-    font-size: 15px;
-    box-sizing: border-box;
-    outline: none;
 }
 
 .searchWrapper {
@@ -215,17 +202,17 @@
 }
 
 .filterButton {
-    width: 44px !important;     /* same as search input height */
+    width: 44px !important;
     height: 42px !important;
     min-width: 42px !important;
     min-height: 42px !important;
-
     padding: 0 !important;
     border-radius: 6px !important;
-
     display: flex;
     align-items: center;
     justify-content: center;
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    background: white !important;
 }
 
 /* override the internal DHIS2 button container */
@@ -233,11 +220,61 @@
     width: 42px !important;
     height: 42px !important;
     padding: 0 !important;
-
     display: flex;
     align-items: center;
     justify-content: center;
     border-radius: 6px !important;
+}
+
+/* ============================================================
+   FILTER BLOCK – Range filter section
+============================================================ */
+.filterBlock {
+    padding: 16px;
+    background: white;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.filterLabel {
+    font-size: 14px;
+    font-weight: 600;
+    color: #333;
+}
+
+.rangeBadges {
+    display: flex;
+    gap: 8px;
+    flex-wrap: wrap;
+}
+
+.rangeBadge,
+.rangeBadgeActive {
+    padding: 8px 16px;
+    border-radius: 20px;
+    font-size: 13px;
+    font-weight: 500;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    user-select: none;
+}
+
+.rangeBadge {
+    background: #f5f5f5;
+    color: #666;
+    border: 1px solid #e0e0e0;
+}
+
+.rangeBadge:hover {
+    background: #ebebeb;
+    border-color: #d0d0d0;
+}
+
+.rangeBadgeActive {
+    background: #2563eb;
+    color: white;
+    border: 1px solid #2563eb;
 }
 
 /* === Filter Badges === */
@@ -245,7 +282,7 @@
     display: flex;
     gap: 8px;
     flex-wrap: wrap;
-    padding: 0 4px;
+    padding: 0 16px 16px 16px;
 }
 
 .badge {
@@ -260,38 +297,22 @@
 }
 
 /* ============================================================
-   BOTTOM SHEET PANEL (FIXED HEIGHT FOOTER)
-============================================================ */
-.bottomSheetPanel {
-    position: absolute;
-    left: 0;
-    right: 0;
-    bottom: 0;
-    height: 320px;               /* fixed height footer */
-    background: #ffffff;
-    display: flex;
-    flex-direction: column;
-    overflow: hidden;
-    z-index: 10;
-    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
-}
-
-/* ============================================================
-   SCHOOL LIST – ONLY SCROLLABLE AREA
+   SCHOOL LIST – Scrollable section below map
 ============================================================ */
 .schoolListContainer {
     width: 100%;
-    margin-top: 12px;
-    overflow: visible;   /* kritisk */
-    flex: unset;         /* fjerner felles scroll */
+    background: white;
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    min-height: 300px;
 }
-
 
 .schoolListScrollable {
     overflow-y: auto;
     overflow-x: hidden;
     padding: 16px;
-    height: 100%;
+    flex: 1;
 }
 
 /* Optional scrollbar styling */
@@ -313,97 +334,79 @@
 }
 
 /* ============================================================
-   SCHOOL CARDS
+   SCHOOL LIST ROWS – Collapsible school items
 ============================================================ */
-.schoolCard {
-    width: 100%;
-    max-width: 100%;
-    padding: 20px 20px;
-}
-.schoolCardContent {
-    display: flex;
-    gap: 16px;
-    align-items: flex-start;
-    width: 100%;
-    overflow-x: hidden;
+.listRow {
+    background: white;
+    border-radius: 8px;
+    margin-bottom: 8px;
+    padding: 16px;
+    cursor: pointer;
+    transition: all 0.2s ease;
+    border: 1px solid #e0e0e0;
 }
 
-/* === Left Icon Bubble === */
-.schoolIcon {
-    width: 46px;
-    height: 46px;
-    background: #e7f1ff;
-    border-radius: 12px;
+.listRow:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    border-color: #d0d0d0;
+}
+
+.listRowExpanded {
+    box-shadow: 0 2px 12px rgba(0, 0, 0, 0.15);
+    border-color: #2563eb;
+}
+
+.headerRow {
     display: flex;
     align-items: center;
-    justify-content: center;
-    flex-shrink: 0;
-}
-
-.schoolIcon svg {
-    width: 22px;
-    height: 22px;
-    color: #2d6cdf;
-}
-
-
-.schoolCard:last-child {
-    margin-bottom: 12px;
-}
-
-.schoolCard:hover {
-    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
-}
-
-.schoolCardHeader {
+    gap: 12px;
     padding: 16px;
+    background: white;
+}
+
+.listRowHeader {
     display: flex;
     justify-content: space-between;
     align-items: center;
+    gap: 12px;
 }
 
-/* === Right Side Content === */
-.schoolRight {
-    display: flex;
-    flex-direction: column;
-    gap: 6px;
-    flex: 1;
-    min-width: 0;
-}
-
-.schoolName {
+.listRowName {
     font-size: 16px;
     font-weight: 600;
     color: #1a2b49;
-    line-height: 1.35;
-    word-break: break-word;
+    margin-bottom: 4px;
 }
 
-
-.urgentBadge {
-    display: inline-block;
-    background: #d32f2f;
-    color: #ffffff;
-    font-size: 11px;
-    font-weight: 600;
-    padding: 2px 8px;
-    border-radius: 12px;
-    text-transform: uppercase;
-}
-
-.schoolMeta {
+.listRowSub {
     font-size: 14px;
     color: #6e7a8a;
-    margin-top: 4px;
 }
 
-.chevronIcon {
+.listRowChevron {
     transition: transform 0.2s ease;
     color: #6e7a8a;
+    flex-shrink: 0;
 }
 
-.chevronRotate {
+.listRowChevron.rotate {
     transform: rotate(180deg);
+}
+
+.listDetails {
+    margin-top: 16px;
+    padding-top: 16px;
+    border-top: 1px solid #f0f0f0;
+}
+
+.listDetailLine {
+    font-size: 14px;
+    color: #333;
+    margin-bottom: 12px;
+}
+
+.actionButtonDHIS2 {
+    margin-top: 8px;
 }
 
 /* === Show More / Less === */

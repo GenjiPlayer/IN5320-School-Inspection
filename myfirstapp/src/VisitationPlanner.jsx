@@ -390,79 +390,80 @@ export default function VisitationPlanner({ setActivePage }) {
                     {error}
                 </NoticeBox>
             </div>
-        );a
+        );
     }
 
     return (
         <div className={classes.plannerContainer}>
-            {/* Search Bar and Filter Button */}
-            <div className={classes.headerContainer}>
-                <div className={classes.searchContainer} ref={searchRef}>
-
-                    <Input
-                        className={classes.searchInput}
-                        type="text"
-                        placeholder="Search schools..."
-                        value={searchQuery}
-                        onChange={({ value }) => {
-                            setSearchQuery(value);
-                            setShowSuggestions(true);
-                            if (!value.trim()) {
-                                setSelectedSchool(null);
-                            }
-                        }}
-                        onFocus={() => {
-                            setShowSuggestions(true);
-                        }}
-                    />
-                    {/* Search Suggestions Dropdown */}
-                    {showSuggestions &&
-                        searchSuggestions.length > 0 && (
-                            <div
-                                className={
-                                    classes.suggestionsDropdown
+            {/* Main Content Wrapper with Rounded Corners */}
+            <div className={classes.contentWrapper}>
+                {/* Search Bar and Filter Button - Floating on top of map */}
+                <div className={classes.searchBarFloating}>
+                    <div className={classes.searchWrapper} ref={searchRef}>
+                        <Input
+                            className={classes.searchInput}
+                            type="text"
+                            placeholder="Search schools..."
+                            value={searchQuery}
+                            onChange={({ value }) => {
+                                setSearchQuery(value);
+                                setShowSuggestions(true);
+                                if (!value.trim()) {
+                                    setSelectedSchool(null);
                                 }
-                            >
-                                {searchSuggestions.map((school) => (
-                                    <div
-                                        key={school.id}
-                                        className={
-                                            classes.suggestionItem
-                                        }
-                                        onClick={() =>
-                                            handleSelectSchool(
-                                                school
-                                            )
-                                        }
-                                    >
-                                        <span
+                            }}
+                            onFocus={() => {
+                                setShowSuggestions(true);
+                            }}
+                        />
+                        {/* Search Suggestions Dropdown */}
+                        {showSuggestions &&
+                            searchSuggestions.length > 0 && (
+                                <div
+                                    className={
+                                        classes.suggestionsDropdown
+                                    }
+                                >
+                                    {searchSuggestions.map((school) => (
+                                        <div
+                                            key={school.id}
                                             className={
-                                                classes.suggestionName
+                                                classes.suggestionItem
+                                            }
+                                            onClick={() =>
+                                                handleSelectSchool(
+                                                    school
+                                                )
                                             }
                                         >
-                                            {school.name}
-                                        </span>
-                                        <span
-                                            className={
-                                                classes.suggestionMeta
-                                            }
-                                        >
-                                            {school.lastVisitDays ===
-                                            999
-                                                ? "Never visited"
-                                                : `${school.lastVisitDays} days ago`}
-                                        </span>
-                                    </div>
-                                ))}
-                            </div>
-                        )}
+                                            <span
+                                                className={
+                                                    classes.suggestionName
+                                                }
+                                            >
+                                                {school.name}
+                                            </span>
+                                            <span
+                                                className={
+                                                    classes.suggestionMeta
+                                                }
+                                            >
+                                                {school.lastVisitDays ===
+                                                999
+                                                    ? "Never visited"
+                                                    : `${school.lastVisitDays} days ago`}
+                                            </span>
+                                        </div>
+                                    ))}
+                                </div>
+                            )}
+                    </div>
+                    <Button className={classes.filterButton}
+                        small
+                        onClick={() => setFilterModalOpen(true)}
+                        icon={<IconFilter24 />}
+                    ></Button>
                 </div>
-                <Button className={classes.filterButton}
-    small
-    onClick={() => setFilterModalOpen(true)}
-    icon={<IconFilter24 />}
-></Button>
-            </div>
 
             {/* Filter Modal */}
             {filterModalOpen && (
@@ -570,174 +571,173 @@ export default function VisitationPlanner({ setActivePage }) {
                 </Modal>
             )}
 
-            {/* MAP */}
-            <div className={classes.mapWrapper}>
-                <MapView
-                    schools={filteredSchools}
-                    selectedSchool={selectedSchool}
-                />
-            </div>
-
-            {/* Range filter (0–30 / 30–90 / 90+) */}
-            <div className={classes.filterBlock}>
-                <div className={classes.filterLabel}>
-                    Days since last visit
-                </div>
-                <div className={classes.rangeBadges}>
-                    {ranges.map((r) => (
-                        <div
-                            key={r.id}
-                            className={
-                                activeRange === r.id
-                                    ? classes.rangeBadgeActive
-                                    : classes.rangeBadge
-                            }
-                            onClick={() =>
-                                setActiveRange(
-                                    activeRange === r.id
-                                        ? null
-                                        : r.id
-                                )
-                            }
-                        >
-                            {r.label}
-                        </div>
-                    ))}
-                </div>
-            </div>
-
-            {/* Filter Badge Pills - only show selected filters */}
-            {(selectedFilters.status.length > 0 ||
-                selectedFilters.performance.length > 0 ||
-                selectedFilters.resources.length > 0 ||
-                selectedFilters.context.length > 0) && (
-                <div className={classes.filterBadges}>
-                    {selectedFilters.status.map((filterId) => {
-                        const filter =
-                            filterOptions.status.find(
-                                (f) => f.id === filterId
-                            );
-                        return (
-                            <div
-                                key={filterId}
-                                className={classes.badge}
-                            >
-                                {filter?.label}
-                            </div>
-                        );
-                    })}
-                    {selectedFilters.performance.map((filterId) => {
-                        const filter =
-                            filterOptions.performance.find(
-                                (f) => f.id === filterId
-                            );
-                        return (
-                            <div
-                                key={filterId}
-                                className={classes.badge}
-                            >
-                                {filter?.label}
-                            </div>
-                        );
-                    })}
-                    {selectedFilters.resources.map((filterId) => {
-                        const filter =
-                            filterOptions.resources.find(
-                                (f) => f.id === filterId
-                            );
-                        return (
-                            <div
-                                key={filterId}
-                                className={classes.badge}
-                            >
-                                {filter?.label}
-                            </div>
-                        );
-                    })}
-                    {selectedFilters.context.map((filterId) => {
-                        const filter =
-                            filterOptions.context.find(
-                                (f) => f.id === filterId
-                            );
-                        return (
-                            <div
-                                key={filterId}
-                                className={classes.badge}
-                            >
-                                {filter?.label}
-                            </div>
-                        );
-                    })}
-                </div>
-            )}
-
-            {/* School List */}
-            <div className={classes.schoolListContainer}>
-    <div className={classes.schoolListScrollable}>
-        {filteredSchools.map((s) => (
-            <div
-                key={s.id}
-                className={`${classes.listRow} ${
-                    expandedSchools.includes(s.id)
-                        ? classes.listRowExpanded
-                        : ""
-                }`}
-                onClick={() => {
-                    setExpandedSchools(prev =>
-                        prev.includes(s.id)
-                            ? prev.filter(id => id !== s.id)
-                            : [...prev, s.id]
-                    );
-                    setSelectedSchool(s);
-                }}
-            >
-                {/* HEADER ROW */}
-                <div className={classes.listRowHeader}>
-                    <div>
-                        <div className={classes.listRowName}>{s.name}</div>
-                        <div className={classes.listRowSub}>
-                            {s.parentName} —{" "}
-                            {s.lastVisitDays === 999
-                                ? "Never visited"
-                                : `${s.lastVisitDays} days ago`}
-                        </div>
-                    </div>
-
-                    <IconChevronDown24
-                        className={`${classes.listRowChevron} ${
-                            expandedSchools.includes(s.id) ? "rotate" : ""
-                        }`}
+                {/* MAP - Extends to top of wrapper */}
+                <div className={classes.mapWrapper}>
+                    <MapView
+                        schools={filteredSchools}
+                        selectedSchool={selectedSchool}
                     />
                 </div>
 
-                {/* EXPANDED DETAILS */}
-                {expandedSchools.includes(s.id) && (
-                    <div className={classes.listDetails}>
-                        <div className={classes.listDetailLine}>
-                            <strong>Learners:</strong> {s.learners}
-                        </div>
+                {/* Range filter (0–30 / 30–90 / 90+) */}
+                <div className={classes.filterBlock}>
+                    <div className={classes.filterLabel}>
+                        Days since last visit
+                    </div>
+                    <div className={classes.rangeBadges}>
+                        {ranges.map((r) => (
+                            <div
+                                key={r.id}
+                                className={
+                                    activeRange === r.id
+                                        ? classes.rangeBadgeActive
+                                        : classes.rangeBadge
+                                }
+                                onClick={() =>
+                                    setActiveRange(
+                                        activeRange === r.id
+                                            ? null
+                                            : r.id
+                                    )
+                                }
+                            >
+                                {r.label}
+                            </div>
+                        ))}
+                    </div>
+                </div>
 
-                        <Button
-                            small
-                            primary
-                            className={classes.actionButtonDHIS2}
-                        >
-                            Schedule inspection
-                        </Button>
+                {/* Filter Badge Pills - only show selected filters */}
+                {(selectedFilters.status.length > 0 ||
+                    selectedFilters.performance.length > 0 ||
+                    selectedFilters.resources.length > 0 ||
+                    selectedFilters.context.length > 0) && (
+                    <div className={classes.filterBadges}>
+                        {selectedFilters.status.map((filterId) => {
+                            const filter =
+                                filterOptions.status.find(
+                                    (f) => f.id === filterId
+                                );
+                            return (
+                                <div
+                                    key={filterId}
+                                    className={classes.badge}
+                                >
+                                    {filter?.label}
+                                </div>
+                            );
+                        })}
+                        {selectedFilters.performance.map((filterId) => {
+                            const filter =
+                                filterOptions.performance.find(
+                                    (f) => f.id === filterId
+                                );
+                            return (
+                                <div
+                                    key={filterId}
+                                    className={classes.badge}
+                                >
+                                    {filter?.label}
+                                </div>
+                            );
+                        })}
+                        {selectedFilters.resources.map((filterId) => {
+                            const filter =
+                                filterOptions.resources.find(
+                                    (f) => f.id === filterId
+                                );
+                            return (
+                                <div
+                                    key={filterId}
+                                    className={classes.badge}
+                                >
+                                    {filter?.label}
+                                </div>
+                            );
+                        })}
+                        {selectedFilters.context.map((filterId) => {
+                            const filter =
+                                filterOptions.context.find(
+                                    (f) => f.id === filterId
+                                );
+                            return (
+                                <div
+                                    key={filterId}
+                                    className={classes.badge}
+                                >
+                                    {filter?.label}
+                                </div>
+                            );
+                        })}
                     </div>
                 )}
+
+                {/* School List */}
+                <div className={classes.schoolListContainer}>
+                    <div className={classes.schoolListScrollable}>
+                        {filteredSchools.map((s) => (
+                            <div
+                                key={s.id}
+                                className={`${classes.listRow} ${
+                                    expandedSchools.includes(s.id)
+                                        ? classes.listRowExpanded
+                                        : ""
+                                }`}
+                                onClick={() => {
+                                    setExpandedSchools(prev =>
+                                        prev.includes(s.id)
+                                            ? prev.filter(id => id !== s.id)
+                                            : [...prev, s.id]
+                                    );
+                                    setSelectedSchool(s);
+                                }}
+                            >
+                                {/* HEADER ROW */}
+                                <div className={classes.listRowHeader}>
+                                    <div>
+                                        <div className={classes.listRowName}>{s.name}</div>
+                                        <div className={classes.listRowSub}>
+                                            {s.parentName} —{" "}
+                                            {s.lastVisitDays === 999
+                                                ? "Never visited"
+                                                : `${s.lastVisitDays} days ago`}
+                                        </div>
+                                    </div>
+
+                                    <IconChevronDown24
+                                        className={`${classes.listRowChevron} ${
+                                            expandedSchools.includes(s.id) ? "rotate" : ""
+                                        }`}
+                                    />
+                                </div>
+
+                                {/* EXPANDED DETAILS */}
+                                {expandedSchools.includes(s.id) && (
+                                    <div className={classes.listDetails}>
+                                        <div className={classes.listDetailLine}>
+                                            <strong>Learners:</strong> {s.learners}
+                                        </div>
+
+                                        <Button
+                                            small
+                                            primary
+                                            className={classes.actionButtonDHIS2}
+                                        >
+                                            Schedule inspection
+                                        </Button>
+                                    </div>
+                                )}
+                            </div>
+                        ))}
+
+                        {filteredSchools.length === 0 && (
+                            <div style={{ padding: 12, color: "#777" }}>
+                                No schools match these filters.
+                            </div>
+                        )}
+                    </div>
+                </div>
             </div>
-        ))}
-
-        {filteredSchools.length === 0 && (
-            <div style={{ padding: 12, color: "#777" }}>
-                No schools match these filters.
-            </div>
-        )}
-    </div>
-</div>
-
-
         </div>
     );
 }
