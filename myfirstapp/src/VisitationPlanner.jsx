@@ -395,17 +395,6 @@ export default function VisitationPlanner({ setActivePage }) {
 
     return (
         <div className={classes.plannerContainer}>
-            <div className={classes.pageHeader}>
-                <div className={classes.pageHeader}>
-                    <Button
-                        small
-                        icon={<IconArrowLeft24 />}
-                        onClick={() => setActivePage("dashboard")}
-                    />
-                    <h2>Visitation Planner</h2>
-                </div>
-            </div>
-
             {/* Search Bar and Filter Button */}
             <div className={classes.headerContainer}>
                 <div className={classes.searchContainer} ref={searchRef}>

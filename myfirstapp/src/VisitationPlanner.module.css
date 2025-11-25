@@ -6,16 +6,22 @@
    MAIN PLANNER LAYOUT – ALWAYS MATCHES VIEWPORT HEIGHT
 ============================================================ */
 .plannerContainer {
-    position: fixed;
-    top: var(--dhis2-header-height);
-    left: 0;
-    right: 0;
-    bottom: var(--dhis2-footer-height);
     display: flex;
     flex-direction: column;
-    overflow: hidden;
-    background: #F45B55;
+    padding: 16px;
+    gap: 12px;
+    background: #f5f5f5;
+    box-sizing: border-box;
+    height: auto;          /* <-- viktig! */
+    overflow: visible;     /* <-- viktig */
 }
+
+.pageHeader {
+    display: flex;
+    align-items: center;      /* <- sørger for vertikal sentrering */
+    gap: 12px;                /* mellomrom mellom pil og tittel */    
+}
+
 /* ============================================================
    MAP SECTION – FLEXIBLE HEIGHT (NO ABSOLUTE!)
 ============================================================ */
