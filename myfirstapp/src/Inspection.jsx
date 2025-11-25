@@ -3,7 +3,6 @@ import {
     Button,
     Card,
     CircularLoader,
-    IconArrowLeft24,
     IconCheckmarkCircle24,
     IconHome24,
     IconInfo24,
@@ -436,19 +435,6 @@ export default function Inspection({ setActivePage }) {
 
     return (
         <div className={classes.pageWrapper}>
-            {/* HEADER */}
-            <div className={classes.pageHeader}>
-                {setActivePage && (
-                    <Button
-                        small
-                        icon={<IconArrowLeft24 />}
-                        onClick={() => setActivePage("dashboard")}
-                    >
-                    </Button>
-                )}
-                <h2>School Inspection Form</h2>
-            </div>
-
             {/* SUBMIT STATUS */}
             {submitStatus && (
                 <NoticeBox
