@@ -12,7 +12,7 @@ import {
     IconCheckmarkCircle24,
     IconEdit24,
     Button,
-    Checkbox
+    Checkbox,
 } from "@dhis2/ui";
 
 import classes from "./Analytics.module.css";
@@ -111,6 +111,7 @@ const renderStatusIcon = (severity) => {
     }
     return <IconInfoFilled24 color="#757575" />;
 };
+
 const formatRatio = (value) => {
     if (value === null || value === undefined || isNaN(value)) return "N/A";
     return Number(value).toFixed(2);
@@ -146,9 +147,14 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                 const list = data.organisationUnits || [];
                 setSchools(list);
 
-                if (initialSchoolId && list.find((s) => s.id === initialSchoolId)) {
+                if (
+                    initialSchoolId &&
+                    list.find((s) => s.id === initialSchoolId)
+                ) {
                     setSelectedSchoolId(initialSchoolId);
-                    setCurrentSchool(list.find((s) => s.id === initialSchoolId));
+                    setCurrentSchool(
+                        list.find((s) => s.id === initialSchoolId)
+                    );
                 } else if (list.length > 0) {
                     setSelectedSchoolId(list[0].id);
                     setCurrentSchool(list[0]);
@@ -168,7 +174,8 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
     useEffect(() => {
         if (!selectedSchoolId) return;
 
-        const school = schools.find((s) => s.id === selectedSchoolId) || null;
+        const school =
+            schools.find((s) => s.id === selectedSchoolId) || null;
         setCurrentSchool(school);
 
         const loadSchoolData = async () => {
@@ -233,7 +240,9 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                     tsMap[month].seats = getVal(DATA_ELEMENTS.SEATS);
                     tsMap[month].books = getVal(DATA_ELEMENTS.BOOKS);
-                    tsMap[month].classrooms = getVal(DATA_ELEMENTS.CLASSROOMS);
+                    tsMap[month].classrooms = getVal(
+                        DATA_ELEMENTS.CLASSROOMS
+                    );
                     tsMap[month].toilets = getVal(DATA_ELEMENTS.TOILETS);
                 });
 
@@ -245,11 +254,17 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                     const textbookToLearner =
                         d.totalLearners > 0 ? d.books / d.totalLearners : null;
                     const learnersPerClassroom =
-                        d.classrooms > 0 ? d.totalLearners / d.classrooms : null;
+                        d.classrooms > 0
+                            ? d.totalLearners / d.classrooms
+                            : null;
                     const learnersPerTeacher =
-                        d.totalTeachers > 0 ? d.totalLearners / d.totalTeachers : null;
+                        d.totalTeachers > 0
+                            ? d.totalLearners / d.totalTeachers
+                            : null;
                     const learnersPerToilet =
-                        d.toilets > 0 ? d.totalLearners / d.toilets : null;
+                        d.toilets > 0
+                            ? d.totalLearners / d.toilets
+                            : null;
 
                     return {
                         month: m,
@@ -270,14 +285,18 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                 setTimeSeries(tsArray);
 
-                const latest = tsArray.length > 0 ? tsArray[tsArray.length - 1] : null;
+                const latest =
+                    tsArray.length > 0
+                        ? tsArray[tsArray.length - 1]
+                        : null;
 
                 setRatios(
                     latest
                         ? {
                               seatToLearner: latest.seatToLearner,
                               textbookToLearner: latest.textbookToLearner,
-                              learnersPerClassroom: latest.learnersPerClassroom,
+                              learnersPerClassroom:
+                                  latest.learnersPerClassroom,
                               learnersPerTeacher: latest.learnersPerTeacher,
                               learnersPerToilet: latest.learnersPerToilet,
                               genderParityIndex: latest.genderParityIndex,
@@ -286,7 +305,10 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                 );
             } catch (err) {
                 console.error(err);
-                setError("Failed to fetch analytics for this school: " + err.message);
+                setError(
+                    "Failed to fetch analytics for this school: " +
+                        err.message
+                );
             } finally {
                 setLoading(false);
             }
@@ -299,11 +321,16 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
     const calculateClusterStats = (metricKey) => {
         if (!timeSeries || timeSeries.length === 0) return null;
 
-        const values = timeSeries.map((p) => p[metricKey]).filter((v) => v != null);
+        const values = timeSeries
+            .map((p) => p[metricKey])
+            .filter((v) => v != null);
         if (values.length === 0) return null;
 
-        const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
-        const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+        const avg =
+            values.reduce((sum, v) => sum + v, 0) / values.length;
+        const variance =
+            values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) /
+            values.length;
         const stdDev = Math.sqrt(variance);
 
         return { avg, stdDev };
@@ -316,7 +343,13 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
         return "#757575";
     };
 
-    const createChartConfig = (metricKey, label, color, currentValue, standard) => {
+    const createChartConfig = (
+        metricKey,
+        label,
+        color,
+        currentValue,
+        standard
+    ) => {
         if (!timeSeries || timeSeries.length === 0) return null;
 
         const clusterStats = calculateClusterStats(metricKey);
@@ -330,33 +363,51 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
               ])
             : [];
 
-        const clusterAvgData = clusterStats ? categories.map(() => clusterStats.avg) : [];
+        const clusterAvgData = clusterStats
+            ? categories.map(() => clusterStats.avg)
+            : [];
 
+        // Build target lines from the given standard
         const plotLines = [];
-        const s = MINIMUM_STANDARDS[metricKey] || {};
-        if (s.min !== undefined) {
+
+        if (standard.min !== undefined) {
             plotLines.push({
                 color: "#d32f2f",
                 dashStyle: "Dash",
-                value: s.min,
+                value: standard.min,
                 width: 2,
                 label: {
-                    text: `Min: ${s.min}`,
+                    text: `Min: ${standard.min}`,
                     align: "right",
                     style: { color: "#d32f2f", fontWeight: "bold" },
                 },
             });
         }
-        if (s.max !== undefined) {
+
+        if (standard.max !== undefined) {
             plotLines.push({
                 color: "#d32f2f",
                 dashStyle: "Dash",
-                value: s.max,
+                value: standard.max,
                 width: 2,
                 label: {
-                    text: `Max: ${s.max}`,
+                    text: `Max: ${standard.max}`,
                     align: "right",
                     style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+
+        if (standard.target !== undefined) {
+            plotLines.push({
+                color: "#1976d2",
+                dashStyle: "Dot",
+                value: standard.target,
+                width: 2,
+                label: {
+                    text: `Target: ${standard.target}`,
+                    align: "right",
+                    style: { color: "#1976d2", fontWeight: "bold" },
                 },
             });
         }
@@ -394,7 +445,7 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                     enableMouseTracking: false,
                 },
                 clusterStats && {
-                    name: "Cluster Average",
+                    name: "Cluster Avg",
                     data: clusterAvgData,
                     color: "#1976d2",
                     dashStyle: "Dash",
@@ -408,8 +459,12 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                         y: val,
                         marker: {
                             enabled: true,
-                            radius: idx === dataPoints.length - 1 ? 6 : 4,
-                            fillColor: idx === dataPoints.length - 1 ? finalPointColor : "#e0e0e0",
+                            radius:
+                                idx === dataPoints.length - 1 ? 6 : 4,
+                            fillColor:
+                                idx === dataPoints.length - 1
+                                    ? finalPointColor
+                                    : "#e0e0e0",
                         },
                         dataLabels: {
                             enabled: idx === dataPoints.length - 1,
@@ -418,7 +473,10 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                             color: "#ffffff",
                             borderRadius: 3,
                             padding: 4,
-                            style: { fontSize: "11px", fontWeight: "bold" },
+                            style: {
+                                fontSize: "11px",
+                                fontWeight: "bold",
+                            },
                         },
                     })),
                     color,
@@ -450,50 +508,74 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
             }
         }
 
-        if (metricKey === "textbookToLearner" && standard.min !== undefined) {
+        if (
+            metricKey === "textbookToLearner" &&
+            standard.min !== undefined
+        ) {
             const deficit = standard.min - value;
             if (deficit > 0) {
                 const latest = timeSeries[timeSeries.length - 1];
                 const learnersCount = latest?.learners || 0;
-                const additionalBooks = Math.ceil(deficit * learnersCount);
+                const additionalBooks = Math.ceil(
+                    deficit * learnersCount
+                );
                 return `Need for approximately ${additionalBooks} additional textbooks to achieve 1:1 ratio.`;
             }
         }
 
-        if (metricKey === "learnersPerClassroom" && standard.max !== undefined) {
+        if (
+            metricKey === "learnersPerClassroom" &&
+            standard.max !== undefined
+        ) {
             const excess = value - standard.max;
             if (excess > 0) {
                 const latest = timeSeries[timeSeries.length - 1];
-                const currentClassrooms = latest?.classrooms || 1;
                 const neededClassrooms = Math.ceil(excess / standard.max);
                 return `Approximately ${neededClassrooms} additional classroom(s) needed to reduce overcrowding.`;
             }
         }
 
-        if (metricKey === "learnersPerTeacher" && standard.max !== undefined) {
+        if (
+            metricKey === "learnersPerTeacher" &&
+            standard.max !== undefined
+        ) {
             const excess = value - standard.max;
             if (excess > 0) {
                 const latest = timeSeries[timeSeries.length - 1];
                 const learnersCount = latest?.learners || 0;
-                const additionalTeachers = Math.ceil(learnersCount / standard.max - (latest?.teachers || 0));
+                const additionalTeachers = Math.ceil(
+                    learnersCount / standard.max -
+                        (latest?.teachers || 0)
+                );
                 return `Need for approximately ${additionalTeachers} additional teacher(s) to meet the standard ratio.`;
             }
         }
 
-        if (metricKey === "learnersPerToilet" && standard.max !== undefined) {
+        if (
+            metricKey === "learnersPerToilet" &&
+            standard.max !== undefined
+        ) {
             const excess = value - standard.max;
             if (excess > 0) {
                 const latest = timeSeries[timeSeries.length - 1];
                 const learnersCount = latest?.learners || 0;
-                const additionalToilets = Math.ceil(learnersCount / standard.max - (latest?.toilets || 0));
+                const additionalToilets = Math.ceil(
+                    learnersCount / standard.max -
+                        (latest?.toilets || 0)
+                );
                 return `Need for approximately ${additionalToilets} additional toilet(s) to meet hygiene standards.`;
             }
         }
 
-        if (metricKey === "genderParityIndex" && standard.target !== undefined) {
+        if (
+            metricKey === "genderParityIndex" &&
+            standard.target !== undefined
+        ) {
             const diff = Math.abs(value - standard.target);
             if (diff > 0.1) {
-                return `Gender imbalance detected. Current ratio is ${value.toFixed(2)}. Target is ${standard.target}.`;
+                return `Gender imbalance detected. Current ratio is ${value.toFixed(
+                    2
+                )}. Target is ${standard.target}.`;
             }
         }
 
@@ -514,7 +596,8 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                   label: "Classroom Capacity",
                   color: "#ef6c00",
                   standard: MINIMUM_STANDARDS.learnersPerClassroom,
-                  description: "Average number of learners per classroom.",
+                  description:
+                      "Average number of learners per classroom.",
               },
               {
                   key: "seatToLearner",
@@ -535,7 +618,8 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                   label: "Toilet Ratio",
                   color: "#00897b",
                   standard: MINIMUM_STANDARDS.learnersPerToilet,
-                  description: "Average number of learners per toilet.",
+                  description:
+                      "Average number of learners per toilet.",
               },
               {
                   key: "genderParityIndex",
@@ -553,7 +637,9 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
     const problemMetrics = metrics.filter((m) => {
         const s = getStatusForMetric(m.value, m.standard);
-        return s.severity === "critical" || s.severity === "limited";
+        return (
+            s.severity === "critical" || s.severity === "limited"
+        );
     });
 
     if (loading && !currentSchool) {
@@ -579,13 +665,16 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
             <Card className={classes.mainCard}>
                 <div className={classes.header}>
                     <h2 className={classes.schoolTitle}>
-                        {currentSchool ? currentSchool.name : "Select a school"}
+                        {currentSchool
+                            ? currentSchool.name
+                            : "Select a school"}
                     </h2>
                 </div>
 
                 {metrics.length === 0 && (
                     <div className={classes.noData}>
-                        No inspections found for this school. Submit an inspection first.
+                        No inspections found for this school. Submit an
+                        inspection first.
                     </div>
                 )}
 
@@ -597,28 +686,61 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                                     metric.value,
                                     metric.standard
                                 );
-                                const isOpen = openMetric === metric.key;
+                                const isOpen =
+                                    openMetric === metric.key;
 
                                 return (
-                                    <div key={metric.key} className={classes.metricRow}>
-                                        <div className={classes.metricHeader}>
-                                            <div className={classes.metricIcon}>
-                                                {renderStatusIcon(status.severity)}
+                                    <div
+                                        key={metric.key}
+                                        className={classes.metricRow}
+                                    >
+                                        <div
+                                            className={
+                                                classes.metricHeader
+                                            }
+                                        >
+                                            <div
+                                                className={
+                                                    classes.metricIcon
+                                                }
+                                            >
+                                                {renderStatusIcon(
+                                                    status.severity
+                                                )}
                                             </div>
 
-                                            <div className={classes.metricText}>
-                                                <div className={classes.metricTitle}>
-                                                    {metric.label} – {status.label}
+                                            <div
+                                                className={
+                                                    classes.metricText
+                                                }
+                                            >
+                                                <div
+                                                    className={
+                                                        classes.metricTitle
+                                                    }
+                                                >
+                                                    {metric.label} –{" "}
+                                                    {status.label}
                                                 </div>
-                                                <div className={classes.metricSubtitle}>
+                                                <div
+                                                    className={
+                                                        classes.metricSubtitle
+                                                    }
+                                                >
                                                     Latest value:{" "}
                                                     <strong>
-                                                        {metric.value != null
-                                                            ? `${formatRatio(metric.value)}${
-                                                                  metric.key === "seatToLearner" ||
-                                                                  metric.key === "textbookToLearner"
+                                                        {metric.value !=
+                                                        null
+                                                            ? `${formatRatio(
+                                                                  metric.value
+                                                              )}${
+                                                                  metric.key ===
+                                                                      "seatToLearner" ||
+                                                                  metric.key ===
+                                                                      "textbookToLearner"
                                                                       ? ":1"
-                                                                      : metric.key === "genderParityIndex"
+                                                                      : metric.key ===
+                                                                        "genderParityIndex"
                                                                       ? ""
                                                                       : ":1"
                                                               }`
@@ -629,9 +751,15 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                                             <button
                                                 type="button"
-                                                className={classes.detailsButton}
+                                                className={
+                                                    classes.detailsButton
+                                                }
                                                 onClick={() =>
-                                                    setOpenMetric(isOpen ? null : metric.key)
+                                                    setOpenMetric(
+                                                        isOpen
+                                                            ? null
+                                                            : metric.key
+                                                    )
                                                 }
                                             >
                                                 details ▾
@@ -640,24 +768,47 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                                         <div
                                             className={`${classes.severityBorder} ${
-                                                classes[`severity${status.severity}`]
+                                                classes[
+                                                    `severity${status.severity}`
+                                                ]
                                             }`}
                                         />
 
                                         {isOpen && (
-                                            <div className={classes.metricDetails}>
+                                            <div
+                                                className={
+                                                    classes.metricDetails
+                                                }
+                                            >
                                                 <div
                                                     className={`${classes.chartHeader} ${
-                                                        classes[`chartHeader${status.severity}`]
+                                                        classes[
+                                                            `chartHeader${status.severity}`
+                                                        ]
                                                     }`}
                                                 >
-                                                    <span className={classes.chartHeaderText}>
-                                                        {metric.label}: {formatRatio(metric.value)}{" "}
-                                                        {metric.standard.min !== undefined
+                                                    <span
+                                                        className={
+                                                            classes.chartHeaderText
+                                                        }
+                                                    >
+                                                        {metric.label}:{" "}
+                                                        {formatRatio(
+                                                            metric.value
+                                                        )}{" "}
+                                                        {metric.standard
+                                                            .min !==
+                                                        undefined
                                                             ? `(Target ≥ ${metric.standard.min})`
-                                                            : metric.standard.max !== undefined
+                                                            : metric
+                                                                  .standard
+                                                                  .max !==
+                                                              undefined
                                                             ? `(Target ≤ ${metric.standard.max})`
-                                                            : metric.standard.target !== undefined
+                                                            : metric
+                                                                  .standard
+                                                                  .target !==
+                                                              undefined
                                                             ? `(Target = ${metric.standard.target})`
                                                             : ""}
                                                     </span>
@@ -670,9 +821,15 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                                                     metric.value,
                                                     metric.standard
                                                 ) ? (
-                                                    <div className={classes.chartWrapper}>
+                                                    <div
+                                                        className={
+                                                            classes.chartWrapper
+                                                        }
+                                                    >
                                                         <HighchartsReact
-                                                            highcharts={Highcharts}
+                                                            highcharts={
+                                                                Highcharts
+                                                            }
                                                             options={createChartConfig(
                                                                 metric.key,
                                                                 metric.label,
@@ -683,20 +840,44 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                                                         />
                                                     </div>
                                                 ) : (
-                                                    <div className={classes.noData}>
-                                                        Not enough data to render a chart for this
+                                                    <div
+                                                        className={
+                                                            classes.noData
+                                                        }
+                                                    >
+                                                        Not enough data
+                                                        to render a
+                                                        chart for this
                                                         metric.
                                                     </div>
                                                 )}
 
-                                                <div className={classes.metricAnalysis}>
-                                                    <p className={classes.metricDescription}>
-                                                        <strong>Description:</strong>{" "}
-                                                        {metric.description}
+                                                <div
+                                                    className={
+                                                        classes.metricAnalysis
+                                                    }
+                                                >
+                                                    <p
+                                                        className={
+                                                            classes.metricDescription
+                                                        }
+                                                    >
+                                                        <strong>
+                                                            Description:
+                                                        </strong>{" "}
+                                                        {
+                                                            metric.description
+                                                        }
                                                     </p>
 
-                                                    <p className={classes.recommendation}>
-                                                        <strong>Recommendation:</strong>{" "}
+                                                    <p
+                                                        className={
+                                                            classes.recommendation
+                                                        }
+                                                    >
+                                                        <strong>
+                                                            Recommendation:
+                                                        </strong>{" "}
                                                         {generateRecommendation(
                                                             metric.key,
                                                             metric.value,
@@ -713,53 +894,112 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                         <div className={classes.divider} />
 
- <div className={classes.summarySection}>
-    <div className={classes.summaryHeaderRow}>
-        <h3 className={classes.summaryTitle}>Summary</h3>
-    </div>
+                        <div className={classes.summarySection}>
+                            <div
+                                className={
+                                    classes.summaryHeaderRow
+                                }
+                            >
+                                <h3
+                                    className={
+                                        classes.summaryTitle
+                                    }
+                                >
+                                    Summary
+                                </h3>
+                            </div>
 
-    <div className={classes.summaryCard}>
-        <p className={classes.summaryIntro}>
-            <strong>{currentSchool ? currentSchool.name : "This school"}</strong>
-            {" "}shows several areas needing improvement:
-        </p>
+                            <div className={classes.summaryCard}>
+                                <p className={classes.summaryIntro}>
+                                    <strong>
+                                        {currentSchool
+                                            ? currentSchool.name
+                                            : "This school"}
+                                    </strong>{" "}
+                                    shows several areas needing
+                                    improvement:
+                                </p>
 
-        {problemMetrics.length > 0 ? (
-            <ul className={classes.summaryList}>
-                {problemMetrics.map((m) => (
-                    <li key={m.key}>{m.label}</li>
-                ))}
-            </ul>
-        ) : (
-            <p className={classes.summaryText}>
-                All tracked indicators currently meet basic standards.
-            </p>
-        )}
+                                {problemMetrics.length > 0 ? (
+                                    <ul
+                                        className={
+                                            classes.summaryList
+                                        }
+                                    >
+                                        {problemMetrics.map((m) => (
+                                            <li key={m.key}>
+                                                {m.label}
+                                            </li>
+                                        ))}
+                                    </ul>
+                                ) : (
+                                    <p
+                                        className={
+                                            classes.summaryText
+                                        }
+                                    >
+                                        All tracked indicators
+                                        currently meet basic
+                                        standards.
+                                    </p>
+                                )}
 
-        <div className={classes.summaryDivider} />
+                                <div
+                                    className={
+                                        classes.summaryDivider
+                                    }
+                                />
 
-       <div className={classes.followUpRow}>
-    <Checkbox
-        checked={followUp}
-        label="Mark for follow-up"
-        onChange={({ checked }) => setFollowUp(checked)}
-    />
-</div>
+                                <div
+                                    className={
+                                        classes.followUpRow
+                                    }
+                                >
+                                    <Checkbox
+                                        checked={followUp}
+                                        label="Mark for follow-up"
+                                        onChange={({ checked }) =>
+                                            setFollowUp(checked)
+                                        }
+                                    />
+                                </div>
 
-        <div className={classes.visitationRow}>
-            <span className={classes.visitationLabel}>Next visitation:</span>
-            <span className={classes.visitationDate}>{nextVisit}</span>
-<Button
-    small
-    icon={<IconEdit24 />}
-    onClick={() => {
-        const newDate = prompt("Set next visitation date:", nextVisit);
-        if (newDate) setNextVisit(newDate);
-    }}
-/>
-        </div>
-    </div>
-</div>
+                                <div
+                                    className={
+                                        classes.visitationRow
+                                    }
+                                >
+                                    <span
+                                        className={
+                                            classes.visitationLabel
+                                        }
+                                    >
+                                        Next visitation:
+                                    </span>
+                                    <span
+                                        className={
+                                            classes.visitationDate
+                                        }
+                                    >
+                                        {nextVisit}
+                                    </span>
+                                    <Button
+                                        small
+                                        icon={<IconEdit24 />}
+                                        onClick={() => {
+                                            const newDate = prompt(
+                                                "Set next visitation date:",
+                                                nextVisit
+                                            );
+                                            if (newDate)
+                                                setNextVisit(
+                                                    newDate
+                                                );
+                                        }}
+                                    />
+                                </div>
+                            </div>
+                        </div>
                     </>
                 )}
             </Card>
