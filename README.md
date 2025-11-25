@@ -39,7 +39,7 @@ We have two analytics dashboards that turn raw inspection data into something us
 
 **Cluster Analytics** is where you can compare multiple schools or look at entire clusters. There are two modes:
 
-In **Cluster View**, you compare Jambalaya vs Pepper clusters on the five Edutopia standards:
+In **Cluster View**, you compare Jambalaya vs Pepper(dummy data) clusters on the five Edutopia standards:
 1. Seat-to-Learner Ratio (need at least 1:1)
 2. Textbook-to-Learner Ratio (need at least 1:1)  
 3. Learners per Classroom (max 53:1)
