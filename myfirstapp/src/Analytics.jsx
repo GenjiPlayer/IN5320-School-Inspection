@@ -294,57 +294,208 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSchoolId, schools]);
 
-    const createChartConfig = (metricKey, label, color) => {
+    const calculateClusterStats = (metricKey) => {
         if (!timeSeries || timeSeries.length === 0) return null;
 
+        const values = timeSeries.map((p) => p[metricKey]).filter((v) => v != null);
+        if (values.length === 0) return null;
+
+        const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+        const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+        const stdDev = Math.sqrt(variance);
+
+        return { avg, stdDev };
+    };
+
+    const getSeverityColor = (severity) => {
+        if (severity === "critical") return "#d32f2f";
+        if (severity === "limited") return "#fb8c00";
+        if (severity === "adequate") return "#43a047";
+        return "#757575";
+    };
+
+    const createChartConfig = (metricKey, label, color, currentValue, standard) => {
+        if (!timeSeries || timeSeries.length === 0) return null;
+
+        const clusterStats = calculateClusterStats(metricKey);
+        const dataPoints = timeSeries.map((p) => p[metricKey]);
+        const categories = timeSeries.map((p) => p.month);
+
+        const areaData = clusterStats
+            ? categories.map(() => [
+                  Math.max(0, clusterStats.avg - clusterStats.stdDev),
+                  clusterStats.avg + clusterStats.stdDev,
+              ])
+            : [];
+
+        const clusterAvgData = clusterStats ? categories.map(() => clusterStats.avg) : [];
+
+        const plotLines = [];
+        const s = MINIMUM_STANDARDS[metricKey] || {};
+        if (s.min !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: s.min,
+                width: 2,
+                label: {
+                    text: `Min: ${s.min}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+        if (s.max !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: s.max,
+                width: 2,
+                label: {
+                    text: `Max: ${s.max}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+
+        const status = getStatusForMetric(currentValue, standard);
+        const finalPointColor = getSeverityColor(status.severity);
+
         return {
-            chart: { type: "line", height: 260 },
+            chart: { type: "line", height: 320, backgroundColor: "#ffffff" },
             title: { text: "" },
             xAxis: {
-                categories: timeSeries.map((p) => p.month),
+                categories,
+                gridLineColor: "#f0f0f0",
             },
             yAxis: {
                 title: { text: label },
                 gridLineColor: "#e5e7eb",
-                plotLines: (() => {
-                    const s = MINIMUM_STANDARDS[metricKey] || {};
-                    if (s.min !== undefined) {
-                        return [
-                            {
-                                color: "#f44336",
-                                dashStyle: "Dash",
-                                value: s.min,
-                                width: 2,
-                                label: { text: "min" },
-                            },
-                        ];
-                    }
-                    if (s.max !== undefined) {
-                        return [
-                            {
-                                color: "#f44336",
-                                dashStyle: "Dash",
-                                value: s.max,
-                                width: 2,
-                                label: { text: "max" },
-                            },
-                        ];
-                    }
-                    return [];
-                })(),
+                plotLines,
             },
             credits: { enabled: false },
-            tooltip: { shared: true },
+            tooltip: {
+                shared: true,
+                crosshairs: true,
+            },
             series: [
+                clusterStats && {
+                    name: "Cluster ±1 SD",
+                    data: areaData,
+                    type: "arearange",
+                    lineWidth: 0,
+                    color: "#bbdefb",
+                    fillOpacity: 0.3,
+                    zIndex: 0,
+                    marker: { enabled: false },
+                    enableMouseTracking: false,
+                },
+                clusterStats && {
+                    name: "Cluster Average",
+                    data: clusterAvgData,
+                    color: "#1976d2",
+                    dashStyle: "Dash",
+                    lineWidth: 2,
+                    zIndex: 1,
+                    marker: { enabled: false },
+                },
                 {
                     name: label,
-                    data: timeSeries.map((p) => p[metricKey]),
+                    data: dataPoints.map((val, idx) => ({
+                        y: val,
+                        marker: {
+                            enabled: true,
+                            radius: idx === dataPoints.length - 1 ? 6 : 4,
+                            fillColor: idx === dataPoints.length - 1 ? finalPointColor : "#e0e0e0",
+                        },
+                        dataLabels: {
+                            enabled: idx === dataPoints.length - 1,
+                            format: "{y:.2f}",
+                            backgroundColor: finalPointColor,
+                            color: "#ffffff",
+                            borderRadius: 3,
+                            padding: 4,
+                            style: { fontSize: "11px", fontWeight: "bold" },
+                        },
+                    })),
                     color,
                     lineWidth: 2,
-                    marker: { radius: 3 },
+                    zIndex: 2,
+                    dataLabels: { enabled: false },
                 },
-            ],
+            ].filter(Boolean),
         };
+    };
+
+    const generateRecommendation = (metricKey, value, standard) => {
+        if (value === null || value === undefined || isNaN(value)) {
+            return "No data available to generate recommendation.";
+        }
+
+        const status = getStatusForMetric(value, standard);
+        if (status.severity === "adequate") {
+            return "This metric meets the required standard. Continue monitoring.";
+        }
+
+        if (metricKey === "seatToLearner" && standard.min !== undefined) {
+            const deficit = standard.min - value;
+            if (deficit > 0) {
+                const latest = timeSeries[timeSeries.length - 1];
+                const learnersCount = latest?.learners || 0;
+                const additionalSeats = Math.ceil(deficit * learnersCount);
+                return `Need for approximately ${additionalSeats} additional seats to reach a full 1:1 seating ratio.`;
+            }
+        }
+
+        if (metricKey === "textbookToLearner" && standard.min !== undefined) {
+            const deficit = standard.min - value;
+            if (deficit > 0) {
+                const latest = timeSeries[timeSeries.length - 1];
+                const learnersCount = latest?.learners || 0;
+                const additionalBooks = Math.ceil(deficit * learnersCount);
+                return `Need for approximately ${additionalBooks} additional textbooks to achieve 1:1 ratio.`;
+            }
+        }
+
+        if (metricKey === "learnersPerClassroom" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const latest = timeSeries[timeSeries.length - 1];
+                const currentClassrooms = latest?.classrooms || 1;
+                const neededClassrooms = Math.ceil(excess / standard.max);
+                return `Approximately ${neededClassrooms} additional classroom(s) needed to reduce overcrowding.`;
+            }
+        }
+
+        if (metricKey === "learnersPerTeacher" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const latest = timeSeries[timeSeries.length - 1];
+                const learnersCount = latest?.learners || 0;
+                const additionalTeachers = Math.ceil(learnersCount / standard.max - (latest?.teachers || 0));
+                return `Need for approximately ${additionalTeachers} additional teacher(s) to meet the standard ratio.`;
+            }
+        }
+
+        if (metricKey === "learnersPerToilet" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const latest = timeSeries[timeSeries.length - 1];
+                const learnersCount = latest?.learners || 0;
+                const additionalToilets = Math.ceil(learnersCount / standard.max - (latest?.toilets || 0));
+                return `Need for approximately ${additionalToilets} additional toilet(s) to meet hygiene standards.`;
+            }
+        }
+
+        if (metricKey === "genderParityIndex" && standard.target !== undefined) {
+            const diff = Math.abs(value - standard.target);
+            if (diff > 0.1) {
+                return `Gender imbalance detected. Current ratio is ${value.toFixed(2)}. Target is ${standard.target}.`;
+            }
+        }
+
+        return "This metric requires attention to meet standards.";
     };
 
     const metrics = ratios
@@ -493,14 +644,29 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                                         {isOpen && (
                                             <div className={classes.metricDetails}>
-                                                <p className={classes.metricDescription}>
-                                                    {metric.description}
-                                                </p>
+                                                <div
+                                                    className={`${classes.chartHeader} ${
+                                                        classes[`chartHeader${status.severity}`]
+                                                    }`}
+                                                >
+                                                    <span className={classes.chartHeaderText}>
+                                                        {metric.label}: {formatRatio(metric.value)}{" "}
+                                                        {metric.standard.min !== undefined
+                                                            ? `(Target ≥ ${metric.standard.min})`
+                                                            : metric.standard.max !== undefined
+                                                            ? `(Target ≤ ${metric.standard.max})`
+                                                            : metric.standard.target !== undefined
+                                                            ? `(Target = ${metric.standard.target})`
+                                                            : ""}
+                                                    </span>
+                                                </div>
 
                                                 {createChartConfig(
                                                     metric.key,
                                                     metric.label,
-                                                    metric.color
+                                                    metric.color,
+                                                    metric.value,
+                                                    metric.standard
                                                 ) ? (
                                                     <div className={classes.chartWrapper}>
                                                         <HighchartsReact
@@ -508,7 +674,9 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                                                             options={createChartConfig(
                                                                 metric.key,
                                                                 metric.label,
-                                                                metric.color
+                                                                metric.color,
+                                                                metric.value,
+                                                                metric.standard
                                                             )}
                                                         />
                                                     </div>
@@ -518,6 +686,22 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                                                         metric.
                                                     </div>
                                                 )}
+
+                                                <div className={classes.metricAnalysis}>
+                                                    <p className={classes.metricDescription}>
+                                                        <strong>Description:</strong>{" "}
+                                                        {metric.description}
+                                                    </p>
+
+                                                    <p className={classes.recommendation}>
+                                                        <strong>Recommendation:</strong>{" "}
+                                                        {generateRecommendation(
+                                                            metric.key,
+                                                            metric.value,
+                                                            metric.standard
+                                                        )}
+                                                    </p>
+                                                </div>
                                             </div>
                                         )}
                                     </div>
