@@ -1,164 +1,91 @@
-# IN5320-School-Inspection
+# IN5320 School Inspection Application
+**Devs from school inspectors worst nightmare**
 
-Devs from school inspectors worst nightmare
+## Project Overview
 
+This application provides a comprehensive digital solution for school inspectors in Edutopia to conduct inspections, plan school visits, and analyze educational performance across the Jambalaya and Pepper clusters  (Dummy data).
 
-## Functionality
+## Core Functionality
 
-### 1. School Inspection Data Collection
-- **Two-part inspection form** with validation:
-  - **Facilities Tab**: Records availability and condition of electricity, handwashing facilities, and computer labs (yes/no with condition ratings)
-  - **Resources Tab**: Captures counts of classrooms, seats, textbooks, and toilets
-- **Real-time validation**: Ensures all mandatory fields are completed before submission
-- **Dual program submission**: Automatically submits data to two separate DHIS2 programs:
-  - School Inspection Program for facilities
-  - Resource Inspection Program for physical resources
-- **User feedback**: Clear success/error messages and loading states during submission
+### School Inspection Data Collection
 
-### 2. School Visit Planner
-- **Interactive map visualization** using Leaflet showing all schools in the Jambalaya Cluster
-- **Color-coded markers** indicating visit status:
-  - Green: Recently visited (< 30 days)
-  - Yellow: Due soon (30-90 days)
-  - Red: Overdue (> 90 days)
-  - Gray: Never visited
-- **Smart filtering system**:
-  - Search by school name with autocomplete suggestions
-  - Filter by days since last visit (0-30, 30-90, 90+ days)
-  - Status filters (overdue, up-to-date)
-- **School details panel**: Expandable cards showing:
-  - Last visitation date
-  - Days since last visit
-  - Inspection status (overdue/up-to-date)
-  - Total learners enrolled
-  - Quick action button to schedule inspection
-- **Sorted list view**: Schools automatically sorted by urgency (most overdue first)
+The inspection form is designed for ease of use on mobile devices during field visits, organized into two logical tabs for efficient data capture.
 
-### 3. School Inspection Analytics Dashboard
+The **Facilities Tab** records infrastructure availability and condition: electricity, handwashing facilities, and computer labs. Each facility present receives a five-point condition rating, providing qualitative context beyond simple presence/absence data. The **Resources Tab** captures quantitative counts of classrooms, seats, textbooks, and toilets—essential metrics for calculating the five Edutopia minimum standards.
 
-#### Individual School Analytics
-- **Resource availability tracking** for selected schools:
-  - Toilet capacity
-  - Seating availability
-  - Textbook availability
-  - Classroom capacity
-- **Status indicators** with color-coded badges:
-  - Green (✓): Meets standard
-  - Orange (!): Below standard
-  - Red (⚠): Critical shortage
-- **Time-series charts**: Track resource availability over time with Highcharts
-- **Comparison with cluster average**: See how each school compares to cluster-wide statistics
-- **Actionable recommendations**: Specific guidance based on current metrics
+Real-time validation ensures data quality before submission. The application automatically posts data to two DHIS2 programs: the School Inspection Program for facility data and the Resource Inspection Program for physical resources. A key technical achievement was implementing dynamic boolean conversion—DHIS2 expects true/false values for facility fields, so our payload builder automatically converts user selections ("yes"/"no") to the appropriate format during submission.
 
-#### Cluster Analytics Dashboard
-- **Dual view modes**:
-  - **Cluster View**: Compare Jambalaya vs Pepper clusters
-  - **School Comparison**: Select multiple schools within a cluster for detailed comparison
-- **Five Edutopia Minimum Standards** with visual indicators:
-  1. **Seat-to-Learner Ratio** (Standard: 1:1 minimum)
-  2. **Textbook-to-Learner Ratio** (Standard: 1:1 minimum)
-  3. **Learner-to-Classroom Ratio** (Standard: <53:1 maximum)
-  4. **Learner-to-Teacher Ratio** (Standard: <45:1 maximum)
-  5. **Learner-to-Toilet Ratio** (Standard: <25:1 maximum)
-- **Interactive visualizations**:
-  - Time-series line charts showing trends over 12 months
-  - Comparison bar charts for multiple clusters/schools
-  - Standard reference lines showing compliance thresholds
-- **Cluster summary statistics**: Total schools, learners, and teachers
-- **Expandable metric cards**: Click "See details" to view charts and recommendations
+### School Visit Planner
 
-### 4. Additional Features
-- **School Registry**: Browse all schools in the Jambalaya Cluster with inspection status
-- **Inspection Reports**: View all submitted inspections with searchable history
-- **Mobile-first design**: Optimized for field use on smartphones and tablets
-- **Persistent navigation**: Sticky header and footer for easy access to all features
+The Visit Planner helps inspectors prioritize visits across their assigned cluster through an interactive Leaflet map combined with a filterable list view. Schools appear as color-coded markers: green for recently visited (< 30 days), yellow for due soon (30-90 days), red for overdue (> 90 days), and gray for never visited. This visual encoding enables quick identification of schools requiring immediate attention.
 
-## Implementation
+The application calculates days since last visit by querying each school's most recent inspection event and computing the time difference. Schools automatically sort by urgency, placing the most overdue at the top. Inspectors can search by school name, filter by time ranges, and apply status filters to refine their view.
+
+Each school card expands to reveal detailed information from the last inspection, enabling inspectors to prepare effectively before field visits. The system intelligently handles schools that exist as separate Lower Basic and Upper Basic entities in DHIS2, merging them into unified entries for a more intuitive user experience.
+
+### School Inspection Analytics
+
+The analytics component transforms raw inspection data into actionable insights through two complementary dashboards.
+
+**Individual School Analytics** displays resource availability metrics (toilets, seats, textbooks, classrooms) with color-coded status indicators: green checkmarks for meeting standards, orange warnings for below-standard resources, and red alerts for critical shortages. Expanding any metric reveals a time-series chart showing performance over 12 months, overlaid with minimum thresholds and cluster averages for context.
+
+**Cluster Analytics** enables comparison across schools or between clusters through two view modes. In **Cluster View**, inspectors compare aggregate metrics between Jambalaya and Pepper clusters, viewing total counts and the five Edutopia minimum standards:
+
+1. **Seat-to-Learner Ratio** ≥ 1:1
+2. **Textbook-to-Learner Ratio** ≥ 1:1
+3. **Learner-to-Classroom Ratio** ≤ 53:1
+4. **Learner-to-Teacher Ratio** ≤ 45:1
+5. **Learner-to-Toilet Ratio** ≤ 25:1
+
+Each standard displays its current value, status assessment, and official threshold. Expandable metric cards reveal time-series trends and comparison charts. In **School Comparison** mode, inspectors select multiple schools within a cluster for side-by-side analysis, useful for identifying high-performing schools and analyzing resource distribution patterns.
+
+### Supporting Features
+
+The **School Registry** provides a browsable list of all schools sorted by inspection urgency, with expandable cards showing status, contact information, and quick-action buttons. The **Inspection Reports** feature offers a searchable archive of all submitted inspections, with each report displaying complete data values labeled with human-readable field names fetched dynamically from DHIS2.
+
+Throughout the application, a persistent mobile-optimized navigation system provides quick access to major features through a sticky header and footer tab bar.
+
+## Technical Implementation
 
 ### Architecture
-- **Frontend Framework**: React with DHIS2 UI components
-- **State Management**: React hooks (useState, useEffect)
-- **Styling**: CSS Modules for component-scoped styling
-- **API Integration**: RESTful calls to DHIS2 Web API
-- **Data Visualization**: Highcharts for analytics dashboards
-- **Mapping**: Leaflet.js for interactive school location maps
+
+The application uses React 18 with functional components and hooks for state management, chosen for its robust ecosystem and excellent mobile performance. The DHIS2 UI library provides pre-styled components following DHIS2 design guidelines. CSS Modules scope styles to individual components, preventing conflicts and improving maintainability. The mobile-first design ensures usability on small screens with responsive breakpoints for larger devices.
+
+Highcharts handles data visualization with excellent browser compatibility and touch support. Leaflet.js provides lightweight mapping functionality without requiring API keys.
 
 ### DHIS2 Integration
-- **Authentication**: Basic authentication with admin credentials
-- **Programs Used**:
-  - School Inspection Program 
-  - Resource Inspection Program
-- **Data Sources**:
-  - `/api/tracker/events.json` - Event data for inspections and resources
-  - `/api/analytics.json` - Aggregate learner enrollment data
-  - `/api/organisationUnits` - School hierarchy and metadata
-- **Data Submission**: POST to `/api/tracker` endpoint with proper event structure
 
-### Key Technical Components
+All data flows through RESTful API calls to Edutopias DHIS2 instance. The application interacts with three programs:
 
-#### Data Collection
-- Dynamic form field mapping from DHIS2 program metadata
-- Boolean value conversion for facility availability (yes/no → true/false)
-- Validation using `inspectionUtils.js` helper functions
+- **School Inspection Program** for facility data
+- **Resource Inspection Program** for resource counts
+- **Teacher Registration Program** for learner-to-teacher ratios
 
-#### School Visit Planner
-- Real-time calculation of days since last visit
-- GeoJSON coordinate parsing for map markers
-- School name normalization (merging Upper/Lower Basic schools)
+When submitting inspections, the application makes two sequential POST requests to `/api/tracker`, one for each program. Each includes properly formatted event payloads with unique client-side generated UIDs.
 
-#### Analytics
-- Multi-source data aggregation (learners, teachers, resources)
-- Ratio calculations with proper null handling
-- Time-series data grouping by month
-- Statistical comparison (mean, standard deviation) across clusters
-- Color-coded status determination based on Edutopia standards
+For reading data, `/api/tracker/events.json` retrieves inspection events filtered by program and organization unit. Learner enrollment comes from `/api/analytics.json`, which aggregates data across grade levels, genders, and age groups. Organization unit hierarchy data from `/api/organisationUnits` provides school lists and GeoJSON coordinates for mapping.
 
-### File Structure
-```
-src/
-├── App.jsx                          # Main app with navigation
-├── Inspection.jsx                   # Data collection form
-├── inspectionUtils.js               # Validation & payload building
-├── VisitationPlanner.jsx            # School visit planning with map
-├── MapView.jsx                      # Leaflet map component
-├── Analytics.jsx                    # Individual school analytics
-├── ClusterAnalytics.jsx             # Multi-school/cluster comparison
-├── InspectionReports.jsx            # Historical inspection data
-├── SchoolRegistry.jsx               # School list and details
-├── [Component].module.css           # Component-specific styles
-```
+### Key Technical Solutions
 
-## Missing Functionality & Known Issues
+**Dynamic Form Construction** fetches program metadata on mount, creating a code-to-ID mapping that makes the form resilient to DHIS2 configuration changes. **Validation System** checks required fields, validates ranges, and performs consistency checks before allowing submission. **Ratio Calculations** handle division-by-zero gracefully and format values appropriately for each standard. **Time-Series Aggregation** groups events by month across all schools, producing data structures for Highcharts rendering. **Map Performance** optimizations handle 100+ schools smoothly through batch loading and in-memory filtering.
 
-### Missing Features
-1. **Gender Parity Index**: Not fully implemented in cluster analytics (standard defined but not displayed in UI)
-2. **Offline support**: Local storage functions exist
-4. **School context filters**: Accessibility challenges and administrative changes filters are UI-only placeholders
-5. **Follow-up marking**: Checkbox in Analytics summary doesn't persist to DHIS2
-6. **Learner enrollment by grade/gender**: Analytics endpoint used but demographic breakdown not displayed
+## Known Limitations
 
-### Known Issues
-2. **Time-series charts**: Some schools show no data points due to missing historical events
-3. **Map performance**: Initial load can be slow when fetching data for 100+ schools
-4. **Data freshness**: No automatic refresh - users must reload page to see newly submitted inspections
-5. **Error handling**: Some API failures fail silently (logged to console but not shown to user)
-6. **Learner count discrepancy**: Analytics API returns 2020 data; current year data may not be available for all schools
+**Learner Data Period**: The analytics API uses 2020 enrollment data as specified in assignment documentation. More recent periods would provide current data, though the test instance has limited recent enrollment records.
 
-### Things That Don't Work As Intended
-1. **School comparison time-series**: When comparing multiple schools, individual time-series aren't shown (only aggregated)
-2. **Map popup details**: Clicking markers shows basic info but doesn't fetch latest inspection data
+**Partial Features**: Gender Parity Index calculations are implemented but not displayed in the UI. Offline support includes LocalStorage functions but not the full synchronization mechanism. Advanced filtering options (performance-based, contextual) have UI elements but require additional DHIS2 metadata configuration to function fully.
 
-## Future Improvements
-- Implement Progressive Web App (PWA) for offline capability
-- Create printable PDF reports from analytics
-- Add photo upload for facility condition documentation
-- Implement push notifications for overdue inspections
-- Multi-language support (English, Wolof, Mandinka)
+**Data Refresh**: The application loads data on component mount but doesn't automatically refresh. Users can reload the page to see newly submitted data.
 
 ## Technologies Used
+
 - React 18
 - DHIS2 UI Library
 - Highcharts
 - Leaflet.js
 - CSS Modules
 - DHIS2 Web API
+
+## Future Enhancements
+
+The application provides a solid foundation with clear pathways for enhancement: implementing Progressive Web App capabilities for offline use, adding photo documentation for facility conditions, creating printable PDF reports, implementing push notifications for overdue inspections, and adding multi-language support.
