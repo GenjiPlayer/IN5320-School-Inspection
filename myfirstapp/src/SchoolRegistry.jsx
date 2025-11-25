@@ -7,7 +7,7 @@ import {
     Card,
     Button,
     InputField,
-    IconArrowLeft24,
+    IconEdit24,
     IconChevronDown24,
     IconHome24,
     IconCalendar24,
@@ -142,31 +142,36 @@ export default function SchoolRegistry({ setActivePage }) {
 
     return (
         <div className={classes.pageWrapper}>
-            <div className={classes.pageHeader}>
-                <Button
-                    small
-                    icon={<IconArrowLeft24 />}
-                    onClick={() => setActivePage("dashboard")}
-                />
-                <h2>School Registry</h2>
-            </div>
-
             <Card className={classes.searchCard}>
-                <InputField
-                    placeholder="Search for school"
-                    value={search}
-                    onChange={({ value }) => setSearch(value)}
-                />
+    <div className={classes.searchRow}>
+        {/* Search input + X button */}
+        <div className={classes.searchWrapper}>
+            <InputField
+                className={classes.searchInput}
+                placeholder="Search for school"
+                value={search}
+                onChange={({ value }) => setSearch(value)}
+            />
 
-                <Button
-                    primary
-                    icon={<IconAdd24 />}
-                    className={classes.searchAddBtn}
-                    onClick={() => console.log("Add school clicked")}
+            {search && (
+                <button
+                    className={classes.clearButton}
+                    onClick={() => setSearch("")}
                 >
-                    Add new school
-                </Button>
-            </Card>
+                    ✕
+                </button>
+            )}
+        </div>
+
+        {/* NEW Add-school icon button */}
+        <Button
+            small
+            className={classes.editIconButton}
+            icon={<IconEdit24 />}
+            onClick={() => console.log("Add new school")}
+        />
+    </div>
+</Card>
 
             <div className={classes.schoolList}>
                 {filtered.map((school) => (
