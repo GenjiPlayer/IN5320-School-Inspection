@@ -323,18 +323,19 @@ export default function Inspection({ setActivePage }) {
                 throw new Error("Failed to submit resource inspection data");
             }
 
-            // ========== SUCCESS ==========
-            setSubmitStatus({
-                type: "success",
-                message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
-            });
+// ========== SUCCESS ==========
+setSubmitStatus({
+    type: "success",
+    message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
+});
 
-            // Reset form
-            setTimeout(() => {
-                resetForm();
-                resetFormResource();
-                setActiveStep(0);
-            }, 2000);
+// Reset & redirect to home page
+setTimeout(() => {
+    resetForm();
+    resetFormResource();
+    setActiveStep(0);
+    setActivePage("Home");
+}, 1500);
 
         } catch (err) {
             console.error("Submission error:", err);
@@ -578,13 +579,9 @@ export default function Inspection({ setActivePage }) {
                             />
                         </div>
 
-                        {ratios.totalLearners > 0 && (
-                            <div className={classes.infoBox}>
-                                <IconInfoFilled24 />
-                                <span>Total learners: <strong>{ratios.totalLearners}</strong></span>
-                            </div>
-                        )}
-
+{ratios.totalLearners > 0 && (
+    <NoticeBox info title={`Total learners: ${ratios.totalLearners}`} />
+)}
                         <h4 className={classes.subsectionTitle}>Teaching Staff</h4>
                         <div className={classes.formRow}>
                             <InputField
@@ -611,12 +608,9 @@ export default function Inspection({ setActivePage }) {
                             />
                         </div>
 
-                        {ratios.totalTeachers > 0 && (
-                            <div className={classes.infoBox}>
-                                <IconInfoFilled24 />
-                                <span>Total teachers: <strong>{ratios.totalTeachers}</strong></span>
-                            </div>
-                        )}
+{ratios.totalTeachers > 0 && (
+    <NoticeBox info title={`Total teachers: ${ratios.totalTeachers}`} />
+)}
                     </div>
 
                     <div className={classes.navigationButtons}>

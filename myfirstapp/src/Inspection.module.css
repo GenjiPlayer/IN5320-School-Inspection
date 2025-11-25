@@ -124,12 +124,12 @@
 .formSection {
     display: flex;
     flex-direction: column;
-    gap: 20px;
+    gap: 12px;
     margin-bottom: 24px;
 }
 
 .subsectionTitle {
-    margin: 16px 0 12px 0;
+margin: 8px 0 4px 0;
     font-size: 16px;
     font-weight: 600;
     color: #1a2b49;
@@ -138,29 +138,7 @@
 .formRow {
     display: flex;
     flex-direction: column;
-    gap: 16px;
-}
-
-
-/* =========================================
-   INFO BOX
-========================================= */
-.infoBox {
-    display: flex;
-    align-items: center;
-    gap: 10px;
-    padding: 12px 16px;
-    background: #e3f2fd;
-    border-radius: 8px;
-    border-left: 4px solid #2196f3;
-    color: #1565c0;
-    font-size: 14px;
-    font-weight: 500;
-}
-
-.infoBox svg {
-    flex-shrink: 0;
-    color: #2196f3;
+    gap: 6px;
 }
 
 /* =========================================
@@ -168,7 +146,7 @@
 ========================================= */
 .ratiosPreview {
     margin-top: 24px;
-    padding: 20px;
+    padding: 16px;
     background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
     border-radius: 12px;
     border: 1px solid #e7edf5;
@@ -250,78 +228,81 @@
     border-top: 1px solid #e7edf5;
 }
 
-/* =========================================
-   SUMMARY SECTIONS
-========================================= */
+/* Section wrapper */
 .summarySection {
-    margin-bottom: 24px;
-    padding-bottom: 20px;
-    border-bottom: 1px solid #e7edf5;
+    padding: 12px 0;
+    margin: 0;
+    border-bottom: 1px solid #e0e6ef; /* DHIS2 grey divider */
 }
 
 .summarySection:last-child {
-    margin-bottom: 0;
-    padding-bottom: 0;
     border-bottom: none;
 }
 
 .summarySection h4 {
-    margin: 0 0 16px 0;
-    font-size: 16px;
+    margin: 0 0 8px 0;
+    font-size: 14px;
     font-weight: 600;
     color: #1a2b49;
 }
 
+/* Row layout (DHIS2 table-like) */
 .summaryRow {
     display: flex;
     justify-content: space-between;
     align-items: center;
-    padding: 8px 0;
-    gap: 16px;
+    padding: 4px 0;           /* compact DHIS2 spacing */
+    font-size: 13px;
 }
 
 .summaryLabel {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 500;
-    color: #6a7280;
+    color: #5a6a7a;           /* DHIS2 neutral text */
 }
 
 .summaryValue {
-    font-size: 14px;
+    font-size: 13px;
     font-weight: 600;
     color: #1a2b49;
     text-align: right;
 }
 
+/* Grid data blocks (DHIS2 analytics-style panels) */
 .summaryGrid {
     display: grid;
-    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
-    gap: 16px;
+    grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+    gap: 12px;                /* tighter gap */
+    margin-top: 8px;
 }
 
 .summaryGrid > div {
-    padding: 16px;
-    background: #f8f9fa;
-    border-radius: 8px;
+    background: #f2f5fa;      /* DHIS2 light system grey */
+    border: 1px solid #e0e6ef;
+    border-radius: 4px;       /* DHIS2 uses 3–4px */
+    padding: 12px;
 }
 
+/* Labels inside grid */
 .summaryGrid .summaryLabel {
-    display: block;
-    margin-bottom: 8px;
-    font-size: 13px;
+    margin: 0 0 4px 0;
+    font-size: 12px;
+    color: #5a6a7a;
+    font-weight: 500;
 }
 
+/* Big values */
 .summaryGrid .summaryValue {
-    display: block;
-    font-size: 24px;
+    font-size: 20px;
     font-weight: 700;
     color: #1a2b49;
-    text-align: left;
+    margin-bottom: 4px;
 }
 
+/* Small detail text */
 .summaryDetail {
-    margin-top: 6px;
-    font-size: 13px;
+    margin: 0;
+    font-size: 12px;
     color: #6a7280;
 }
 
