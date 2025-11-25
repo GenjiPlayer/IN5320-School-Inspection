@@ -325,7 +325,7 @@ function Dashboard({
                             setHeaderTextColor("#ffffffff");
                             setHeaderIconColor("#ffffffff");
                             setHeaderTitle("Cluster Analytics");
-                            setActivePage("analytics"); //ENDRET TIL ANALYTICS FOR Å FIKSE LAYOUT
+                            setActivePage("clusterAnalytics"); 
                         }}
                     >
                         <Card className={classes.programCard}>
