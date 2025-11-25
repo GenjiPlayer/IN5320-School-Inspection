@@ -1,138 +1,383 @@
 import React, { useState, useEffect, useRef } from "react";
+import classes from "./VisitationPlanner.module.css";
+import MapView from "./MapView"; // Leaflet map component
 import {
-    Card,
+    Input,
     Button,
-    InputField,
+    Modal,
+    ModalTitle,
+    ModalContent,
+    ModalActions,
+    Checkbox,
     CircularLoader,
     NoticeBox,
-    IconArrowLeft24,
     IconHome24,
     IconChevronDown24,
-    IconCalendar24,
+    IconArrowLeft24
 } from "@dhis2/ui";
 
-import classes from "./VisitationPlanner.module.css";
-import MapView from "./MapView.jsx";
-
-const API_BASE = "https://research.im.dhis2.org/in5320g20/api";
-const CREDENTIALS = "Basic " + btoa("admin:district");
-const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
-const JAMBALAYA_CLUSTER_ID = "Jj1IUjjPaWf";
-
 export default function VisitationPlanner({ setActivePage }) {
-    const [schools, setSchools] = useState([]);
-    const [visitData, setVisitData] = useState([]);
+    // Filter & UI state
+    const searchRef = useRef(null);
+    const [searchQuery, setSearchQuery] = useState("");
+    const [expandedSchools, setExpandedSchools] = useState([]);
+    const [filterModalOpen, setFilterModalOpen] = useState(false);
+    const [selectedFilters, setSelectedFilters] = useState({
+        status: [],
+        performance: [],
+        resources: [],
+        context: [],
+    });
+    const [showSuggestions, setShowSuggestions] = useState(false);
+    const [selectedSchool, setSelectedSchool] = useState(null);
+    const [activeRange, setActiveRange] = useState(null); // 0–30 / 30–90 / 90+
+
+    // API data state
+    const [allSchools, setAllSchools] = useState([]);
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [search, setSearch] = useState("");
-    const [openSchoolId, setOpenSchoolId] = useState(null);
-    const [selectedSchool, setSelectedSchool] = useState(null);
-    const [showSuggestions, setShowSuggestions] = useState(false);
 
-    const searchRef = useRef(null);
+    const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 
     useEffect(() => {
-        fetchSchools();
+        fetchClustersAndSchools();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
+// Close suggestions when clicking outside search box
     useEffect(() => {
-        function handleOutside(e) {
-            if (searchRef.current && !searchRef.current.contains(e.target)) {
+        function handleClickOutside(event) {
+            if (searchRef.current && !searchRef.current.contains(event.target)) {
                 setShowSuggestions(false);
             }
         }
-        document.addEventListener("mousedown", handleOutside);
-        return () => document.removeEventListener("mousedown", handleOutside);
+
+        document.addEventListener("mousedown", handleClickOutside);
+        return () => document.removeEventListener("mousedown", handleClickOutside);
     }, []);
 
-    const fetchSchools = async () => {
+
+    const fetchClustersAndSchools = async () => {
         try {
-            const res = await fetch(
-                `${API_BASE}/organisationUnits?fields=id,name,geometry&filter=parent.id:eq:${JAMBALAYA_CLUSTER_ID}&filter=geometry:!null:all`,
-                { headers: { Authorization: CREDENTIALS } }
+            // Fetch all schools at level 5 (all schools in the database)
+            const schoolRes = await fetch(
+                "https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&fields=id,name,geometry,parent&paging=false",
+                {
+                    headers: {
+                        Authorization: "Basic " + btoa("admin:district"),
+                    },
+                }
             );
-            const data = await res.json();
-            const schoolList = data.organisationUnits || [];
-            setSchools(schoolList);
-            await fetchLastVisits(schoolList);
+
+            const schoolData = await schoolRes.json();
+            const allSchoolsList = schoolData.organisationUnits || [];
+
+            console.log(`Found ${allSchoolsList.length} schools total`);
+
+            // Fetch last visit data for each school
+            await fetchSchoolsWithVisitData(allSchoolsList);
         } catch (err) {
-            setError("Failed to fetch schools");
+            setError(
+                "Failed to fetch data: " +
+                (err instanceof Error ? err.message : String(err))
+            );
             setLoading(false);
         }
     };
 
-    const fetchLastVisits = async (schoolList) => {
+    const fetchSchoolsWithVisitData = async (schoolList) => {
         const results = [];
 
         for (const school of schoolList) {
             try {
                 const res = await fetch(
-                    `${API_BASE}/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&order=occurredAt:desc&pageSize=1`,
-                    { headers: { Authorization: CREDENTIALS } }
+                    `https://research.im.dhis2.org/in5320g20/api/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&order=occurredAt:desc&pageSize=1`,
+                    {
+                        headers: {
+                            Authorization:
+                                "Basic " + btoa("admin:district"),
+                        },
+                    }
                 );
+
                 const data = await res.json();
                 const lastEvent = data.events?.[0];
-                const lastVisitDate = lastEvent?.occurredAt || lastEvent?.eventDate || null;
+                const lastVisitDate =
+                    lastEvent?.occurredAt ||
+                    lastEvent?.eventDate ||
+                    null;
 
-                const daysSinceVisit = lastVisitDate
-                    ? Math.floor((Date.now() - new Date(lastVisitDate).getTime()) / (1000 * 60 * 60 * 24))
-                    : 999;
+                // Calculate days since last visit
+                let lastVisitDays = null;
+                if (lastVisitDate) {
+                    const diffMs =
+                        Date.now() -
+                        new Date(lastVisitDate).getTime();
+                    lastVisitDays = Math.floor(
+                        diffMs / (1000 * 60 * 60 * 24)
+                    );
+                }
 
-                let markerColor = "#4caf50"; // Green - recently visited
-                if (daysSinceVisit > 90) markerColor = "#ff9800"; // Orange - overdue
-                if (daysSinceVisit > 180) markerColor = "#f44336"; // Red - severely overdue
+                // Determine marker color based on visit status
+                let markerColor = "red"; // default: overdue
+                if (lastVisitDays === null) {
+                    markerColor = "gray"; // never visited
+                } else if (lastVisitDays <= 30) {
+                    markerColor = "green"; // recently visited
+                } else if (lastVisitDays <= 90) {
+                    markerColor = "yellow"; // due soon
+                }
 
-                const [lng, lat] = school.geometry?.coordinates || [0, 0];
+                // Extract coordinates from geometry
+                let lat = 13.4432; // default Gambia coordinates
+                let lng = -15.3101;
+                if (school.geometry?.coordinates) {
+                    const [lngCoord, latCoord] =
+                        school.geometry.coordinates; // GeoJSON format: [lng, lat]
+                    lat = latCoord;
+                    lng = lngCoord;
+                }
 
                 results.push({
                     id: school.id,
                     name: school.name,
-                    lastVisitDate: lastVisitDate,
-                    lastVisitDays: daysSinceVisit,
-                    markerColor: markerColor,
-                    lat: lat,
-                    lng: lng,
-                    learners: 0, // Placeholder
+                    lastVisitDate,
+                    lastVisitDays: lastVisitDays ?? 999, // Use high number if never visited
+                    lat,
+                    lng,
+                    markerColor,
+                    learners:
+                        Math.floor(Math.random() * 500) + 200, // Placeholder - replace with actual data
+                    parentId: school.parent?.id || null,
+                    parentName:
+                        school.parent?.name || "Unknown Cluster",
                 });
             } catch (err) {
-                console.error("Error fetching events for", school.name, err);
+                console.error(
+                    "Error fetching events for",
+                    school.name,
+                    err
+                );
             }
         }
 
-        setVisitData(results);
+        // Merge schools with the same base name (e.g., "Bakadagi Lower Basic" and "Bakadagi Upper Basic")
+        const mergedSchools = [];
+        const schoolGroups = new Map();
+
+        results.forEach((school) => {
+            // Extract base school name (remove "Lower Basic", "Upper Basic", etc.)
+            const baseName = school.name
+                .replace(/\s+(Lower|Upper)\s+Basic.*$/i, "")
+                .replace(/\s+Basic.*$/i, "")
+                .trim();
+
+            if (!schoolGroups.has(baseName)) {
+                schoolGroups.set(baseName, {
+                    ...school,
+                    name: baseName,
+                    originalNames: [school.name],
+                    ids: [school.id],
+                });
+            } else {
+                const existing = schoolGroups.get(baseName);
+                existing.originalNames.push(school.name);
+                existing.ids.push(school.id);
+
+                // Keep the most recent visit date
+                if (school.lastVisitDays < existing.lastVisitDays) {
+                    existing.lastVisitDate = school.lastVisitDate;
+                    existing.lastVisitDays = school.lastVisitDays;
+                    existing.markerColor = school.markerColor;
+                    existing.lat = school.lat;
+                    existing.lng = school.lng;
+                }
+
+                // Sum learners
+                existing.learners += school.learners;
+            }
+        });
+
+        schoolGroups.forEach((school) => mergedSchools.push(school));
+
+        setAllSchools(mergedSchools);
         setLoading(false);
     };
 
-    const isOverdue = (date) => {
-        if (!date) return true;
-        const days = (Date.now() - new Date(date).getTime()) / (1000 * 60 * 60 * 24);
-        return days > 90;
+    const filterOptions = {
+        status: [
+            { id: "visitedThisMonth", label: "Visited this month" },
+            { id: "visited3Months", label: "Visited last 3 months" },
+            { id: "6monthsSince", label: "6+ months since visit" },
+            { id: "1yearSince", label: "1+ year since visit" },
+            { id: "urgentFollowUp", label: "Urgent follow-up" },
+            { id: "neverVisited", label: "Never visited" },
+        ],
+        performance: [
+            { id: "teacherShortage", label: "Teacher shortage" },
+            { id: "classroomShortage", label: "Classroom shortage" },
+            { id: "seatingShortage", label: "Seating shortage" },
+            { id: "toiletShortage", label: "Toilet shortage" },
+            { id: "textbookShortage", label: "Textbook shortage" },
+        ],
+        resources: [
+            { id: "resourceDrop", label: "Resource drop" },
+            { id: "resourceSurplus", label: "Resource surplus" },
+        ],
+        context: [
+            { id: "newSchool", label: "New school" },
+            { id: "newAdministration", label: "New administration" },
+            { id: "hardToReach", label: "Hard to reach area" },
+        ],
     };
 
-    const sortedData = [...visitData].sort((a, b) => {
-        return b.lastVisitDays - a.lastVisitDays; // Most overdue first
-    });
+    const ranges = [
+        { id: "0-30", label: "0–30" },
+        { id: "30-90", label: "30–90" },
+        { id: "90+", label: "90+" },
+    ];
 
-    const filteredData = sortedData.filter((s) =>
-        s.name.toLowerCase().includes(search.toLowerCase())
-    );
+    const handleFilterToggle = (category, filterId) => {
+        setSelectedFilters((prev) => {
+            const categoryFilters = prev[category];
+            const isSelected = categoryFilters.includes(filterId);
 
-    const suggestions = showSuggestions && search.length > 0
-        ? sortedData.filter((s) => s.name.toLowerCase().includes(search.toLowerCase())).slice(0, 5)
+            return {
+                ...prev,
+                [category]: isSelected
+                    ? categoryFilters.filter((id) => id !== filterId)
+                    : [...categoryFilters, filterId],
+            };
+        });
+    };
+
+    const clearAllFilters = () => {
+        setSelectedFilters({
+            status: [],
+            performance: [],
+            resources: [],
+            context: [],
+        });
+    };
+
+    // Get search suggestions based on search query
+    const searchSuggestions = showSuggestions
+        ? allSchools
+            .filter((school) =>
+                searchQuery.trim().length === 0
+                    ? true // show all when search is empty
+                    : school.name
+                        .toLowerCase()
+                        .startsWith(searchQuery.toLowerCase())
+            )
         : [];
 
-    const toggleOpen = (id) => {
-        setOpenSchoolId((prev) => (prev === id ? null : id));
+
+    const handleSelectSchool = (school) => {
+        setSelectedSchool(school);
+        setSearchQuery(school.name);
+        setShowSuggestions(false);
     };
 
-    const handleSchoolClick = (school) => {
-        setSelectedSchool(school);
-        setOpenSchoolId(school.id);
-    };
+    // Sort schools by last visit days (most overdue first)
+    const sortedSchools = [...allSchools].sort(
+        (a, b) => b.lastVisitDays - a.lastVisitDays
+    );
+
+    // Filtering logic: Days range + modal filters
+    const filteredSchools = sortedSchools.filter((school) => {
+        // 1) Range filter (0–30 / 30–90 / 90+)
+        let matchesRange = true;
+        if (activeRange === "0-30") {
+            matchesRange = school.lastVisitDays <= 30;
+        } else if (activeRange === "30-90") {
+            matchesRange =
+                school.lastVisitDays > 30 &&
+                school.lastVisitDays <= 90;
+        } else if (activeRange === "90+") {
+            matchesRange = school.lastVisitDays > 90;
+        }
+        if (!matchesRange) return false;
+
+        // 2) Modal filters
+        const hasAnyModalFilter =
+            selectedFilters.status.length > 0 ||
+            selectedFilters.performance.length > 0 ||
+            selectedFilters.resources.length > 0 ||
+            selectedFilters.context.length > 0;
+
+        if (!hasAnyModalFilter) return true;
+
+        // Status filters
+        let matchesStatus = true;
+        if (selectedFilters.status.length > 0) {
+            matchesStatus = false;
+            for (const filterId of selectedFilters.status) {
+                if (
+                    filterId === "visitedThisMonth" &&
+                    school.lastVisitDays <= 30
+                ) {
+                    matchesStatus = true;
+                    break;
+                }
+                if (
+                    filterId === "visited3Months" &&
+                    school.lastVisitDays <= 90
+                ) {
+                    matchesStatus = true;
+                    break;
+                }
+                if (
+                    filterId === "6monthsSince" &&
+                    school.lastVisitDays >= 180
+                ) {
+                    matchesStatus = true;
+                    break;
+                }
+                if (
+                    filterId === "1yearSince" &&
+                    school.lastVisitDays >= 365
+                ) {
+                    matchesStatus = true;
+                    break;
+                }
+                if (
+                    filterId === "neverVisited" &&
+                    school.lastVisitDays === 999
+                ) {
+                    matchesStatus = true;
+                    break;
+                }
+            }
+        }
+
+        // For nå: performance/resources/context pass-through
+        const matchesPerformance =
+            selectedFilters.performance.length === 0;
+        const matchesResources =
+            selectedFilters.resources.length === 0;
+        const matchesContext =
+            selectedFilters.context.length === 0;
+
+        return (
+            matchesRange &&
+            matchesStatus &&
+            matchesPerformance &&
+            matchesResources &&
+            matchesContext
+        );
+    });
 
     if (loading) {
         return (
-            <div style={{ display: "flex", justifyContent: "center", padding: "60px" }}>
+            <div
+                style={{
+                    display: "flex",
+                    justifyContent: "center",
+                    alignItems: "center",
+                    height: "100vh",
+                }}
+            >
                 <CircularLoader />
             </div>
         );
@@ -140,132 +385,370 @@ export default function VisitationPlanner({ setActivePage }) {
 
     if (error) {
         return (
-            <NoticeBox error title="Error loading data">
-                {error}
-            </NoticeBox>
+            <div style={{ padding: "20px" }}>
+                <NoticeBox error title="Error loading schools">
+                    {error}
+                </NoticeBox>
+            </div>
         );
     }
 
     return (
         <div className={classes.plannerContainer}>
             <div className={classes.pageHeader}>
-                <Button small icon={<IconArrowLeft24 />} onClick={() => setActivePage("dashboard")} />
-                <h2>Visitation Planner</h2>
+                <div className={classes.pageHeader}>
+                    <Button
+                        small
+                        icon={<IconArrowLeft24 />}
+                        onClick={() => setActivePage("dashboard")}
+                    />
+                    <h2>Visitation Planner</h2>
+                </div>
             </div>
 
-            {/* SEARCH BAR */}
-            <div className={classes.searchContainer} ref={searchRef}>
-                <InputField
-                    className={classes.searchInput}
-                    placeholder="Search schools..."
-                    value={search}
-                    onChange={({ value }) => {
-                        setSearch(value);
-                        setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
-                />
+            {/* Search Bar and Filter Button */}
+            <div className={classes.headerContainer}>
+                <div className={classes.searchContainer} ref={searchRef}>
 
-                {suggestions.length > 0 && (
-                    <div className={classes.suggestionsDropdown}>
-                        {suggestions.map((s) => (
+                    <Input
+                        className={classes.searchInput}
+                        type="text"
+                        placeholder="Search schools..."
+                        value={searchQuery}
+                        onChange={({ value }) => {
+                            setSearchQuery(value);
+                            setShowSuggestions(true);
+                            if (!value.trim()) {
+                                setSelectedSchool(null);
+                            }
+                        }}
+                        onFocus={() => {
+                            setShowSuggestions(true);
+                        }}
+                    />
+                    {/* Search Suggestions Dropdown */}
+                    {showSuggestions &&
+                        searchSuggestions.length > 0 && (
                             <div
-                                key={s.id}
-                                className={classes.suggestionItem}
-                                onClick={() => {
-                                    setSearch(s.name);
-                                    setSelectedSchool(s);
-                                    setOpenSchoolId(s.id);
-                                    setShowSuggestions(false);
-                                }}
+                                className={
+                                    classes.suggestionsDropdown
+                                }
                             >
-                                <span className={classes.suggestionIcon}>🏫</span>
-                                <span className={classes.suggestionName}>{s.name}</span>
-                                <span className={classes.suggestionMeta}>
-                                    {s.lastVisitDays === 999 ? "Never" : `${s.lastVisitDays}d ago`}
-                                </span>
+                                {searchSuggestions.map((school) => (
+                                    <div
+                                        key={school.id}
+                                        className={
+                                            classes.suggestionItem
+                                        }
+                                        onClick={() =>
+                                            handleSelectSchool(
+                                                school
+                                            )
+                                        }
+                                    >
+                                      <span className={classes.suggestionIcon}>
+    <IconHome24 />
+</span>
+                                        <span
+                                            className={
+                                                classes.suggestionName
+                                            }
+                                        >
+                                            {school.name}
+                                        </span>
+                                        <span
+                                            className={
+                                                classes.suggestionMeta
+                                            }
+                                        >
+                                            {school.lastVisitDays ===
+                                            999
+                                                ? "Never visited"
+                                                : `${school.lastVisitDays} days ago`}
+                                        </span>
+                                    </div>
+                                ))}
                             </div>
-                        ))}
-                    </div>
-                )}
+                        )}
+                </div>
+                <Button onClick={() => setFilterModalOpen(true)}>
+                    Filter
+                </Button>
             </div>
+
+            {/* Filter Modal */}
+            {filterModalOpen && (
+                <Modal
+                    onClose={() => setFilterModalOpen(false)}
+                    large
+                >
+                    <ModalTitle>Filters</ModalTitle>
+                    <ModalContent>
+                        {/* Status Section */}
+                        <div className={classes.filterSection}>
+                            <h3>Status</h3>
+                            {filterOptions.status.map((option) => (
+                                <Checkbox
+                                    key={option.id}
+                                    label={option.label}
+                                    checked={selectedFilters.status.includes(
+                                        option.id
+                                    )}
+                                    onChange={() =>
+                                        handleFilterToggle(
+                                            "status",
+                                            option.id
+                                        )
+                                    }
+                                />
+                            ))}
+                        </div>
+
+                        {/* Performance & standards Section */}
+                        <div className={classes.filterSection}>
+                            <h3>Performance & standards</h3>
+                            {filterOptions.performance.map(
+                                (option) => (
+                                    <Checkbox
+                                        key={option.id}
+                                        label={option.label}
+                                        checked={selectedFilters.performance.includes(
+                                            option.id
+                                        )}
+                                        onChange={() =>
+                                            handleFilterToggle(
+                                                "performance",
+                                                option.id
+                                            )
+                                        }
+                                    />
+                                )
+                            )}
+                        </div>
+
+                        {/* Resource changes Section */}
+                        <div className={classes.filterSection}>
+                            <h3>Resource changes</h3>
+                            {filterOptions.resources.map(
+                                (option) => (
+                                    <Checkbox
+                                        key={option.id}
+                                        label={option.label}
+                                        checked={selectedFilters.resources.includes(
+                                            option.id
+                                        )}
+                                        onChange={() =>
+                                            handleFilterToggle(
+                                                "resources",
+                                                option.id
+                                            )
+                                        }
+                                    />
+                                )
+                            )}
+                        </div>
+
+                        {/* School context Section */}
+                        <div className={classes.filterSection}>
+                            <h3>School context</h3>
+                            {filterOptions.context.map((option) => (
+                                <Checkbox
+                                    key={option.id}
+                                    label={option.label}
+                                    checked={selectedFilters.context.includes(
+                                        option.id
+                                    )}
+                                    onChange={() =>
+                                        handleFilterToggle(
+                                            "context",
+                                            option.id
+                                        )
+                                    }
+                                />
+                            ))}
+                        </div>
+                    </ModalContent>
+                    <ModalActions>
+                        <Button onClick={clearAllFilters}>
+                            Clear all
+                        </Button>
+                        <Button
+                            primary
+                            onClick={() => setFilterModalOpen(false)}
+                        >
+                            Apply
+                        </Button>
+                    </ModalActions>
+                </Modal>
+            )}
 
             {/* MAP */}
             <div className={classes.mapWrapper}>
                 <MapView
-                    schools={filteredData}
+                    schools={filteredSchools}
                     selectedSchool={selectedSchool}
-                    onMarkerClick={handleSchoolClick}
                 />
             </div>
 
-            {/* SCHOOL LIST */}
+            {/* Range filter (0–30 / 30–90 / 90+) */}
+            <div className={classes.filterBlock}>
+                <div className={classes.filterLabel}>
+                    Days since last visit
+                </div>
+                <div className={classes.rangeBadges}>
+                    {ranges.map((r) => (
+                        <div
+                            key={r.id}
+                            className={
+                                activeRange === r.id
+                                    ? classes.rangeBadgeActive
+                                    : classes.rangeBadge
+                            }
+                            onClick={() =>
+                                setActiveRange(
+                                    activeRange === r.id
+                                        ? null
+                                        : r.id
+                                )
+                            }
+                        >
+                            {r.label}
+                        </div>
+                    ))}
+                </div>
+            </div>
+
+            {/* Filter Badge Pills - only show selected filters */}
+            {(selectedFilters.status.length > 0 ||
+                selectedFilters.performance.length > 0 ||
+                selectedFilters.resources.length > 0 ||
+                selectedFilters.context.length > 0) && (
+                <div className={classes.filterBadges}>
+                    {selectedFilters.status.map((filterId) => {
+                        const filter =
+                            filterOptions.status.find(
+                                (f) => f.id === filterId
+                            );
+                        return (
+                            <div
+                                key={filterId}
+                                className={classes.badge}
+                            >
+                                {filter?.label}
+                            </div>
+                        );
+                    })}
+                    {selectedFilters.performance.map((filterId) => {
+                        const filter =
+                            filterOptions.performance.find(
+                                (f) => f.id === filterId
+                            );
+                        return (
+                            <div
+                                key={filterId}
+                                className={classes.badge}
+                            >
+                                {filter?.label}
+                            </div>
+                        );
+                    })}
+                    {selectedFilters.resources.map((filterId) => {
+                        const filter =
+                            filterOptions.resources.find(
+                                (f) => f.id === filterId
+                            );
+                        return (
+                            <div
+                                key={filterId}
+                                className={classes.badge}
+                            >
+                                {filter?.label}
+                            </div>
+                        );
+                    })}
+                    {selectedFilters.context.map((filterId) => {
+                        const filter =
+                            filterOptions.context.find(
+                                (f) => f.id === filterId
+                            );
+                        return (
+                            <div
+                                key={filterId}
+                                className={classes.badge}
+                            >
+                                {filter?.label}
+                            </div>
+                        );
+                    })}
+                </div>
+            )}
+
+            {/* School List */}
+            {/* School List */}
             <div className={classes.schoolListContainer}>
-                {filteredData.map((school) => {
-                    const isOpen = openSchoolId === school.id;
+                {filteredSchools.map((s) => {
+                    const isExpanded = expandedSchools.includes(s.id);
 
                     return (
-                        <Card key={school.id} className={classes.schoolCard}>
-                            <div className={classes.schoolCardContent}>
-                                <div className={classes.schoolIcon}>
-                                    <IconHome24 />
+                        <div
+                            key={s.id}
+                            className={`${classes.listRow} ${isExpanded ? classes.listRowExpanded : ""}`}
+                            onClick={() => {
+                                // Expand/collapse row
+                                setExpandedSchools((prev) =>
+                                    prev.includes(s.id)
+                                        ? prev.filter((id) => id !== s.id)
+                                        : [...prev, s.id]
+                                );
+                                setSelectedSchool(s); // Select for map highlight
+                            }}
+                        >
+                            {/* HEADER ROW */}
+                            <div className={classes.listRowHeader}>
+                                <div>
+                                    <div className={classes.listRowName}>{s.name}</div>
+                                    <div className={classes.listRowSub}>
+                                        {s.parentName} —{" "}
+                                        {s.lastVisitDays === 999
+                                            ? "Never visited"
+                                            : `${s.lastVisitDays} days ago`}
+                                    </div>
                                 </div>
 
-                                <div className={classes.schoolRight}>
-                                    <div className={classes.schoolName}>{school.name}</div>
-
-                                    <div className={classes.statusRow}>
-                                        <span className={classes.textGray}>
-                                            {school.lastVisitDays === 999
-                                                ? "Never visited"
-                                                : `Last visit: ${school.lastVisitDays} days ago`}
-                                        </span>
-                                    </div>
-
-                                    <div className={classes.showMore} onClick={() => toggleOpen(school.id)}>
-                                        <IconChevronDown24
-                                            className={`${classes.showMoreIcon} ${isOpen ? classes.rotateUp : ""}`}
-                                        />
-                                        {isOpen ? "Show less" : "Show more"}
-                                    </div>
-
-                                    {isOpen && (
-                                        <div className={classes.detailsWrapper}>
-                                            <div className={classes.detailLine}>
-                                                <span className={classes.detailLabel}>Last visitation:</span>
-                                                <span className={classes.detailValue}>
-                                                    {school.lastVisitDate
-                                                        ? new Date(school.lastVisitDate).toLocaleDateString()
-                                                        : "No visits recorded"}
-                                                </span>
-                                            </div>
-
-                                            <div className={classes.detailLine}>
-                                                <span className={classes.detailLabel}>Status:</span>
-                                                <span className={classes.detailValue}>
-                                                    {isOverdue(school.lastVisitDate)
-                                                        ? "Overdue for inspection"
-                                                        : "Up to date"}
-                                                </span>
-                                            </div>
-
-                                            <div className={classes.actionButtons}>
-                                                <Button
-                                                    primary
-                                                    className={classes.actionButtonDHIS2}
-                                                    onClick={() => setActivePage("inspection")}
-                                                >
-                                                    Schedule visit
-                                                </Button>
-                                            </div>
-                                        </div>
-                                    )}
-                                </div>
+                                <IconChevronDown24
+                                    className={`${classes.listRowChevron} ${
+                                        isExpanded ? "rotate" : ""
+                                    }`}
+                                />
                             </div>
-                        </Card>
+
+                            {/* EXPANDED DETAILS */}
+                            {isExpanded && (
+                                <div className={classes.listDetails}>
+                                    <div className={classes.listDetailLine}>
+                                        <strong>Learners:</strong> {s.learners}
+                                    </div>
+
+                                    <Button
+                                        small
+                                        primary
+                                        className={classes.actionButtonDHIS2}
+                                    >
+                                        Schedule inspection
+                                    </Button>
+                                </div>
+                            )}
+                        </div>
                     );
                 })}
+
+                {filteredSchools.length === 0 && (
+                    <div style={{ padding: 12, color: "#777" }}>
+                        No schools match these filters.
+                    </div>
+                )}
             </div>
+
         </div>
     );
 }
