@@ -688,15 +688,6 @@ export default function ClusterAnalytics({ setActivePage }) {
 
     return (
         <div className={classes.pageWrapper}>
-            {/* HEADER */}
-            <div className={classes.pageHeader}>
-                <Button
-                    small
-                    icon={<IconArrowLeft24 />}
-                    onClick={() => setActivePage("dashboard")}
-                />
-                <h2>Cluster Analytics</h2>
-            </div>
 
             {/* VIEW MODE SELECTOR */}
             <Card className={classes.viewModeCard}>
