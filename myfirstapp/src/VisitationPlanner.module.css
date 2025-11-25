@@ -18,8 +18,8 @@
 
 .pageHeader {
     display: flex;
-    align-items: center;      /* <- sørger for vertikal sentrering */
-    gap: 12px;                /* mellomrom mellom pil og tittel */    
+    align-items: center;
+    gap: 12px;               
 }
 
 /* ============================================================
@@ -81,7 +81,14 @@
 
 /* ============================================================
    FLOATING SEARCH BAR
-============================================================ */.searchBarFloating {
+============================================================
+*/
+.searchContainer {
+    flex: 1;
+    position: relative;
+}
+
+.searchBarFloating {
     position: absolute;
     top: 16px; 
     left: 16px;
@@ -92,27 +99,36 @@
     align-items: center;
     gap: 12px;
 }
+
+.searchInput {
+    width: 100%;
+    padding: 12px 16px;
+    border-radius: 25px;
+    font-size: 15px;
+    box-sizing: border-box;
+    outline: none;
+}
+
 .searchWrapper {
     flex: 1;
     position: relative;
 }
 
-/* Search dropdown */
+/* === Search Suggestions === */
 .suggestionsDropdown {
     position: absolute;
     top: 100%;
     left: 0;
     right: 0;
     margin-top: 8px;
-    background: #ffffff;
-    border-radius: 4px;
-    box-shadow:
-        0 0 0 1px rgba(0, 0, 0, 0.08),
-        0 4px 8px rgba(0, 0, 0, 0.15);
-    z-index: 1001;
-    max-height: 280px;
+    background: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+    z-index: 1000;
+    max-height: 300px;
     overflow-y: auto;
-    pointer-events: auto;
+        display: flex;
+    flex-direction: column;
 }
 
 .suggestionItem {

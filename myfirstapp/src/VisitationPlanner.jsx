@@ -435,9 +435,6 @@ export default function VisitationPlanner({ setActivePage }) {
                                             )
                                         }
                                     >
-                                      <span className={classes.suggestionIcon}>
-    <IconHome24 />
-</span>
                                         <span
                                             className={
                                                 classes.suggestionName
