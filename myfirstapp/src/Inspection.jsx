@@ -1,46 +1,36 @@
 import React, { useState, useEffect } from 'react';
 import {
-    Table,
-    TableHead,
-    TableRowHead,
-    TableCellHead,
-    TableBody,
-    TableRow,
-    TableCell,
+    Button,
     CircularLoader,
     NoticeBox,
-    Button,
-    Modal,
-    ModalTitle,
-    ModalContent,
-    ModalActions,
-    ButtonStrip,
     InputField,
     SingleSelectField,
     SingleSelectOption,
     Radio,
     FieldSet,
     Legend,
+    IconArrowLeft24,
 } from "@dhis2/ui";
 
-export default function Inspection({ setActivePage, setHeaderColor, setHeaderTitle, setHeaderTextColor, setHeaderIconColor }) {
+import classes from "./Inspection.module.css";
+
+const API_BASE = "https://research.im.dhis2.org/in5320g20/api";
+const CREDENTIALS = "Basic " + btoa("admin:district");
+const SCHOOL_INSPECTION_PROGRAM_ID = "UxK2o06ScIe";
+const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
+
+export default function Inspection({ setActivePage }) {
     const [schools, setSchools] = useState([]);
+    const [selectedSchool, setSelectedSchool] = useState('');
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-    const [selectedSchool, setSelectedSchool] = useState(null);
-    const [showModal, setShowModal] = useState(false);
-    const [inspectionType, setInspectionType] = useState(null);
+    const [submitting, setSubmitting] = useState(false);
+    const [activeTab, setActiveTab] = useState(0);
 
-    // Resource inspection state
-    const [resourceForm, setResourceForm] = useState({
-        reportDate: "",
-        toilets: "",
-        seats: "",
-        books: "",
-        classrooms: ""
-    });
+    const [programStageId, setProgramStageId] = useState("");
+    const [resourceProgramStageId, setResourceProgramStageId] = useState("");
+    const [dataElementIds, setDataElementIds] = useState([]);
 
-    // School inspection state
     const [schoolForm, setSchoolForm] = useState({
         reportDate: "",
         hasComputerLab: "",
@@ -49,188 +39,150 @@ export default function Inspection({ setActivePage, setHeaderColor, setHeaderTit
         elecCondition: "",
         hasHandwash: "",
         handwashCondition: "",
+        hasLibrary: "",
+        libraryCondition: "",
+        hasPlayground: "",
+        playgroundCondition: "",
         classroomsTotal: "",
         classroomsClean: "",
-        hasYard: "",
-        yardCondition: "",
         teacherToilets: "",
     });
 
-    const [programStageId, setProgramStageId] = useState("");
-    const [dataElementIds, setDataElementIds] = useState([]);
-    const [resourceDataElements, setResourceDataElements] = useState([]);
-    const [resourceProgramStageId, setResourceProgramStageId] = useState("");
-    const [submitting, setSubmitting] = useState(false);
-    const [submitErrors, setSubmitErrors] = useState([]);
+    const [resourceForm, setResourceForm] = useState({
+        reportDate: "",
+        toilets: "",
+        seats: "",
+        books: "",
+        classrooms: "",
+    });
 
-    const RESOURCE_PROGRAM_ID = 'uvpW17dnfUS';
-    const SCHOOL_INSPECTION_PROGRAM_ID = 'UxK2o06ScIe';
-
-    // Set header styling on mount
-    useEffect(() => {
-        if (setHeaderColor) setHeaderColor("#2D6693");
-        if (setHeaderTitle) setHeaderTitle("New Inspection");
-        if (setHeaderTextColor) setHeaderTextColor("#FFFFFF");
-        if (setHeaderIconColor) setHeaderIconColor("#FFFFFF");
-    }, [setHeaderColor, setHeaderTitle, setHeaderTextColor, setHeaderIconColor]);
-
-    // Fetch schools
     useEffect(() => {
         fetchSchools();
-        fetchSchoolInspectionDataElements();
-        fetchResourceDataElements();
+        fetchProgramMetadata();
+        fetchResourceProgramMetadata();
     }, []);
 
     const fetchSchools = async () => {
         try {
             const res = await fetch(
-                "https://research.im.dhis2.org/in5320g20/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name&pageSize=1000",
-                {
-                    headers: {
-                        Authorization: 'Basic ' + btoa('admin:district'),
-                    },
-                }
+                `${API_BASE}/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name&pageSize=200`,
+                { headers: { Authorization: CREDENTIALS } }
             );
-
             const data = await res.json();
-            const schoolList = data.organisationUnits || [];
-            setSchools(schoolList);
-            setLoading(false);
+            setSchools(data.organisationUnits || []);
         } catch (err) {
-            setError("Failed to fetch schools: " + err.message);
+            setError("Failed to load schools");
+        } finally {
             setLoading(false);
         }
     };
 
-    const fetchSchoolInspectionDataElements = async () => {
+    const fetchProgramMetadata = async () => {
         try {
             const res = await fetch(
-                `https://research.im.dhis2.org/in5320g20/api/programs/${SCHOOL_INSPECTION_PROGRAM_ID}?fields=programStages[id,programStageDataElements[dataElement[id,name,code]]]`,
-                {
-                    headers: {
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                }
+                `${API_BASE}/programs/${SCHOOL_INSPECTION_PROGRAM_ID}?fields=programStages[id,programStageDataElements[dataElement[id]]]`,
+                { headers: { Authorization: CREDENTIALS } }
             );
             const data = await res.json();
-
-            const stageId = data.programStages[0].id;
-            setProgramStageId(stageId);
-
-            const ids = data.programStages[0].programStageDataElements.map(
-                (el) => el.dataElement.id
-            );
-            setDataElementIds(ids);
-            console.log("📋 School Inspection Program Stage ID:", stageId);
-            console.log("📋 School Inspection Data Element IDs:", ids);
+            setProgramStageId(data.programStages[0].id);
+            setDataElementIds(data.programStages[0].programStageDataElements.map(el => el.dataElement.id));
         } catch (err) {
-            console.error("Error fetching data elements:", err);
+            console.error("Failed to fetch program metadata", err);
         }
     };
 
-    const fetchResourceDataElements = async () => {
+    const fetchResourceProgramMetadata = async () => {
         try {
             const res = await fetch(
-                `https://research.im.dhis2.org/in5320g20/api/programs/${RESOURCE_PROGRAM_ID}?fields=programStages[id,programStageDataElements[dataElement[id,name,code],mandatory]]`,
-                {
-                    headers: {
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                }
+                `${API_BASE}/programs/${RESOURCE_PROGRAM_ID}?fields=programStages[id]`,
+                { headers: { Authorization: CREDENTIALS } }
             );
             const data = await res.json();
-
-            console.log("📋 Resource Program Structure:", data);
-
-            const stageId = data.programStages[0].id;
-            setResourceProgramStageId(stageId);
-
-            const dataElements = data.programStages[0].programStageDataElements.map(
-                (el) => ({
-                    id: el.dataElement.id,
-                    name: el.dataElement.name,
-                    code: el.dataElement.code,
-                    mandatory: el.mandatory
-                })
-            );
-            setResourceDataElements(dataElements);
-            console.log("📋 Resource Program Stage ID:", stageId);
-            console.log("📋 Resource Data Elements:", dataElements);
+            setResourceProgramStageId(data.programStages[0].id);
         } catch (err) {
-            console.error("Error fetching resource data elements:", err);
+            console.error("Failed to fetch resource program metadata", err);
         }
     };
 
-    const handleSchoolClick = (school) => {
-        setSelectedSchool(school);
-        setShowModal(true);
-        setInspectionType(null);
+    const generateUID = () => {
+        const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
+        let uid = chars.charAt(Math.floor(Math.random() * 52));
+        for (let i = 0; i < 10; i++) {
+            uid += chars.charAt(Math.floor(Math.random() * chars.length));
+        }
+        return uid;
     };
 
-    const handleInspectionTypeSelect = (type) => {
-        setInspectionType(type);
-    };
-
-    const handleCloseModal = () => {
-        setShowModal(false);
-        setSelectedSchool(null);
-        setInspectionType(null);
-        setResourceForm({
-            reportDate: "",
-            toilets: "",
-            seats: "",
-            books: "",
-            classrooms: ""
-        });
-        setSchoolForm({
-            reportDate: "",
-            hasComputerLab: "",
-            compLabCondition: "",
-            hasElectricity: "",
-            elecCondition: "",
-            hasHandwash: "",
-            handwashCondition: "",
-            classroomsTotal: "",
-            classroomsClean: "",
-            hasYard: "",
-            yardCondition: "",
-            teacherToilets: "",
-        });
-        setSubmitErrors([]);
-    };
-
-    // Resource inspection submission
-    const submitResourceInspection = async () => {
-        const errors = [];
-        if (!resourceForm.reportDate) errors.push("Report date is required");
-        if (!resourceForm.toilets) errors.push("Number of toilets is required");
-        if (!resourceForm.seats) errors.push("Number of seats is required");
-        if (!resourceForm.books) errors.push("Number of books is required");
-        if (!resourceForm.classrooms) errors.push("Number of classrooms is required");
-
-        if (errors.length > 0) {
-            setSubmitErrors(errors);
+    const handleSchoolInspectionSubmit = async () => {
+        if (!selectedSchool || !schoolForm.reportDate) {
+            alert("Please select a school and report date");
             return;
         }
 
         setSubmitting(true);
-        setSubmitErrors([]);
 
-        // Generate a unique event ID
-        const generateUID = () => {
-            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let uid = chars.charAt(Math.floor(Math.random() * 52));
-            for (let i = 0; i < 10; i++) {
-                uid += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return uid;
+        const dataValues = [
+            { dataElement: dataElementIds[0], value: schoolForm.hasComputerLab },
+            { dataElement: dataElementIds[1], value: schoolForm.compLabCondition },
+            { dataElement: dataElementIds[2], value: schoolForm.hasElectricity },
+            { dataElement: dataElementIds[3], value: schoolForm.elecCondition },
+            { dataElement: dataElementIds[4], value: schoolForm.hasHandwash },
+            { dataElement: dataElementIds[5], value: schoolForm.handwashCondition },
+            { dataElement: dataElementIds[6], value: schoolForm.hasLibrary },
+            { dataElement: dataElementIds[7], value: schoolForm.libraryCondition },
+            { dataElement: dataElementIds[8], value: schoolForm.classroomsTotal },
+            { dataElement: dataElementIds[9], value: schoolForm.classroomsClean },
+            { dataElement: dataElementIds[10], value: schoolForm.hasPlayground },
+            { dataElement: dataElementIds[11], value: schoolForm.playgroundCondition },
+            { dataElement: dataElementIds[12], value: schoolForm.teacherToilets },
+        ].filter(dv => dv.value !== "" && dv.value !== null);
+
+        const event = {
+            event: generateUID(),
+            program: SCHOOL_INSPECTION_PROGRAM_ID,
+            programStage: programStageId,
+            orgUnit: selectedSchool,
+            occurredAt: new Date(schoolForm.reportDate).toISOString(),
+            status: "ACTIVE",
+            dataValues: dataValues,
         };
+
+        try {
+            const res = await fetch(`${API_BASE}/tracker?async=false`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: CREDENTIALS,
+                },
+                body: JSON.stringify({ events: [event] }),
+            });
+
+            if (res.ok) {
+                alert("School inspection submitted successfully!");
+                setActivePage("dashboard");
+            } else {
+                alert("Failed to submit inspection");
+            }
+        } catch (err) {
+            alert("Error submitting inspection: " + err.message);
+        } finally {
+            setSubmitting(false);
+        }
+    };
+
+    const handleResourceInspectionSubmit = async () => {
+        if (!selectedSchool || !resourceForm.reportDate) {
+            alert("Please select a school and report date");
+            return;
+        }
+
+        setSubmitting(true);
 
         const event = {
             event: generateUID(),
             program: RESOURCE_PROGRAM_ID,
             programStage: resourceProgramStageId,
-            orgUnit: selectedSchool.id,
+            orgUnit: selectedSchool,
             occurredAt: new Date(resourceForm.reportDate).toISOString(),
             status: "COMPLETED",
             dataValues: [
@@ -242,117 +194,24 @@ export default function Inspection({ setActivePage, setHeaderColor, setHeaderTit
             ]
         };
 
-        console.log("📤 Submitting resource event:", event);
-
         try {
-            const res = await fetch(
-                "https://research.im.dhis2.org/in5320g20/api/tracker?async=false",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                    body: JSON.stringify({ events: [event] }),
-                }
-            );
+            const res = await fetch(`${API_BASE}/tracker?async=false`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Authorization: CREDENTIALS,
+                },
+                body: JSON.stringify({ events: [event] }),
+            });
 
-            const result = await res.json();
-            console.log("📤 Resource Inspection API Response:", result);
-
-            if (res.ok && result.status !== "ERROR") {
+            if (res.ok) {
                 alert("Resource inspection submitted successfully!");
-                handleCloseModal();
+                setActivePage("dashboard");
             } else {
-                console.error("❌ Submission failed:", result);
-                setSubmitErrors(["Failed to submit inspection. Check console for details."]);
+                alert("Failed to submit inspection");
             }
         } catch (err) {
-            console.error("❌ Network error:", err);
-            setSubmitErrors(["Network error: " + err.message]);
-        } finally {
-            setSubmitting(false);
-        }
-    };
-
-    // School inspection submission
-    const submitSchoolInspection = async () => {
-        const errors = [];
-        if (!schoolForm.reportDate) errors.push("Report date is required");
-        if (!schoolForm.hasComputerLab) errors.push("Computer lab question is required");
-        if (!schoolForm.hasElectricity) errors.push("Electricity question is required");
-        if (!schoolForm.hasHandwash) errors.push("Handwashing facilities question is required");
-        if (!schoolForm.hasYard) errors.push("Yard/playground question is required");
-
-        if (errors.length > 0) {
-            setSubmitErrors(errors);
-            return;
-        }
-
-        setSubmitting(true);
-        setSubmitErrors([]);
-
-        const generateUID = () => {
-            const chars = 'abcdefghijklmnopqrstuvwxyzABCDEFGHIJKLMNOPQRSTUVWXYZ0123456789';
-            let uid = chars.charAt(Math.floor(Math.random() * 52));
-            for (let i = 0; i < 10; i++) {
-                uid += chars.charAt(Math.floor(Math.random() * chars.length));
-            }
-            return uid;
-        };
-
-        const dataValues = [
-            { dataElement: dataElementIds[0], value: schoolForm.hasComputerLab },
-            { dataElement: dataElementIds[1], value: schoolForm.compLabCondition },
-            { dataElement: dataElementIds[2], value: schoolForm.hasElectricity },
-            { dataElement: dataElementIds[3], value: schoolForm.elecCondition },
-            { dataElement: dataElementIds[4], value: schoolForm.hasHandwash },
-            { dataElement: dataElementIds[5], value: schoolForm.handwashCondition },
-            { dataElement: dataElementIds[8], value: schoolForm.classroomsTotal },
-            { dataElement: dataElementIds[9], value: schoolForm.classroomsClean },
-            { dataElement: dataElementIds[10], value: schoolForm.hasYard },
-            { dataElement: dataElementIds[11], value: schoolForm.yardCondition },
-            { dataElement: dataElementIds[12], value: schoolForm.teacherToilets },
-        ].filter(dv => dv.value !== "" && dv.value !== null && dv.value !== undefined);
-
-        const event = {
-            event: generateUID(),
-            program: SCHOOL_INSPECTION_PROGRAM_ID,
-            programStage: programStageId,
-            orgUnit: selectedSchool.id,
-            occurredAt: new Date(schoolForm.reportDate).toISOString(),
-            status: "ACTIVE",
-            dataValues: dataValues,
-        };
-
-        console.log("📤 Submitting school inspection event:", event);
-
-        try {
-            const res = await fetch(
-                "https://research.im.dhis2.org/in5320g20/api/tracker?async=false",
-                {
-                    method: "POST",
-                    headers: {
-                        "Content-Type": "application/json",
-                        Authorization: "Basic " + btoa("admin:district"),
-                    },
-                    body: JSON.stringify({ events: [event] }),
-                }
-            );
-
-            const result = await res.json();
-            console.log("📤 School Inspection API Response:", result);
-
-            if (res.ok && result.status !== "ERROR") {
-                alert("School inspection submitted successfully!");
-                handleCloseModal();
-            } else {
-                console.error("❌ Submission failed:", result);
-                setSubmitErrors(["Failed to submit inspection. Check console for details."]);
-            }
-        } catch (err) {
-            console.error("❌ Network error:", err);
-            setSubmitErrors(["Network error: " + err.message]);
+            alert("Error submitting inspection: " + err.message);
         } finally {
             setSubmitting(false);
         }
@@ -360,26 +219,15 @@ export default function Inspection({ setActivePage, setHeaderColor, setHeaderTit
 
     if (loading) {
         return (
-            <div style={{ display: "flex", justifyContent: "center", padding: "50px" }}>
+            <div className={classes.loadingWrapper}>
                 <CircularLoader />
             </div>
         );
     }
 
     if (error) {
-        return (
-            <div style={{ padding: "20px" }}>
-                <NoticeBox error title="Error loading data">
-                    {error}
-                </NoticeBox>
-            </div>
-        );
+        return <NoticeBox error title="Error">{error}</NoticeBox>;
     }
-
-    const yesNoOptions = [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" },
-    ];
 
     const conditionOptions = [
         { code: "1", name: "Strongly disagree" },
@@ -389,168 +237,152 @@ export default function Inspection({ setActivePage, setHeaderColor, setHeaderTit
         { code: "5", name: "Strongly agree" }
     ];
 
+    const tabs = ["School Inspection", "Resource Count"];
+
     return (
-        <div style={{ padding: "20px" }}>
-            <h2 style={{ marginBottom: '10px' }}>Select a School</h2>
-            <p style={{ marginBottom: '20px', color: '#666' }}>Choose a school to perform a resource or facilities inspection.</p>
+        <div className={classes.pageWrapper}>
+            <div className={classes.pageHeader}>
+                <Button small icon={<IconArrowLeft24 />} onClick={() => setActivePage("dashboard")} />
+                <h2>New Inspection</h2>
+            </div>
 
-            <Table>
-                <TableHead>
-                    <TableRowHead>
-                        <TableCellHead>School Name</TableCellHead>
-                        <TableCellHead>Actions</TableCellHead>
-                    </TableRowHead>
-                </TableHead>
-
-                <TableBody>
-                    {schools.map((school) => (
-                        <TableRow key={school.id}>
-                            <TableCell>{school.name}</TableCell>
-                            <TableCell>
-                                <Button small onClick={() => handleSchoolClick(school)}>
-                                    Inspect
-                                </Button>
-                            </TableCell>
-                        </TableRow>
+            <div className={classes.tabCard}>
+                <div className={classes.tabBar}>
+                    {tabs.map((tab, idx) => (
+                        <button
+                            key={idx}
+                            className={activeTab === idx ? classes.tabButtonActive : classes.tabButton}
+                            onClick={() => setActiveTab(idx)}
+                        >
+                            {tab}
+                        </button>
                     ))}
-                </TableBody>
-            </Table>
+                </div>
+            </div>
 
-            {/* Modal for inspection type selection and forms */}
-            {showModal && (
-                <Modal large onClose={handleCloseModal}>
-                    <ModalTitle>
-                        {inspectionType ?
-                            `${inspectionType === 'resource' ? 'Resource' : 'School'} Inspection - ${selectedSchool?.name}` :
-                            `Choose Inspection Type - ${selectedSchool?.name}`
-                        }
-                    </ModalTitle>
-                    <ModalContent>
-                        {!inspectionType ? (
-                            <div style={{ display: 'flex', gap: '20px', justifyContent: 'center', padding: '40px' }}>
-                                <Button large onClick={() => handleInspectionTypeSelect('resource')}>
-                                    Resource Inspection
-                                </Button>
-                                <Button large onClick={() => handleInspectionTypeSelect('school')}>
-                                    School Inspection
-                                </Button>
-                            </div>
-                        ) : inspectionType === 'resource' ? (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <InputField
-                                    label="Report Date"
-                                    type="date"
-                                    value={resourceForm.reportDate}
-                                    onChange={(e) => setResourceForm({ ...resourceForm, reportDate: e.value })}
-                                />
-                                <InputField
-                                    label="Number of Toilets"
-                                    type="number"
-                                    value={resourceForm.toilets}
-                                    onChange={(e) => setResourceForm({ ...resourceForm, toilets: e.value })}
-                                />
-                                <InputField
-                                    label="Number of Seats"
-                                    type="number"
-                                    value={resourceForm.seats}
-                                    onChange={(e) => setResourceForm({ ...resourceForm, seats: e.value })}
-                                />
-                                <InputField
-                                    label="Number of Books"
-                                    type="number"
-                                    value={resourceForm.books}
-                                    onChange={(e) => setResourceForm({ ...resourceForm, books: e.value })}
-                                />
-                                <InputField
-                                    label="Number of Classrooms"
-                                    type="number"
-                                    value={resourceForm.classrooms}
-                                    onChange={(e) => setResourceForm({ ...resourceForm, classrooms: e.value })}
-                                />
-                            </div>
-                        ) : (
-                            <div style={{ display: 'flex', flexDirection: 'column', gap: '20px' }}>
-                                <InputField
-                                    label="Report Date"
-                                    type="date"
-                                    value={schoolForm.reportDate}
-                                    onChange={(e) => setSchoolForm({ ...schoolForm, reportDate: e.value })}
-                                />
+            <div className={classes.formCard}>
+                <SingleSelectField
+                    label="Select School"
+                    selected={selectedSchool}
+                    onChange={({ selected }) => setSelectedSchool(selected)}
+                    required
+                >
+                    <SingleSelectOption value="" label="Choose a school..." />
+                    {schools.map(school => (
+                        <SingleSelectOption key={school.id} value={school.id} label={school.name} />
+                    ))}
+                </SingleSelectField>
 
-                                {[
-                                    { name: "hasComputerLab", label: "The school has a computer lab for learners", condition: "compLabCondition" },
-                                    { name: "hasElectricity", label: "The school has an electricity supply", condition: "elecCondition" },
-                                    { name: "hasHandwash", label: "The school has handwashing facilities", condition: "handwashCondition" },
-                                    { name: "hasYard", label: "The school has a yard/playground", condition: "yardCondition" },
-                                ].map((item) => (
-                                    <FieldSet key={item.name}>
-                                        <Legend>{item.label}</Legend>
-                                        {yesNoOptions.map((opt) => (
-                                            <Radio
-                                                key={opt.value}
-                                                label={opt.label}
-                                                checked={schoolForm[item.name] === opt.value}
-                                                onChange={() => setSchoolForm({ ...schoolForm, [item.name]: opt.value })}
-                                            />
-                                        ))}
-                                        <SingleSelectField
-                                            label="Condition"
-                                            selected={schoolForm[item.condition]}
-                                            onChange={(e) => setSchoolForm({ ...schoolForm, [item.condition]: e.selected })}
-                                            placeholder="Select condition"
-                                        >
-                                            {conditionOptions.map((opt) => (
-                                                <SingleSelectOption key={opt.code} label={opt.name} value={opt.code} />
-                                            ))}
-                                        </SingleSelectField>
-                                    </FieldSet>
-                                ))}
+                {activeTab === 0 ? (
+                    <div className={classes.formSection}>
+                        <InputField
+                            label="Report Date"
+                            type="date"
+                            value={schoolForm.reportDate}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, reportDate: e.value })}
+                            required
+                        />
 
-                                <InputField
-                                    label="Total number of classrooms"
-                                    type="number"
-                                    value={schoolForm.classroomsTotal}
-                                    onChange={(e) => setSchoolForm({ ...schoolForm, classroomsTotal: e.value })}
+                        {[
+                            { name: "hasComputerLab", label: "Computer lab for learners", condition: "compLabCondition" },
+                            { name: "hasElectricity", label: "Electricity supply", condition: "elecCondition" },
+                            { name: "hasHandwash", label: "Handwashing facilities", condition: "handwashCondition" },
+                            { name: "hasLibrary", label: "Library", condition: "libraryCondition" },
+                            { name: "hasPlayground", label: "Yard/playground", condition: "playgroundCondition" },
+                        ].map((item) => (
+                            <FieldSet key={item.name}>
+                                <Legend>{item.label}</Legend>
+                                <Radio
+                                    label="Yes"
+                                    checked={schoolForm[item.name] === "true"}
+                                    onChange={() => setSchoolForm({ ...schoolForm, [item.name]: "true" })}
                                 />
-                                <InputField
-                                    label="Number of classrooms that are clean and secure"
-                                    type="number"
-                                    value={schoolForm.classroomsClean}
-                                    onChange={(e) => setSchoolForm({ ...schoolForm, classroomsClean: e.value })}
+                                <Radio
+                                    label="No"
+                                    checked={schoolForm[item.name] === "false"}
+                                    onChange={() => setSchoolForm({ ...schoolForm, [item.name]: "false" })}
                                 />
-                                <InputField
-                                    label="Number of toilets for teachers"
-                                    type="number"
-                                    value={schoolForm.teacherToilets}
-                                    onChange={(e) => setSchoolForm({ ...schoolForm, teacherToilets: e.value })}
-                                />
-                            </div>
-                        )}
-
-                        {submitErrors.length > 0 && (
-                            <NoticeBox error title="Validation Errors" style={{ marginTop: '20px' }}>
-                                {submitErrors.map((e, i) => (
-                                    <div key={i}>{e}</div>
-                                ))}
-                            </NoticeBox>
-                        )}
-                    </ModalContent>
-                    <ModalActions>
-                        <ButtonStrip>
-                            <Button onClick={handleCloseModal}>Cancel</Button>
-                            {inspectionType && (
-                                <Button
-                                    primary
-                                    onClick={inspectionType === 'resource' ? submitResourceInspection : submitSchoolInspection}
-                                    disabled={submitting}
+                                <SingleSelectField
+                                    label="Condition"
+                                    selected={schoolForm[item.condition]}
+                                    onChange={(e) => setSchoolForm({ ...schoolForm, [item.condition]: e.selected })}
                                 >
-                                    {submitting ? 'Submitting...' : 'Submit Inspection'}
-                                </Button>
-                            )}
-                        </ButtonStrip>
-                    </ModalActions>
-                </Modal>
-            )}
+                                    {conditionOptions.map((opt) => (
+                                        <SingleSelectOption key={opt.code} label={opt.name} value={opt.code} />
+                                    ))}
+                                </SingleSelectField>
+                            </FieldSet>
+                        ))}
+
+                        <InputField
+                            label="Total classrooms"
+                            type="number"
+                            value={schoolForm.classroomsTotal}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, classroomsTotal: e.value })}
+                        />
+                        <InputField
+                            label="Clean and secure classrooms"
+                            type="number"
+                            value={schoolForm.classroomsClean}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, classroomsClean: e.value })}
+                        />
+                        <InputField
+                            label="Toilets for teachers"
+                            type="number"
+                            value={schoolForm.teacherToilets}
+                            onChange={(e) => setSchoolForm({ ...schoolForm, teacherToilets: e.value })}
+                        />
+
+                        <div className={classes.navigationButtons}>
+                            <Button onClick={() => setActivePage("dashboard")}>Cancel</Button>
+                            <Button primary onClick={handleSchoolInspectionSubmit} disabled={submitting}>
+                                {submitting ? "Submitting..." : "Submit Inspection"}
+                            </Button>
+                        </div>
+                    </div>
+                ) : (
+                    <div className={classes.formSection}>
+                        <InputField
+                            label="Report Date"
+                            type="date"
+                            value={resourceForm.reportDate}
+                            onChange={(e) => setResourceForm({ ...resourceForm, reportDate: e.value })}
+                            required
+                        />
+                        <InputField
+                            label="Number of Toilets"
+                            type="number"
+                            value={resourceForm.toilets}
+                            onChange={(e) => setResourceForm({ ...resourceForm, toilets: e.value })}
+                        />
+                        <InputField
+                            label="Number of Seats"
+                            type="number"
+                            value={resourceForm.seats}
+                            onChange={(e) => setResourceForm({ ...resourceForm, seats: e.value })}
+                        />
+                        <InputField
+                            label="Number of Books"
+                            type="number"
+                            value={resourceForm.books}
+                            onChange={(e) => setResourceForm({ ...resourceForm, books: e.value })}
+                        />
+                        <InputField
+                            label="Number of Classrooms"
+                            type="number"
+                            value={resourceForm.classrooms}
+                            onChange={(e) => setResourceForm({ ...resourceForm, classrooms: e.value })}
+                        />
+
+                        <div className={classes.navigationButtons}>
+                            <Button onClick={() => setActivePage("dashboard")}>Cancel</Button>
+                            <Button primary onClick={handleResourceInspectionSubmit} disabled={submitting}>
+                                {submitting ? "Submitting..." : "Submit Resource Count"}
+                            </Button>
+                        </div>
+                    </div>
+                )}
+            </div>
         </div>
     );
 }
