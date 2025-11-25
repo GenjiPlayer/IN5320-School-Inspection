@@ -1,5 +1,5 @@
 /* =========================================
-   GLOBAL BASE
+   GLOBAL BASE (inherits from app)
 ========================================= */
 :global(body) {
     overflow-x: hidden;
@@ -12,7 +12,6 @@
 /* =========================================
    PAGE WRAPPER
 ========================================= */
-.container,
 .pageWrapper {
     width: 100%;
     padding: 12px;
@@ -46,113 +45,45 @@
     box-shadow: var(--elevation-e100);
 }
 
-/* Search wrapper */
-.searchWrapper {
-    position: relative;
-    width: 100%;
-}
 
-.searchInputContainer input {
-    padding-right: 40px !important; /* plass til X-knappen */
-    text-overflow: ellipsis;
-    white-space: nowrap;
-    overflow: hidden;
-}
-
-/* Clear button inside search input */
-.clearButton {
-    position: absolute;
-    right: 12px;
-    top: 50%;
-    transform: translateY(-50%);
-    background: transparent;
-    border: none;
-    font-size: 16px;
-    cursor: pointer;
-    color: #777;
-    padding: 0;
-}
-
-.clearButton:hover {
-    color: #111;
-}
-
-/* Add school / report button */
-.searchAddBtn {
+/* Search bar */
+.addButton {
     width: 100% !important;
     font-family: inherit;
 }
 
 /* =========================================
-   AUTOCOMPLETE — ATTACHED
+   REPORT LIST
 ========================================= */
-.suggestionsDropdown {
-    position: absolute;
-    top: calc(100% - 2px);
-    left: 0;
-    width: 100%;
-    background: #ffffff;
-
-    border: 1px solid #d0d6e0;
-    border-top: none;
-    border-radius: 0 0 10px 10px;
-
-    max-height: 230px;
-    overflow-y: auto;
-
-    box-shadow: none !important;
-    z-index: 50;
-}
-
-/* Suggestion rows */
-.suggestionItem {
-    padding: 12px 14px;
-    cursor: pointer;
-    font-size: 15px;
-    color: #1a2b49;
-    border-bottom: 1px solid #f1f4f7;
-    transition: background 0.15s ease;
-}
-
-.suggestionItem:last-child {
-    border-bottom: none;
-}
-
-.suggestionItem:hover {
-    background: #eef4ff;
-}
-
-/* =========================================
-   LIST
-========================================= */
-.schoolList {
+.reportList {
     display: flex;
     flex-direction: column;
     gap: 14px;
 }
 
 /* =========================================
-   CARD
+   REPORT CARD
 ========================================= */
-.schoolCard {
+.reportCard {
     background: #ffffff;
-    border-radius: 16px;
     padding: 16px;
+    border-radius: 16px;
     box-shadow: var(--elevation-e100);
     width: 100%;
     box-sizing: border-box;
 }
 
-.schoolCardContent {
+.reportContent {
     display: flex;
+    align-items: center;
     gap: 16px;
     width: 100%;
 }
 
 /* =========================================
-   ICON LEFT SIDE
+   ICON CIRCLE
 ========================================= */
-.schoolIcon {
+.iconCircle {
     width: 46px;
     height: 46px;
     background: #E7F1FF;
@@ -163,16 +94,16 @@
     flex-shrink: 0;
 }
 
-.schoolIcon svg {
+.iconCircle svg {
     width: 22px;
     height: 22px;
     color: #1C4E9E;
 }
 
 /* =========================================
-   RIGHT CONTENT
+   RIGHT TEXT CONTENT
 ========================================= */
-.schoolRight {
+.reportText {
     display: flex;
     flex-direction: column;
     gap: 6px;
@@ -188,132 +119,87 @@
 }
 
 /* =========================================
-   STATUS BADGES (if you ever need)
+   DATE ROW
 ========================================= */
-.statusRow {
+.dateRow {
     display: flex;
     align-items: center;
     gap: 6px;
     font-size: 14px;
+    color: #4A5568;
+}
+
+.dateRow svg {
+    color: #4A5568;
+}
+
+/* =========================================
+   DETAILS OPEN/CLOSE
+========================================= */
+.reportDetails {
+    margin-top: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #E0E6EE;
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+.valuesList {
+    list-style: none;
+    padding: 0;
+    margin: 0;
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+}
+
+/* empty placeholder */
+.emptyValues {
+    color: #6A7280;
+    font-size: 14px;
+    font-style: italic;
+}
+
+/* =========================================
+   VALUE ROWS
+========================================= */
+.valueRow {
+    display: flex;
+    justify-content: space-between;
+    gap: 8px;
+    font-size: 14px;
+    flex-wrap: wrap;
+}
+
+.valueLabel {
+    color: #6A7280;
     font-weight: 500;
 }
 
-.textRed { color: #B71C1C; }
-.textOrange { color: #FB8C00; }
-
-/* =========================================
-   DATE / META ROW
-========================================= */
-.nextInspectionRow {
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    font-size: 14px;
-    color: #4A5568;
-}
-.nextInspectionRow svg {
-    color: #4A5568;
+.valueText {
+    color: #1F2937;
 }
 
 /* =========================================
-   SHOW MORE
+   SHOW MORE — MATCHES SCHOOLREGISTRY
 ========================================= */
 .showMore {
     display: flex;
     align-items: center;
     gap: 6px;
+    margin-left: auto; /* push to right side */
     margin-top: 4px;
     font-size: 14px;
     cursor: pointer;
     font-weight: 500;
-    color: #0D47A1;
+    color: #0D47A1; /* blue link style */
 }
 
 .showMoreIcon {
     transition: transform 0.25s ease;
 }
 
-.rotateUp {
+.showMoreIcon.rotateUp {
     transform: rotate(180deg);
-}
-
-/* =========================================
-   DETAILS SECTION
-========================================= */
-.detailsWrapper {
-    margin-top: 12px;
-    padding-top: 12px;
-    border-top: 1px solid #E0E6EE;
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    width: 100%;
-}
-
-.detailLine {
-    display: flex;
-    gap: 8px;
-    font-size: 14px;
-    flex-wrap: wrap;
-}
-
-.detailLabel {
-    color: #6A7280;
-    font-weight: 500;
-}
-
-.detailValue {
-    color: #1F2937;
-    flex: 1;
-}
-
-/* =========================================
-   ACTION BUTTONS — FULL WIDTH
-========================================= */
-.actionsSection {
-    display: flex;
-    flex-direction: column;
-    gap: 10px;
-    padding: 4px 0 4px;
-    width: 100%;
-}
-
-.actionButtonDHIS2 {
-    display: flex !important;
-    width: 100% !important;
-    justify-content: flex-start !important;
-    align-items: center !important;
-    gap: 10px !important;
-    padding: 12px 14px !important;
-}
-
-.actionButtonDHIS2 svg {
-    margin: 0 !important;
-}
-
-/* =========================================
-   SEARCH ROW
-========================================= */
-.searchRow {
-    display: flex;
-    align-items: center;
-    justify-content: space-between;
-    gap: 12px;
-    width: 100%;
-}
-
-.searchWrapper {
-    flex: 1;
-}
-
-/* EDIT / ADD ICON BUTTON IN SEARCH ROW */
-.editIconButton {
-    height: 40px !important;
-    width: 40px !important;
-    min-width: 40px !important;
-    padding: 0 !important;
-
-    display: flex !important;
-    justify-content: center !important;
-    align-items: center !important;
 }

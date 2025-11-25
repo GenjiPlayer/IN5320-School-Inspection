@@ -8,7 +8,6 @@ import {
     IconCalendar24,
     IconHome24,
     IconAdd24,
-    IconArrowLeft24,
     IconChevronDown24,
     IconChevronUp24,
 } from "@dhis2/ui";
@@ -17,7 +16,7 @@ import classes from "./InspectionReports.module.css";
 
 const API_BASE = "https://research.im.dhis2.org/in5320g20/api";
 const CREDENTIALS = "Basic " + btoa("admin:district");
-const PROGRAM_ID = "UxK2o06ScIe"; // same program as in Inspection.jsx
+const PROGRAM_ID = "UxK2o06ScIe";
 
 export default function InspectionReports({ setActivePage }) {
     const [reports, setReports] = useState([]);
@@ -29,13 +28,10 @@ export default function InspectionReports({ setActivePage }) {
     const [openReportId, setOpenReportId] = useState(null);
 
     // ---------- API HELPERS ----------
-
     const fetchSchools = async () => {
         const res = await fetch(
             `${API_BASE}/organisationUnits?paging=false&fields=id,name`,
-            {
-                headers: { Authorization: CREDENTIALS },
-            }
+            { headers: { Authorization: CREDENTIALS } }
         );
         const data = await res.json();
         return data.organisationUnits || [];
@@ -44,45 +40,35 @@ export default function InspectionReports({ setActivePage }) {
     const fetchEvents = async () => {
         const res = await fetch(
             `${API_BASE}/tracker/events.json?program=${PROGRAM_ID}&paging=false&fields=event,orgUnit,occurredAt,dataValues[dataElement,value]`,
-            {
-                headers: { Authorization: CREDENTIALS },
-            }
+            { headers: { Authorization: CREDENTIALS } }
         );
         const data = await res.json();
         return data.events || [];
     };
 
     const fetchProgramMeta = async () => {
-        // Get dataElement labels for this program so reports can show human-readable names
         const res = await fetch(
             `${API_BASE}/programs/${PROGRAM_ID}?fields=programStages[programStageDataElements[dataElement[id,displayName,shortName,code]]]`,
-            {
-                headers: { Authorization: CREDENTIALS },
-            }
+            { headers: { Authorization: CREDENTIALS } }
         );
         const data = await res.json();
-        const map = {};
 
-        if (data.programStages && data.programStages.length > 0) {
+        const map = {};
+        if (data.programStages?.length > 0) {
             data.programStages[0].programStageDataElements.forEach((psde) => {
                 const de = psde.dataElement;
-                const label =
+                map[de.id] =
                     de.displayName || de.shortName || de.code || de.id;
-                map[de.id] = label;
             });
         }
-
         return map;
     };
 
-    // ---------- LOAD ALL DATA ON MOUNT ----------
-
+    // ---------- LOAD DATA ----------
     useEffect(() => {
         const loadAll = async () => {
             try {
                 setLoading(true);
-                setError(null);
-
                 const [schoolList, eventList, labelMap] = await Promise.all([
                     fetchSchools(),
                     fetchEvents(),
@@ -90,9 +76,7 @@ export default function InspectionReports({ setActivePage }) {
                 ]);
 
                 const schoolMap = {};
-                schoolList.forEach((s) => {
-                    schoolMap[s.id] = s.name;
-                });
+                schoolList.forEach((s) => (schoolMap[s.id] = s.name));
 
                 const formatted = eventList.map((ev) => ({
                     id: ev.event,
@@ -101,7 +85,6 @@ export default function InspectionReports({ setActivePage }) {
                     values: ev.dataValues || [],
                 }));
 
-                // sort newest first
                 formatted.sort(
                     (a, b) => new Date(b.date) - new Date(a.date)
                 );
@@ -109,8 +92,7 @@ export default function InspectionReports({ setActivePage }) {
                 setReports(formatted);
                 setSchools(schoolList);
                 setDeLabelMap(labelMap);
-            } catch (err) {
-                console.error(err);
+            } catch {
                 setError("Failed to load inspection reports");
             } finally {
                 setLoading(false);
@@ -120,38 +102,33 @@ export default function InspectionReports({ setActivePage }) {
         loadAll();
     }, []);
 
-    // ---------- FILTERING ----------
-
+    // ---------- FILTER ----------
     const filteredReports = reports.filter((r) =>
         r.schoolName.toLowerCase().includes(search.toLowerCase())
     );
-
-    // ---------- RENDERING ----------
-
-    if (loading) {
-        return (
-            <div className={classes.loadingWrapper}>
-                <CircularLoader />
-            </div>
-        );
-    }
-
-    if (error) {
-        return (
-            <NoticeBox error title="Error loading reports">
-                {error}
-            </NoticeBox>
-        );
-    }
 
     const toggleOpen = (id) => {
         setOpenReportId((prev) => (prev === id ? null : id));
     };
 
+    // ---------- RENDER ----------
+    if (loading)
+        return (
+            <div className={classes.loadingWrapper}>
+                <CircularLoader />
+            </div>
+        );
+
+    if (error)
+        return (
+            <NoticeBox error title="Error loading reports">
+                {error}
+            </NoticeBox>
+        );
+
     return (
         <div className={classes.pageWrapper}>
-
-            {/* SEARCH + START INSPECTION */}
+            {/* SEARCH + START BUTTON */}
             <Card className={classes.searchCard}>
                 <InputField
                     placeholder="Search by school name..."
@@ -181,65 +158,90 @@ export default function InspectionReports({ setActivePage }) {
                     const isOpen = openReportId === report.id;
 
                     return (
-                        <Card
-                            key={report.id}
-                            className={classes.reportCard}
-                        >
+                        <Card key={report.id} className={classes.reportCard}>
                             <div className={classes.reportContent}>
                                 <div className={classes.iconCircle}>
                                     <IconHome24 />
                                 </div>
 
-                                <div className={classes.reportText}>
+                                <div className={classes.textColumn}>
                                     <h3 className={classes.schoolName}>
                                         {report.schoolName}
                                     </h3>
 
-                                    <div className={classes.dateRow}>
-                                        <IconCalendar24 />
-                                        <span>
-                                            {new Date(
-                                                report.date
-                                            ).toLocaleDateString("en-GB", {
-                                                day: "2-digit",
-                                                month: "short",
-                                                year: "numeric",
-                                            })}
-                                        </span>
+                                    <div className={classes.rowBetween}>
+                                        <div className={classes.dateRow}>
+                                            <IconCalendar24 />
+                                            <span
+                                                className={classes.dateLabel}
+                                            >
+                                                Last visit:
+                                            </span>
+                                            <span>
+                                                {new Date(
+                                                    report.date
+                                                ).toLocaleDateString(
+                                                    "en-GB",
+                                                    {
+                                                        day: "2-digit",
+                                                        month: "short",
+                                                        year: "numeric",
+                                                    }
+                                                )}
+                                            </span>
+                                        </div>
+
+                                        <div
+                                            className={classes.showMore}
+                                            onClick={() =>
+                                                toggleOpen(report.id)
+                                            }
+                                        >
+                                            {isOpen ? (
+                                                <>
+                                                    Hide details
+                                                    <IconChevronUp24
+                                                        className={
+                                                            classes.showMoreIcon
+                                                        }
+                                                    />
+                                                </>
+                                            ) : (
+                                                <>
+                                                    Show details
+                                                    <IconChevronDown24
+                                                        className={
+                                                            classes.showMoreIcon
+                                                        }
+                                                    />
+                                                </>
+                                            )}
+                                        </div>
                                     </div>
                                 </div>
-
-                                <Button
-                                    small
-                                    secondary
-                                    onClick={() => toggleOpen(report.id)}
-                                >
-                                    {isOpen ? (
-                                        <>
-                                            Hide details <IconChevronUp24 />
-                                        </>
-                                    ) : (
-                                        <>
-                                            Show details <IconChevronDown24 />
-                                        </>
-                                    )}
-                                </Button>
                             </div>
 
                             {isOpen && (
                                 <div className={classes.reportDetails}>
                                     <h4>Recorded values</h4>
+
                                     <ul className={classes.valuesList}>
                                         {report.values.length === 0 && (
-                                            <li className={classes.emptyValues}>
-                                                No data values recorded for this
-                                                event.
+                                            <li
+                                                className={
+                                                    classes.emptyValues
+                                                }
+                                            >
+                                                No data values recorded for
+                                                this event.
                                             </li>
                                         )}
+
                                         {report.values.map((dv, idx) => {
                                             const label =
                                                 deLabelMap[dv.dataElement] ||
                                                 dv.dataElement;
+
                                             return (
                                                 <li
                                                     key={`${dv.dataElement}-${idx}`}
