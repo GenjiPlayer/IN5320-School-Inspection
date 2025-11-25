@@ -13,7 +13,7 @@ import {
     NoticeBox,
     IconHome24,
     IconChevronDown24,
-    IconArrowLeft24
+    IconFilter24 
 } from "@dhis2/ui";
 
 export default function VisitationPlanner({ setActivePage }) {
@@ -457,9 +457,11 @@ export default function VisitationPlanner({ setActivePage }) {
                             </div>
                         )}
                 </div>
-                <Button onClick={() => setFilterModalOpen(true)}>
-                    Filter
-                </Button>
+                <Button className={classes.filterButton}
+    small
+    onClick={() => setFilterModalOpen(true)}
+    icon={<IconFilter24 />}
+></Button>
             </div>
 
             {/* Filter Modal */}
@@ -670,70 +672,71 @@ export default function VisitationPlanner({ setActivePage }) {
             )}
 
             {/* School List */}
-            {/* School List */}
             <div className={classes.schoolListContainer}>
-                {filteredSchools.map((s) => {
-                    const isExpanded = expandedSchools.includes(s.id);
-
-                    return (
-                        <div
-                            key={s.id}
-                            className={`${classes.listRow} ${isExpanded ? classes.listRowExpanded : ""}`}
-                            onClick={() => {
-                                // Expand/collapse row
-                                setExpandedSchools((prev) =>
-                                    prev.includes(s.id)
-                                        ? prev.filter((id) => id !== s.id)
-                                        : [...prev, s.id]
-                                );
-                                setSelectedSchool(s); // Select for map highlight
-                            }}
-                        >
-                            {/* HEADER ROW */}
-                            <div className={classes.listRowHeader}>
-                                <div>
-                                    <div className={classes.listRowName}>{s.name}</div>
-                                    <div className={classes.listRowSub}>
-                                        {s.parentName} —{" "}
-                                        {s.lastVisitDays === 999
-                                            ? "Never visited"
-                                            : `${s.lastVisitDays} days ago`}
-                                    </div>
-                                </div>
-
-                                <IconChevronDown24
-                                    className={`${classes.listRowChevron} ${
-                                        isExpanded ? "rotate" : ""
-                                    }`}
-                                />
-                            </div>
-
-                            {/* EXPANDED DETAILS */}
-                            {isExpanded && (
-                                <div className={classes.listDetails}>
-                                    <div className={classes.listDetailLine}>
-                                        <strong>Learners:</strong> {s.learners}
-                                    </div>
-
-                                    <Button
-                                        small
-                                        primary
-                                        className={classes.actionButtonDHIS2}
-                                    >
-                                        Schedule inspection
-                                    </Button>
-                                </div>
-                            )}
-                        </div>
+    <div className={classes.schoolListScrollable}>
+        {filteredSchools.map((s) => (
+            <div
+                key={s.id}
+                className={`${classes.listRow} ${
+                    expandedSchools.includes(s.id)
+                        ? classes.listRowExpanded
+                        : ""
+                }`}
+                onClick={() => {
+                    setExpandedSchools(prev =>
+                        prev.includes(s.id)
+                            ? prev.filter(id => id !== s.id)
+                            : [...prev, s.id]
                     );
-                })}
+                    setSelectedSchool(s);
+                }}
+            >
+                {/* HEADER ROW */}
+                <div className={classes.listRowHeader}>
+                    <div>
+                        <div className={classes.listRowName}>{s.name}</div>
+                        <div className={classes.listRowSub}>
+                            {s.parentName} —{" "}
+                            {s.lastVisitDays === 999
+                                ? "Never visited"
+                                : `${s.lastVisitDays} days ago`}
+                        </div>
+                    </div>
 
-                {filteredSchools.length === 0 && (
-                    <div style={{ padding: 12, color: "#777" }}>
-                        No schools match these filters.
+                    <IconChevronDown24
+                        className={`${classes.listRowChevron} ${
+                            expandedSchools.includes(s.id) ? "rotate" : ""
+                        }`}
+                    />
+                </div>
+
+                {/* EXPANDED DETAILS */}
+                {expandedSchools.includes(s.id) && (
+                    <div className={classes.listDetails}>
+                        <div className={classes.listDetailLine}>
+                            <strong>Learners:</strong> {s.learners}
+                        </div>
+
+                        <Button
+                            small
+                            primary
+                            className={classes.actionButtonDHIS2}
+                        >
+                            Schedule inspection
+                        </Button>
                     </div>
                 )}
             </div>
+        ))}
+
+        {filteredSchools.length === 0 && (
+            <div style={{ padding: 12, color: "#777" }}>
+                No schools match these filters.
+            </div>
+        )}
+    </div>
+</div>
+
 
         </div>
     );

@@ -214,6 +214,32 @@
     color: #333;
 }
 
+.filterButton {
+    width: 44px !important;     /* same as search input height */
+    height: 42px !important;
+    min-width: 42px !important;
+    min-height: 42px !important;
+
+    padding: 0 !important;
+    border-radius: 6px !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+/* override the internal DHIS2 button container */
+.filterButton :global(button) {
+    width: 42px !important;
+    height: 42px !important;
+    padding: 0 !important;
+
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 6px !important;
+}
+
 /* === Filter Badges === */
 .filterBadges {
     display: flex;
