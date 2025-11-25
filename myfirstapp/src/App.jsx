@@ -19,34 +19,23 @@ import {
 } from "@dhis2/ui";
 
 import classes from "./App.module.css";
-<<<<<<< HEAD
-import { useState } from "react";
-import Inspection from "./Inspection";
-import { Navigation } from "./Navigation";
-import Analytics from "./Analytics"
-import SchoolPlanner from "./SchoolPlanner";
-=======
->>>>>>> Tina
-
 import Inspection from "./Inspection.jsx";
 import InspectionReports from "./InspectionReports.jsx";
 import Analytics from "./Analytics.jsx";
-import SchoolPlanner from "./SchoolPlanner.jsx";
+import VisitationPlanner from "./VisitationPlanner";
 import SchoolRegistry from "./SchoolRegistry.jsx";
-import ClusterAnalytics from "./ClusterAnalytics.jsx";
-import VisitationPlanner from "./VisitationPlanner.jsx";
 
 /* ===========================
       HEADER
 =========================== */
 function Header({
-    headerColor,
-    headerTitle,
-    headerTextColor,
-    headerIconColor,
-    activePage,
-    setActivePage
-}) {
+                    headerColor,
+                    headerTitle,
+                    headerTextColor,
+                    headerIconColor,
+                    activePage,
+                    setActivePage
+                }) {
     return (
         <div
             className={classes.appHeader}
@@ -88,7 +77,6 @@ function Footer({ activePage, setActivePage }) {
     return (
         <footer className={classes.footerNav}>
             <ButtonStrip middle>
-
                 <Button
                     className={
                         activePage === "dashboard"
@@ -113,7 +101,6 @@ function Footer({ activePage, setActivePage }) {
                 <Button className={classes.footerButton} icon={<IconEditItems24 />} small>
                     Notes
                 </Button>
-
             </ButtonStrip>
         </footer>
     );
@@ -124,11 +111,8 @@ function Footer({ activePage, setActivePage }) {
 =========================== */
 export default function App() {
     const [activePage, setActivePage] = useState("dashboard");
-
     const [headerColor, setHeaderColor] = useState("#2D6693");
     const [headerTitle, setHeaderTitle] = useState("School Inspection");
-
-    // NEW STATES FOR TEXT + ICON COLORS
     const [headerTextColor, setHeaderTextColor] = useState("#FFFFFF");
     const [headerIconColor, setHeaderIconColor] = useState("#FFFFFF");
 
@@ -156,31 +140,9 @@ export default function App() {
                     />
                 );
 
-            case "visitationPlanner":
-                return (
-                    <VisitationPlanner
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
-            case "clusterAnalytics":
-                return (
-                    <ClusterAnalytics
-                        setActivePage={setActivePage}
-                        setHeaderColor={setHeaderColor}
-                        setHeaderTextColor={setHeaderTextColor}
-                        setHeaderIconColor={setHeaderIconColor}
-                        setHeaderTitle={setHeaderTitle}
-                    />
-                );
-
             case "planner":
                 return (
-                    <SchoolPlanner
+                    <VisitationPlanner
                         setActivePage={setActivePage}
                         setHeaderColor={setHeaderColor}
                         setHeaderTextColor={setHeaderTextColor}
@@ -246,12 +208,12 @@ export default function App() {
       DASHBOARD
 =========================== */
 function Dashboard({
-    setActivePage,
-    setHeaderColor,
-    setHeaderTextColor,
-    setHeaderIconColor,
-    setHeaderTitle
-}) {
+                       setActivePage,
+                       setHeaderColor,
+                       setHeaderTextColor,
+                       setHeaderIconColor,
+                       setHeaderTitle
+                   }) {
     useEffect(() => {
         setHeaderColor("#2D6693");
         setHeaderTextColor("#FFFFFF");
@@ -268,7 +230,7 @@ function Dashboard({
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
-                            setHeaderColor("#E65100");
+                            setHeaderColor("#FB8C00");
                             setHeaderTextColor("#FFFFFF");
                             setHeaderIconColor("#FFFFFF");
                             setHeaderTitle("School Registry");
@@ -277,7 +239,7 @@ function Dashboard({
                     >
                         <Card className={classes.programCard}>
                             <div className={classes.programContent}>
-                                <div className={`${classes.programIcon} ${classes.programIconYellow}`}>
+                                <div className={`${classes.programIcon} ${classes.programIconOrange}`}>
                                     <IconHome24 />
                                 </div>
                                 <div className={classes.programText}>School Registry</div>
@@ -306,15 +268,15 @@ function Dashboard({
                         </Card>
                     </div>
 
-                    {/* VISITATION PLANNER */}
+                    {/* SCHOOL PLANNER */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
                             setHeaderColor("#F45B55");
                             setHeaderTextColor("#FFFFFF");
                             setHeaderIconColor("#FFFFFF");
-                            setHeaderTitle("Visitation Planner");
-                            setActivePage("visitationPlanner");
+                            setHeaderTitle("School Visit Planner");
+                            setActivePage("planner");
                         }}
                     >
                         <Card className={classes.programCard}>
@@ -322,20 +284,20 @@ function Dashboard({
                                 <div className={`${classes.programIcon} ${classes.programIconPink}`}>
                                     <IconClock24 />
                                 </div>
-                                <div className={classes.programText}>Visitation Planner</div>
+                                <div className={classes.programText}>School Visit Planner</div>
                             </div>
                         </Card>
                     </div>
 
-                    {/* CLUSTER ANALYTICS */}
+                    {/* ANALYTICS */}
                     <div
                         className={classes.programCardWrapper}
                         onClick={() => {
                             setHeaderColor("#00897B");
-                            setHeaderTextColor("#ffffffff");
-                            setHeaderIconColor("#ffffffff");
-                            setHeaderTitle("Cluster Analytics");
-                            setActivePage("clusterAnalytics");
+                            setHeaderTextColor("#FFFFFF");
+                            setHeaderIconColor("#FFFFFF");
+                            setHeaderTitle("School Analytics");
+                            setActivePage("analytics");
                         }}
                     >
                         <Card className={classes.programCard}>
@@ -343,7 +305,7 @@ function Dashboard({
                                 <div className={`${classes.programIcon} ${classes.programIconTeal}`}>
                                     <IconVisualizationColumn24 />
                                 </div>
-                                <div className={classes.programText}>Cluster Analytics</div>
+                                <div className={classes.programText}>School Analytics</div>
                             </div>
                         </Card>
                     </div>
