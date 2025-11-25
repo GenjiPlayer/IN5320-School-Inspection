@@ -109,6 +109,15 @@
    FLOATING SEARCH BAR
 ============================================================
 */
+
+.headerContainer {
+    display: flex;
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+    width: 100%;
+}
+
 .searchContainer {
     flex: 1;
     position: relative;
@@ -120,7 +129,7 @@
     left: 16px;
     right: 16px;
     z-index: 999;
-        display: flex;     
+    display: flex;     
     flex-direction: row;
     align-items: center;
     gap: 12px;
