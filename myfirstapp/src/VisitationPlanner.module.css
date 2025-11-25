@@ -132,14 +132,53 @@
 }
 
 .suggestionItem {
+    display: flex;
+    align-items: center;
+    gap: 12px;
     padding: 12px 16px;
     cursor: pointer;
     transition: background 0.15s ease;
+    border-bottom: 1px solid #f0f0f0;
+}
+
+.suggestionItem:last-child {
+    border-bottom: none;
 }
 
 .suggestionItem:hover {
-    background: #f4f6f8;
+    background: #f8f9fa;
 }
+
+.suggestionIcon {
+    font-size: 20px;
+    flex-shrink: 0;
+}
+
+.suggestionName {
+    flex: 1;
+    font-size: 14px;
+    font-weight: 500;
+    color: #333;
+}
+
+.suggestionMeta {
+    font-size: 12px;
+    color: #888;
+    flex-shrink: 0;
+}
+
+/* === Filter Modal Sections === */
+.filterSection {
+    margin-bottom: 24px;
+}
+
+.filterSection h3 {
+    font-size: 16px;
+    font-weight: 600;
+    margin-bottom: 12px;
+    color: #333;
+}
+
 
 /* ============================================================
    BOTTOM SHEET PANEL (FIXED HEIGHT FOOTER)
