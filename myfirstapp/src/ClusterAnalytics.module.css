@@ -1,0 +1,600 @@
+/* =========================================
+   GLOBAL BASE
+========================================= */
+:global(body) {
+    overflow-x: hidden;
+    background: #EFF6FA;
+    font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+        Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+        sans-serif !important;
+}
+
+/* =========================================
+   PAGE WRAPPER
+========================================= */
+.pageWrapper {
+    width: 100%;
+    padding: 12px;
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    box-sizing: border-box;
+    background: #EFF6FA;
+    border-radius: 16px 16px 0 0;
+}
+
+/* =========================================
+   LOADING
+========================================= */
+.loadingWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+}
+
+/* =========================================
+   PAGE HEADER
+========================================= */
+.pageHeader {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    margin-bottom: 8px;
+}
+
+.pageHeader h2 {
+    margin: 0;
+    font-size: 24px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+/* =========================================
+   VIEW MODE CARD
+========================================= */
+.viewModeCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.viewModeButtons {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+}
+
+/* =========================================
+   SELECTOR CARD
+========================================= */
+.selectorCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.selectorRow {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+    margin-bottom: 20px;
+}
+
+.mainSelector {
+    flex: 1;
+    min-width: 250px;
+}
+
+.comparisonSection {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+    padding-top: 12px;
+    border-top: 1px solid #e7edf5;
+}
+
+.comparisonLabel {
+    margin: 0 0 8px 0;
+    font-size: 14px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+/* =========================================
+   INFO CARD (Cluster Summary)
+========================================= */
+.infoCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.clusterTitle {
+    margin: 0 0 16px 0;
+    font-size: 20px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.clusterStats {
+    display: flex;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
+.statItem {
+    display: flex;
+    flex-direction: column;
+    gap: 6px;
+    flex: 1;
+    min-width: 100px;
+}
+
+.statLabel {
+    font-size: 13px;
+    color: #6a7280;
+    font-weight: 500;
+}
+
+.statValue {
+    font-size: 24px;
+    font-weight: 700;
+    color: #1a2b49;
+}
+
+/* =========================================
+   METRICS CONTAINER
+========================================= */
+.metricsContainer {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    width: 100%;
+}
+
+/* =========================================
+   METRIC CARD
+========================================= */
+.metricCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+    transition: box-shadow 0.3s ease;
+}
+
+.metricCard:hover {
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
+}
+
+.metricHeader {
+    display: flex;
+    align-items: flex-start;
+    gap: 16px;
+    margin-bottom: 12px;
+}
+
+.metricIconWrapper {
+    flex-shrink: 0;
+    width: 48px;
+    height: 48px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #f4f6f9;
+    border-radius: 12px;
+}
+
+.metricTextBlock {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.metricLabel {
+    font-size: 16px;
+    font-weight: 600;
+    color: #1a2b49;
+    line-height: 1.3;
+}
+
+.metricValue {
+    font-size: 28px;
+    font-weight: 700;
+    color: #1a2b49;
+    line-height: 1.2;
+}
+
+.metricStatus {
+    font-size: 14px;
+    font-weight: 500;
+    color: #6a7280;
+}
+
+.metricStandard {
+    font-size: 13px;
+    font-weight: 500;
+    color: #2196f3;
+    margin-top: 4px;
+    padding: 6px 10px;
+    background: #e3f2fd;
+    border-radius: 6px;
+    display: inline-block;
+    width: fit-content;
+}
+
+.metricDescription {
+    font-size: 14px;
+    color: #4a5568;
+    line-height: 1.5;
+    margin: 0 0 16px 0;
+}
+
+/* =========================================
+   STATUS ICONS
+========================================= */
+.iconGood svg {
+    color: #4caf50 !important;
+    width: 28px;
+    height: 28px;
+}
+
+.iconWarning svg {
+    color: #ff9800 !important;
+    width: 28px;
+    height: 28px;
+}
+
+.iconCritical svg {
+    color: #f44336 !important;
+    width: 28px;
+    height: 28px;
+}
+
+/* =========================================
+   DETAILS BUTTON
+========================================= */
+.detailsButton {
+    margin-top: 8px;
+}
+
+/* =========================================
+   EXPANDED CONTENT
+========================================= */
+.expandedContent {
+    margin-top: 20px;
+    padding-top: 20px;
+    border-top: 1px solid #e7edf5;
+    display: flex;
+    flex-direction: column;
+    gap: 24px;
+}
+
+/* =========================================
+   CHART WRAPPER
+========================================= */
+.chartWrapper {
+    width: 100%;
+    background: linear-gradient(135deg, #f8f9fa 0%, #ffffff 100%);
+    border-radius: 12px;
+    padding: 20px;
+    box-sizing: border-box;
+    overflow-x: auto;
+    box-shadow: 0 1px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Make charts responsive on mobile */
+@media (max-width: 768px) {
+    .chartWrapper {
+        padding: 16px 12px;
+    }
+}
+
+/* =========================================
+   RECOMMENDATION CARD (DHIS2 Style)
+========================================= */
+.recommendationCard {
+    background: #ffffff;
+    border-radius: 3px;
+    padding: 16px;
+    box-sizing: border-box;
+    border: 1px solid #e0e0e0;
+}
+
+.recommendationTitle {
+    margin: 0 0 12px 0;
+    font-size: 16px;
+    font-weight: 600;
+    color: #212934;
+}
+
+.recommendationText {
+    font-size: 14px;
+    line-height: 1.6;
+    color: #494949;
+}
+
+.recommendationText p {
+    margin: 0;
+}
+
+/* =========================================
+   FACILITY CARD
+========================================= */
+.facilityCard {
+    background: #ffffff;
+    border-radius: 16px;
+    padding: 16px;
+    box-shadow: var(--elevation-e100);
+    width: 100%;
+    box-sizing: border-box;
+}
+
+.facilityTitle {
+    margin: 0 0 20px 0;
+    font-size: 18px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.facilityList {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+}
+
+.facilityRow {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 14px;
+    background: #fafbfc;
+    border-radius: 12px;
+    transition: background 0.2s ease;
+}
+
+.facilityRow:hover {
+    background: #f4f6f9;
+}
+
+.facilityIconWrapper {
+    flex-shrink: 0;
+    width: 40px;
+    height: 40px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    background: #ffffff;
+    border-radius: 10px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+}
+
+.facilityInfo {
+    flex: 1;
+    display: flex;
+    flex-direction: column;
+    gap: 4px;
+}
+
+.facilityLabel {
+    font-size: 15px;
+    font-weight: 600;
+    color: #1a2b49;
+}
+
+.facilityValue {
+    font-size: 13px;
+    color: #6a7280;
+    font-weight: 500;
+}
+
+/* =========================================
+   RESPONSIVE DESIGN
+========================================= */
+
+/* Tablets */
+@media (max-width: 1024px) {
+    .pageWrapper {
+        padding: 12px;
+        gap: 16px;
+    }
+
+    .clusterStats {
+        gap: 12px;
+    }
+
+    .metricValue {
+        font-size: 24px;
+    }
+
+    .selectorRow {
+        flex-direction: column;
+    }
+
+    .mainSelector {
+        min-width: 100%;
+    }
+}
+
+/* Mobile devices */
+@media (max-width: 768px) {
+    .pageHeader h2 {
+        font-size: 20px;
+    }
+
+    .clusterTitle {
+        font-size: 18px;
+    }
+
+    .clusterStats {
+        flex-direction: column;
+        gap: 12px;
+    }
+
+    .statItem {
+        min-width: 100%;
+    }
+
+    .metricHeader {
+        gap: 12px;
+    }
+
+    .metricIconWrapper {
+        width: 40px;
+        height: 40px;
+    }
+
+    .metricLabel {
+        font-size: 15px;
+    }
+
+    .metricValue {
+        font-size: 22px;
+    }
+
+    .metricStandard {
+        font-size: 12px;
+        padding: 5px 8px;
+    }
+
+    .metricDescription {
+        font-size: 13px;
+    }
+
+    .chartWrapper {
+        overflow-x: scroll;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .facilityRow {
+        padding: 12px;
+        gap: 12px;
+    }
+
+    .facilityIconWrapper {
+        width: 36px;
+        height: 36px;
+    }
+
+    .comparisonSection {
+        gap: 10px;
+    }
+}
+
+/* Very small mobile devices */
+@media (max-width: 480px) {
+    .pageWrapper {
+        padding: 10px;
+        gap: 14px;
+    }
+
+    .pageHeader h2 {
+        font-size: 18px;
+    }
+
+    .clusterTitle {
+        font-size: 16px;
+    }
+
+    .statValue {
+        font-size: 20px;
+    }
+
+    .metricValue {
+        font-size: 20px;
+    }
+
+    .infoCard,
+    .metricCard,
+    .facilityCard,
+    .selectorCard {
+        border-radius: 14px;
+        padding: 14px;
+    }
+
+    .expandedContent {
+        gap: 20px;
+    }
+
+    .chartWrapper {
+        padding: 14px 10px;
+    }
+}
+
+/* =========================================
+   ACCESSIBILITY
+========================================= */
+
+/* Focus states for keyboard navigation */
+.detailsButton:focus {
+    outline: 2px solid #2196f3;
+    outline-offset: 2px;
+}
+
+/* High contrast mode support */
+@media (prefers-contrast: high) {
+    .metricCard,
+    .infoCard,
+    .facilityCard,
+    .selectorCard {
+        border: 1px solid #1a2b49;
+    }
+
+    .iconGood svg {
+        color: #2e7d32 !important;
+    }
+
+    .iconWarning svg {
+        color: #f57c00 !important;
+    }
+
+    .iconCritical svg {
+        color: #c62828 !important;
+    }
+}
+
+/* Reduce motion for users who prefer it */
+@media (prefers-reduced-motion: reduce) {
+    .metricCard,
+    .expandedContent,
+    .facilityRow {
+        transition: none;
+    }
+}
+
+
+/* =========================================
+   PRINT STYLES
+========================================= */
+@media print {
+    .pageWrapper {
+        padding: 0;
+    }
+
+    .detailsButton {
+        display: none;
+    }
+
+    .expandedContent {
+        display: block !important;
+        animation: none;
+    }
+
+    .metricCard {
+        page-break-inside: avoid;
+        box-shadow: none;
+        border: 1px solid #e7edf5;
+    }
+}

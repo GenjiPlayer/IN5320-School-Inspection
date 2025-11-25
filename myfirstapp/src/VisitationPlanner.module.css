@@ -1,0 +1,291 @@
+:root {
+    --dhis2-header-height: 64px; /* juster ved behov */
+    --dhis2-footer-height: 56px;
+}
+/* ============================================================
+   MAIN PLANNER LAYOUT – ALWAYS MATCHES VIEWPORT HEIGHT
+============================================================ */
+.plannerContainer {
+    position: fixed;
+    top: var(--dhis2-header-height);
+    left: 0;
+    right: 0;
+    bottom: var(--dhis2-footer-height);
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    background: #F45B55;
+}
+/* ============================================================
+   MAP SECTION – FLEXIBLE HEIGHT (NO ABSOLUTE!)
+============================================================ */
+.mapSection {
+    flex: 0 0 60%;
+    min-height: 200px;
+    max-height: 60vh;
+    position: relative;
+    border-radius: 16px 16px 0 0;
+    overflow: hidden;
+        background: transparent;
+    top: 80px;
+}
+/* Force leaflet to fill container */
+.mapSection :global(.leaflet-container) {
+    width: 100% !important;
+    height: 100% !important;
+    cursor: grab;
+}
+/* ============================================================
+   LEAFLET CONTROLS (SQUARE, NO BORDER)
+============================================================ */
+:global(.leaflet-bar) {
+    background: none !important;
+    border: none !important;
+    box-shadow: none !important;
+}
+
+:global(.leaflet-bar a) {
+    background: white !important;
+    width: 36px !important;
+    height: 36px !important;
+    border-radius: 4px !important;
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    margin: 4px 8px !important;
+    box-shadow: 0 1px 4px rgba(0,0,0,0.15) !important;
+}
+
+:global(.leaflet-top.leaflet-right .leaflet-control) {
+    margin: 4px 8px 0 0 !important;
+}
+/* Optional custom control class (for your recenter button) */
+:global(.leaflet-control-custom) {
+    width: 36px !important;
+    height: 36px !important;
+    line-height: 36px !important;
+    display: flex !important;
+    justify-content: center;
+    align-items: center;
+    background: #ffffff !important;
+    border-radius: 4px !important;
+    color: #000000 !important;
+    font-size: 18px !important;
+}
+
+/* ============================================================
+   FLOATING SEARCH BAR
+============================================================ */.searchBarFloating {
+    position: absolute;
+    top: 16px; 
+    left: 16px;
+    right: 16px;
+    z-index: 999;
+        display: flex;     
+    flex-direction: row;
+    align-items: center;
+    gap: 12px;
+}
+.searchWrapper {
+    flex: 1;
+    position: relative;
+}
+
+/* Search dropdown */
+.suggestionsDropdown {
+    position: absolute;
+    top: 100%;
+    left: 0;
+    right: 0;
+    margin-top: 8px;
+    background: #ffffff;
+    border-radius: 4px;
+    box-shadow:
+        0 0 0 1px rgba(0, 0, 0, 0.08),
+        0 4px 8px rgba(0, 0, 0, 0.15);
+    z-index: 1001;
+    max-height: 280px;
+    overflow-y: auto;
+    pointer-events: auto;
+}
+
+.suggestionItem {
+    padding: 12px 16px;
+    cursor: pointer;
+    transition: background 0.15s ease;
+}
+
+.suggestionItem:hover {
+    background: #f4f6f8;
+}
+
+/* ============================================================
+   BOTTOM SHEET PANEL (FIXED HEIGHT FOOTER)
+============================================================ */
+.bottomSheetPanel {
+    position: absolute;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    height: 320px;               /* fixed height footer */
+    background: #ffffff;
+    display: flex;
+    flex-direction: column;
+    overflow: hidden;
+    z-index: 10;
+    box-shadow: 0 -2px 8px rgba(0, 0, 0, 0.1);
+}
+
+/* ============================================================
+   SCHOOL LIST – ONLY SCROLLABLE AREA
+============================================================ */
+.schoolListScrollable {
+    overflow-y: auto;
+    overflow-x: hidden;
+    padding: 16px;
+    height: 100%;
+}
+
+/* Optional scrollbar styling */
+.schoolListScrollable::-webkit-scrollbar {
+    width: 8px;
+}
+
+.schoolListScrollable::-webkit-scrollbar-track {
+    background: #f1f1f1;
+}
+
+.schoolListScrollable::-webkit-scrollbar-thumb {
+    background: #888;
+    border-radius: 4px;
+}
+
+.schoolListScrollable::-webkit-scrollbar-thumb:hover {
+    background: #555;
+}
+
+/* ============================================================
+   SCHOOL CARDS
+============================================================ */
+.schoolCard {
+    border-radius: 8px;
+    cursor: pointer;
+    background: #ffffff;
+    box-shadow: 0 0 0 1px rgba(0, 0, 0, 0.08);
+    transition: box-shadow 0.2s ease;
+    margin-bottom: 12px;
+    margin-top: 12px;
+}
+
+.schoolCard:last-child {
+    margin-bottom: 12px;
+}
+
+.schoolCard:hover {
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+}
+
+.schoolCardHeader {
+    padding: 16px;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+}
+
+.schoolName {
+    font-size: 16px;
+    font-weight: 500;
+    color: #212934;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.urgentBadge {
+    display: inline-block;
+    background: #d32f2f;
+    color: #ffffff;
+    font-size: 11px;
+    font-weight: 600;
+    padding: 2px 8px;
+    border-radius: 12px;
+    text-transform: uppercase;
+}
+
+.schoolMeta {
+    font-size: 14px;
+    color: #6e7a8a;
+    margin-top: 4px;
+}
+
+.chevronIcon {
+    transition: transform 0.2s ease;
+    color: #6e7a8a;
+}
+
+.chevronRotate {
+    transform: rotate(180deg);
+}
+
+/* ============================================================
+   EXPANDED SCHOOL DETAILS
+============================================================ */
+.schoolDetails {
+    padding: 8px;
+}
+
+.detailsGrid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 16px;
+    margin-bottom: 16px;
+}
+
+.detailsGrid > div {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.detailLabel {
+    font-size: 12px;
+    color: #6e7a8a;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+}
+
+.detailValue {
+    font-size: 14px;
+    font-weight: 500;
+    color: #212934;
+}
+
+.actionButtons {
+    display: flex;
+    gap: 8px;
+    margin-top: 8px;
+}
+
+
+
+/* ============================================================
+   EMPTY STATE
+============================================================ */
+.emptyState {
+    padding: 48px 24px;
+    text-align: center;
+    color: #6e7a8a;
+    font-size: 14px;
+}
+
+/* ============================================================
+   LOADING & ERROR STATES
+============================================================ */
+.loadingContainer,
+.errorContainer {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 100vh;
+    padding: 24px;
+}
