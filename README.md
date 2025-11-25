@@ -1,5 +1,4 @@
 # IN5320 School Inspection Application
-**Devs from school inspectors worst nightmare**
 
 ## What This App Does
 
