@@ -79,10 +79,15 @@ export default function ClusterAnalytics({ setActivePage }) {
 
         for (const clusterName of Object.keys(CLUSTERS)) {
             const clusterId = CLUSTERS[clusterName].id;
+            console.log(`Fetching data for ${clusterName} (${clusterId})`);
             const data = await fetchClusterData(clusterId, clusterName);
             clusterMap[clusterName] = data.clusterData;
             Object.assign(schoolMap, data.schoolDataMap);
+            console.log(`Schools in ${clusterName}:`, Object.keys(data.schoolDataMap).length);
         }
+
+        console.log("Final schoolMap:", schoolMap);
+        console.log("Final clusterMap:", clusterMap);
 
         setClusterDataMap(clusterMap);
         setSchoolDataMap(schoolMap);
@@ -104,22 +109,36 @@ export default function ClusterAnalytics({ setActivePage }) {
             let totalTextbooks = 0;
             let totalClassrooms = 0;
             let totalToilets = 0;
-            let totalBoys = 0;
-            let totalGirls = 0;
 
             const timeSeriesData = {};
             const schoolDataMap = {};
 
             // Fetch data for each school
             for (const school of schools) {
-                // Fetch learner data
+                // ========== FETCH LEARNER DATA FROM ANALYTICS ==========
                 const learnersRes = await fetch(
-                    `${API_BASE}/analytics.json?dimension=dx:${LEARNER_DATA_ELEMENT}&dimension=ou:${school.id}&dimension=pe:LAST_12_MONTHS`,
+                    `${API_BASE}/analytics.json?dimension=dx:${LEARNER_DATA_ELEMENT}&dimension=ou:${school.id}&dimension=pe:2020`,
                     { headers: { Authorization: CREDENTIALS } }
                 );
                 const learnersData = await learnersRes.json();
 
-                // Fetch teacher data
+                console.log(`Learner data for ${school.name}:`, learnersData);
+
+                // Extract total learners
+                let learners = 0;
+                if (learnersData.rows && learnersData.rows.length > 0) {
+                    console.log(`Rows for ${school.name}:`, learnersData.rows);
+                    // Sum all rows (in case there are multiple)
+                    learnersData.rows.forEach(row => {
+                        const value = parseInt(row[3]) || 0;
+                        learners += value;
+                        console.log(`Row value: ${value}, running total: ${learners}`);
+                    });
+                }
+
+                console.log(`Final learner count for ${school.name}: ${learners}`);
+
+                // ========== FETCH TEACHER DATA ==========
                 const teachersRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${TEACHER_PROGRAM}&orgUnit=${school.id}&pageSize=1000`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -127,13 +146,19 @@ export default function ClusterAnalytics({ setActivePage }) {
                 const teachersData = await teachersRes.json();
                 const teacherCount = teachersData.events?.length || 0;
 
-                // Fetch resource data
+                // ========== FETCH RESOURCE DATA ==========
                 const resourcesRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&pageSize=100`,
                     { headers: { Authorization: CREDENTIALS } }
                 );
                 const resourcesData = await resourcesRes.json();
                 const events = resourcesData.events || [];
+
+                // Variables for this school's totals
+                let totalSeatsSchool = 0;
+                let totalTextbooksSchool = 0;
+                let totalClassroomsSchool = 0;
+                let totalToiletsSchool = 0;
 
                 // Process each event for time series
                 events.forEach((event) => {
@@ -147,16 +172,12 @@ export default function ClusterAnalytics({ setActivePage }) {
                             totalTextbooks: 0,
                             totalClassrooms: 0,
                             totalToilets: 0,
-                            totalBoys: 0,
-                            totalGirls: 0,
                         };
                     }
 
                     const dataValues = event.dataValues || [];
-                    const learnerRows = learnersData.rows || [];
-                    const learnerCount = parseInt(learnerRows[0]?.[3] || 0);
 
-                    timeSeriesData[date].totalLearners += learnerCount;
+                    timeSeriesData[date].totalLearners += learners;
                     timeSeriesData[date].totalTeachers += teacherCount;
                     timeSeriesData[date].totalSeats += parseInt(dataValues.find(dv => dv.dataElement === "fgUU2XNkGvI")?.value || 0);
                     timeSeriesData[date].totalTextbooks += parseInt(dataValues.find(dv => dv.dataElement === "m9k3VefvGQw")?.value || 0);
@@ -164,38 +185,41 @@ export default function ClusterAnalytics({ setActivePage }) {
                     timeSeriesData[date].totalToilets += parseInt(dataValues.find(dv => dv.dataElement === "slYohGwjQme")?.value || 0);
                 });
 
-                // Get latest values for aggregation
+                // Get latest values for this school
                 const latestEvent = events[0];
                 if (latestEvent) {
                     const dataValues = latestEvent.dataValues || [];
-                    const learnerRows = learnersData.rows || [];
-                    const learners = parseInt(learnerRows[0]?.[3] || 0);
-
-                    totalLearners += learners;
-                    totalTeachers += teacherCount;
-                    totalSeats += parseInt(dataValues.find(dv => dv.dataElement === "fgUU2XNkGvI")?.value || 0);
-                    totalTextbooks += parseInt(dataValues.find(dv => dv.dataElement === "m9k3VefvGQw")?.value || 0);
-                    totalClassrooms += parseInt(dataValues.find(dv => dv.dataElement === "mlbyc3CWNyb")?.value || 0);
-                    totalToilets += parseInt(dataValues.find(dv => dv.dataElement === "slYohGwjQme")?.value || 0);
-
-                    // Store individual school data
-                    schoolDataMap[school.id] = {
-                        id: school.id,
-                        name: school.name,
-                        clusterName: clusterName,
-                        totalLearners: learners,
-                        totalTeachers: teacherCount,
-                        totalSchools: 1,
-                        ratios: {
-                            seatToLearner: learners > 0 ? parseFloat((totalSeats / learners).toFixed(2)) : 0,
-                            textbookToLearner: learners > 0 ? parseFloat((totalTextbooks / learners).toFixed(2)) : 0,
-                            learnersPerClassroom: totalClassrooms > 0 ? parseFloat((learners / totalClassrooms).toFixed(2)) : 0,
-                            learnersPerTeacher: teacherCount > 0 ? parseFloat((learners / teacherCount).toFixed(2)) : 0,
-                            learnersPerToilet: totalToilets > 0 ? parseFloat((learners / totalToilets).toFixed(2)) : 0,
-                        },
-                        timeSeries: []
-                    };
+                    totalSeatsSchool = parseInt(dataValues.find(dv => dv.dataElement === "fgUU2XNkGvI")?.value || 0);
+                    totalTextbooksSchool = parseInt(dataValues.find(dv => dv.dataElement === "m9k3VefvGQw")?.value || 0);
+                    totalClassroomsSchool = parseInt(dataValues.find(dv => dv.dataElement === "mlbyc3CWNyb")?.value || 0);
+                    totalToiletsSchool = parseInt(dataValues.find(dv => dv.dataElement === "slYohGwjQme")?.value || 0);
                 }
+
+                // Add to cluster totals
+                totalLearners += learners;
+                totalTeachers += teacherCount;
+                totalSeats += totalSeatsSchool;
+                totalTextbooks += totalTextbooksSchool;
+                totalClassrooms += totalClassroomsSchool;
+                totalToilets += totalToiletsSchool;
+
+                // Store individual school data
+                schoolDataMap[school.id] = {
+                    id: school.id,
+                    name: school.name,
+                    clusterName: clusterName,
+                    totalLearners: learners,
+                    totalTeachers: teacherCount,
+                    totalSchools: 1,
+                    ratios: {
+                        seatToLearner: learners > 0 ? parseFloat((totalSeatsSchool / learners).toFixed(2)) : 0,
+                        textbookToLearner: learners > 0 ? parseFloat((totalTextbooksSchool / learners).toFixed(2)) : 0,
+                        learnersPerClassroom: totalClassroomsSchool > 0 ? parseFloat((learners / totalClassroomsSchool).toFixed(2)) : 0,
+                        learnersPerTeacher: teacherCount > 0 ? parseFloat((learners / teacherCount).toFixed(2)) : 0,
+                        learnersPerToilet: totalToiletsSchool > 0 ? parseFloat((learners / totalToiletsSchool).toFixed(2)) : 0,
+                    },
+                    timeSeries: []
+                };
             }
 
             // Calculate time series with ratios
@@ -269,12 +293,20 @@ export default function ClusterAnalytics({ setActivePage }) {
     };
 
     const getAvailableSchools = () => {
-        if (viewMode === "cluster") {
-            return Object.values(schoolDataMap).filter(
-                (s) => s.clusterName === selectedCluster
-            );
-        }
-        return [];
+        console.log("getAvailableSchools called");
+        console.log("viewMode:", viewMode);
+        console.log("selectedCluster:", selectedCluster);
+        console.log("schoolDataMap:", schoolDataMap);
+
+        // Return schools from the selected cluster for BOTH modes
+        const filtered = Object.values(schoolDataMap).filter(
+            (s) => {
+                console.log(`School ${s.name}: clusterName="${s.clusterName}", matches=${s.clusterName === selectedCluster}`);
+                return s.clusterName === selectedCluster;
+            }
+        );
+        console.log("Filtered schools:", filtered);
+        return filtered;
     };
 
     const getStatusForMetric = (value, standard, metricKey) => {
