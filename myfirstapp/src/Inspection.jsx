@@ -461,7 +461,6 @@ export default function Inspection({ setActivePage }) {
                     <Tab
                         selected={activeStep === 1}
                         onClick={() => setActiveStep(1)}
-                        disabled={!isStepValid(0)}
                     >
                         <IconUserGroup24 />
                     </Tab>
@@ -469,7 +468,6 @@ export default function Inspection({ setActivePage }) {
                     <Tab
                         selected={activeStep === 2}
                         onClick={() => setActiveStep(2)}
-                        disabled={!isStepValid(0) || !isStepValid(1)}
                     >
                         <IconStar24 />
                     </Tab>
@@ -477,7 +475,6 @@ export default function Inspection({ setActivePage }) {
                     <Tab
                         selected={activeStep === 3}
                         onClick={() => setActiveStep(3)}
-                        disabled={!isStepValid(0) || !isStepValid(1) || !isStepValid(2)}
                     >
                         <IconHome24 />
                     </Tab>
@@ -485,7 +482,6 @@ export default function Inspection({ setActivePage }) {
                     <Tab
                         selected={activeStep === 4}
                         onClick={() => setActiveStep(4)}
-                        disabled={!isStepValid(0) || !isStepValid(1) || !isStepValid(2) || !isStepValid(3)}
                     >
                         <IconVisualizationColumn24 />
                     </Tab>
