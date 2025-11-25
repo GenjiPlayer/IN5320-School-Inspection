@@ -513,12 +513,12 @@
 /* ============================================================
    LOADING & ERROR STATES
 ============================================================ */
-.loadingContainer {
-    flex: 1;
+.loadingWrapper {
     display: flex;
     justify-content: center;
-    align-items: center;
+    padding: 60px 0;
 }
+
 .errorContainer {
     display: flex;
     align-items: center;

@@ -9,6 +9,13 @@
     overflow-y: auto; /* Tillater vertikal rulling */
 }
 
+/* Loading */
+.loadingWrapper {
+    display: flex;
+    justify-content: center;
+    padding: 60px 0;
+}
+
 /* Page header */
 .pageHeader {
     display: flex;

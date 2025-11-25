@@ -312,7 +312,7 @@ export default function VisitationPlanner({ setActivePage }) {
 
     if (loading) {
         return (
-            <div className={classes.loadingContainer}>
+            <div className={classes.loadingWrapper}>
                 <CircularLoader />
             </div>
         );
