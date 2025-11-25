@@ -150,15 +150,6 @@ export default function InspectionReports({ setActivePage }) {
 
     return (
         <div className={classes.pageWrapper}>
-            {/* HEADER */}
-            <div className={classes.pageHeader}>
-                <Button
-                    small
-                    icon={<IconArrowLeft24 />}
-                    onClick={() => setActivePage("dashboard")}
-                />
-                <h2>Inspection Reports</h2>
-            </div>
 
             {/* SEARCH + START INSPECTION */}
             <Card className={classes.searchCard}>

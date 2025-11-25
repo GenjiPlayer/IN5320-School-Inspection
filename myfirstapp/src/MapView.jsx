@@ -9,7 +9,7 @@ const MapView = forwardRef(({ schools = [], selectedSchool = null, onMarkerClick
     const defaultCenter = useRef([13.4432, -15.3101]); // Gambia center
     const defaultZoom = useRef(8);
 
-    // Expose flyToSchool and recenter methods to parent component via ref
+    // Expose flyToSchool, recenter, and fitBoundsToSchools methods to parent component via ref
     useImperativeHandle(ref, () => ({
         flyToSchool: (school) => {
             if (mapInstance.current && school) {
@@ -30,7 +30,7 @@ const MapView = forwardRef(({ schools = [], selectedSchool = null, onMarkerClick
                 });
             }
         },
-        fitToFilteredSchools: (filteredSchools) => {
+        fitBoundsToSchools: (filteredSchools) => {
             if (mapInstance.current && filteredSchools.length > 0) {
                 const bounds = filteredSchools.map(s => [s.lat, s.lng]);
 
@@ -42,7 +42,7 @@ const MapView = forwardRef(({ schools = [], selectedSchool = null, onMarkerClick
                     });
                 } else {
                     // If multiple schools, fit bounds to show all
-                    mapInstance.current.flyToBounds(bounds, {
+                    mapInstance.current.fitBounds(bounds, {
                         padding: [80, 80],
                         animate: true,
                         duration: 1.5,
