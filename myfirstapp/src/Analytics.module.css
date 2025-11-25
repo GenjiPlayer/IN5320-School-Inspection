@@ -58,19 +58,35 @@
 }
 
 .iconCritical {
-    color: var(--colors-red600, #d32f2f);
+    color: #d32f2f !important;
+}
+
+.iconCritical svg path {
+    fill: #d32f2f !important;
 }
 
 .iconLimited {
-    color: var(--colors-orange600, #fb8c00);
+    color: #fb8c00 !important;
+}
+
+.iconLimited svg path {
+    fill: #fb8c00 !important;
 }
 
 .iconAdequate {
-    color: var(--colors-green600, #43a047);
+    color: #43a047 !important;
+}
+
+.iconAdequate svg path {
+    fill: #43a047 !important;
 }
 
 .iconUnknown {
-    color: var(--colors-grey600, #757575);
+    color: #757575 !important;
+}
+
+.iconUnknown svg path {
+    fill: #757575 !important;
 }
 
 .metricText {

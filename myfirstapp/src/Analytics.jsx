@@ -98,17 +98,16 @@ const getStatusForMetric = (value, standard) => {
 
 const renderStatusIcon = (severity) => {
     if (severity === "critical") {
-        return <IconWarningFilled24 className={classes.iconCritical} />;
+        return <IconWarningFilled24 color="#d32f2f" />;
     }
     if (severity === "limited") {
-        return <IconInfoFilled24 className={classes.iconLimited} />;
+        return <IconInfoFilled24 color="#fb8c00" />;
     }
     if (severity === "adequate") {
-        return <IconCheckmarkCircle24 className={classes.iconAdequate} />;
+        return <IconCheckmarkCircle24 color="#43a047" />;
     }
-    return <IconInfoFilled24 className={classes.iconUnknown} />;
+    return <IconInfoFilled24 color="#757575" />;
 };
-
 const formatRatio = (value) => {
     if (value === null || value === undefined || isNaN(value)) return "N/A";
     return Number(value).toFixed(2);
