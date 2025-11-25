@@ -7,8 +7,6 @@ import {
     Card,
     CircularLoader,
     NoticeBox,
-    SingleSelectField,
-    SingleSelectOption,
     IconWarningFilled24,
     IconInfoFilled24,
     IconCheckmarkCircle24,
@@ -16,14 +14,13 @@ import {
 
 import classes from "./Analytics.module.css";
 
-// ========= API CONFIG (samme som i ClusterAnalytics) =========
+// ========= API CONFIG =========
 const API_BASE = "https://research.im.dhis2.org/in5320g20/api";
 const CREDENTIALS = "Basic " + btoa("admin:district");
-const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";      // resources (classrooms, seats, toilets, textbooks)
-const TEACHER_PROGRAM = "rmuGQ7kBQBU";         // one event per teacher
-const LEARNER_DATA_ELEMENT = "ue3QIMOAC7G";    // total learners (analytics)
+const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
+const TEACHER_PROGRAM = "rmuGQ7kBQBU";
+const LEARNER_DATA_ELEMENT = "ue3QIMOAC7G";
 
-// dataElements fra resource-programmet
 const DATA_ELEMENTS = {
     SEATS: "fgUU2XNkGvI",
     BOOKS: "m9k3VefvGQw",
@@ -31,7 +28,7 @@ const DATA_ELEMENTS = {
     TOILETS: "slYohGwjQme",
 };
 
-// ========= MINIMUM STANDARDS (gjenbrukt) =========
+// ========= MINIMUM STANDARDS =========
 const MINIMUM_STANDARDS = {
     seatToLearner: {
         min: 1.0,
@@ -59,7 +56,7 @@ const MINIMUM_STANDARDS = {
     },
 };
 
-// ========= HJELPERE =========
+// ========= HELPERS =========
 const getStatusForMetric = (value, standard) => {
     if (value === null || value === undefined || isNaN(value)) {
         return { severity: "unknown", label: "No data" };
@@ -101,15 +98,15 @@ const getStatusForMetric = (value, standard) => {
 
 const renderStatusIcon = (severity) => {
     if (severity === "critical") {
-        return <IconWarningFilled24 />;
+        return <IconWarningFilled24 className={classes.iconCritical} />;
     }
     if (severity === "limited") {
-        return <IconInfoFilled24 />;
+        return <IconInfoFilled24 className={classes.iconLimited} />;
     }
     if (severity === "adequate") {
-        return <IconCheckmarkCircle24 />;
+        return <IconCheckmarkCircle24 className={classes.iconAdequate} />;
     }
-    return <IconInfoFilled24 />;
+    return <IconInfoFilled24 className={classes.iconUnknown} />;
 };
 
 const formatRatio = (value) => {
@@ -117,24 +114,25 @@ const formatRatio = (value) => {
     return Number(value).toFixed(2);
 };
 
-// ========= HOVEDKOMPONENT =========
+// ========= MAIN COMPONENT =========
 export default function Analytics({ selectedSchoolId: initialSchoolId }) {
     const [schools, setSchools] = useState([]);
-    const [selectedSchoolId, setSelectedSchoolId] = useState(initialSchoolId || "");
+    const [selectedSchoolId, setSelectedSchoolId] = useState(
+        initialSchoolId || ""
+    );
     const [currentSchool, setCurrentSchool] = useState(null);
 
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
-    const [timeSeries, setTimeSeries] = useState([]); // per-month resource + ratios
-    const [ratios, setRatios] = useState(null);       // latest ratios
+    const [timeSeries, setTimeSeries] = useState([]);
+    const [ratios, setRatios] = useState(null);
     const [openMetric, setOpenMetric] = useState(null);
 
-    // enkel state for summary (du kan koble til backend senere)
     const [followUp, setFollowUp] = useState(true);
     const [nextVisit, setNextVisit] = useState("10. Jan 2026");
 
-    // ---- 1. hent skoler (samme filter som andre steder) ----
+    // ---- 1. hent skoler ----
     useEffect(() => {
         const fetchSchools = async () => {
             try {
@@ -146,10 +144,9 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                 const list = data.organisationUnits || [];
                 setSchools(list);
 
-                // velg initialSchoolId hvis den finnes, ellers første i lista
-                if (initialSchoolId && list.find(s => s.id === initialSchoolId)) {
+                if (initialSchoolId && list.find((s) => s.id === initialSchoolId)) {
                     setSelectedSchoolId(initialSchoolId);
-                    setCurrentSchool(list.find(s => s.id === initialSchoolId));
+                    setCurrentSchool(list.find((s) => s.id === initialSchoolId));
                 } else if (list.length > 0) {
                     setSelectedSchoolId(list[0].id);
                     setCurrentSchool(list[0]);
@@ -177,7 +174,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
             setError(null);
 
             try {
-                // 2.1 learners (analytics)
                 const learnersRes = await fetch(
                     `${API_BASE}/analytics.json?dimension=dx:${LEARNER_DATA_ELEMENT}&dimension=ou:${selectedSchoolId}&dimension=pe:2020`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -192,7 +188,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                     });
                 }
 
-                // 2.2 teachers (tracker events)
                 const teachersRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${TEACHER_PROGRAM}&orgUnit=${selectedSchoolId}&pageSize=1000`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -200,7 +195,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                 const teachersData = await teachersRes.json();
                 const teacherCount = teachersData.events?.length || 0;
 
-                // 2.3 resources (tracker events)
                 const resRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${selectedSchoolId}&pageSize=100`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -208,11 +202,13 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                 const resData = await resRes.json();
                 const events = resData.events || [];
 
-                // time series per month
                 const tsMap = {};
 
                 events.forEach((event) => {
-                    const month = (event.occurredAt || event.eventDate || "").slice(0, 7); // YYYY-MM
+                    const month = (event.occurredAt || event.eventDate || "").slice(
+                        0,
+                        7
+                    );
                     if (!month) return;
 
                     if (!tsMap[month]) {
@@ -228,7 +224,10 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
                     const dvs = event.dataValues || [];
                     const getVal = (id) =>
-                        parseInt(dvs.find((dv) => dv.dataElement === id)?.value || 0, 10);
+                        parseInt(
+                            dvs.find((dv) => dv.dataElement === id)?.value || 0,
+                            10
+                        );
 
                     tsMap[month].seats = getVal(DATA_ELEMENTS.SEATS);
                     tsMap[month].books = getVal(DATA_ELEMENTS.BOOKS);
@@ -263,13 +262,12 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
                         learnersPerClassroom,
                         learnersPerTeacher,
                         learnersPerToilet,
-                        genderParityIndex: null, // TODO: hvis dere får data
+                        genderParityIndex: null,
                     };
                 });
 
                 setTimeSeries(tsArray);
 
-                // siste inngang = "latest"
                 const latest = tsArray.length > 0 ? tsArray[tsArray.length - 1] : null;
 
                 setRatios(
@@ -296,7 +294,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
         // eslint-disable-next-line react-hooks/exhaustive-deps
     }, [selectedSchoolId, schools]);
 
-    // ---- chart-config for en indikator ----
     const createChartConfig = (metricKey, label, color) => {
         if (!timeSeries || timeSeries.length === 0) return null;
 
@@ -350,7 +347,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
         };
     };
 
-    // ---- derive metrics-array for UI ----
     const metrics = ratios
         ? [
               {
@@ -407,7 +403,6 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
         return s.severity === "critical" || s.severity === "limited";
     });
 
-    // ---- RENDER ----
     if (loading && !currentSchool) {
         return (
             <div className={classes.loadingWrapper}>
@@ -418,7 +413,7 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
 
     if (error) {
         return (
-            <div className={classes.pageWrapper}>
+            <div className={classes.container}>
                 <NoticeBox error title="Error">
                     {error}
                 </NoticeBox>
@@ -427,153 +422,167 @@ export default function Analytics({ selectedSchoolId: initialSchoolId }) {
     }
 
     return (
-        <div className={classes.pageWrapper}>
-            {/* SCHOOL CARD */}
-            <Card className={classes.schoolCard}>
-                <h3 className={classes.schoolName}>
-                    {currentSchool ? currentSchool.name : "Select a school"}
-                </h3>
-            </Card>
+        <div className={classes.container}>
+            <Card className={classes.mainCard}>
+                <div className={classes.header}>
+                    <h2 className={classes.schoolTitle}>
+                        {currentSchool ? currentSchool.name : "Select a school"}
+                    </h2>
+                </div>
 
-            {/* STATUS LIST (figma-listen) */}
-            <Card className={classes.statusCard}>
                 {metrics.length === 0 && (
-                    <div className={classes.noDataText}>
+                    <div className={classes.noData}>
                         No inspections found for this school. Submit an inspection first.
                     </div>
                 )}
 
-                {metrics.map((metric) => {
-                    const status = getStatusForMetric(
-                        metric.value,
-                        metric.standard
-                    );
-                    const isOpen = openMetric === metric.key;
+                {metrics.length > 0 && (
+                    <>
+                        <div className={classes.metricsSection}>
+                            {metrics.map((metric) => {
+                                const status = getStatusForMetric(
+                                    metric.value,
+                                    metric.standard
+                                );
+                                const isOpen = openMetric === metric.key;
 
-                    return (
-                        <div key={metric.key} className={classes.statusRow}>
-                            <div className={classes.statusIcon}>
-                                {renderStatusIcon(status.severity)}
-                            </div>
+                                return (
+                                    <div key={metric.key} className={classes.metricRow}>
+                                        <div className={classes.metricHeader}>
+                                            <div className={classes.metricIcon}>
+                                                {renderStatusIcon(status.severity)}
+                                            </div>
 
-                            <div className={classes.statusTextBlock}>
-                                <div className={classes.statusTitle}>
-                                    {metric.label} – {status.label}
-                                </div>
-                                <div className={classes.statusSubtitle}>
-                                    Latest value:{" "}
-                                    <strong>
-                                        {metric.value != null
-                                            ? `${formatRatio(metric.value)}${
-                                                  metric.key === "seatToLearner" ||
-                                                  metric.key === "textbookToLearner"
-                                                      ? ":1"
-                                                      : metric.key === "genderParityIndex"
-                                                      ? ""
-                                                      : ":1"
-                                              }`
-                                            : "No data"}
-                                    </strong>
-                                </div>
-                            </div>
+                                            <div className={classes.metricText}>
+                                                <div className={classes.metricTitle}>
+                                                    {metric.label} – {status.label}
+                                                </div>
+                                                <div className={classes.metricSubtitle}>
+                                                    Latest value:{" "}
+                                                    <strong>
+                                                        {metric.value != null
+                                                            ? `${formatRatio(metric.value)}${
+                                                                  metric.key === "seatToLearner" ||
+                                                                  metric.key === "textbookToLearner"
+                                                                      ? ":1"
+                                                                      : metric.key === "genderParityIndex"
+                                                                      ? ""
+                                                                      : ":1"
+                                                              }`
+                                                            : "No data"}
+                                                    </strong>
+                                                </div>
+                                            </div>
 
-                            <button
-                                type="button"
-                                className={classes.detailsButton}
-                                onClick={() =>
-                                    setOpenMetric(isOpen ? null : metric.key)
-                                }
-                            >
-                                details ▾
-                            </button>
+                                            <button
+                                                type="button"
+                                                className={classes.detailsButton}
+                                                onClick={() =>
+                                                    setOpenMetric(isOpen ? null : metric.key)
+                                                }
+                                            >
+                                                details ▾
+                                            </button>
+                                        </div>
 
-                            {isOpen && (
-                                <div className={classes.detailsPanel}>
-                                    <p className={classes.metricDescription}>
-                                        {metric.description}
-                                    </p>
+                                        <div
+                                            className={`${classes.severityBorder} ${
+                                                classes[`severity${status.severity}`]
+                                            }`}
+                                        />
 
-                                    {createChartConfig(
-                                        metric.key,
-                                        metric.label,
-                                        metric.color
-                                    ) ? (
-                                        <div className={classes.chartWrapper}>
-                                            <HighchartsReact
-                                                highcharts={Highcharts}
-                                                options={createChartConfig(
+                                        {isOpen && (
+                                            <div className={classes.metricDetails}>
+                                                <p className={classes.metricDescription}>
+                                                    {metric.description}
+                                                </p>
+
+                                                {createChartConfig(
                                                     metric.key,
                                                     metric.label,
                                                     metric.color
+                                                ) ? (
+                                                    <div className={classes.chartWrapper}>
+                                                        <HighchartsReact
+                                                            highcharts={Highcharts}
+                                                            options={createChartConfig(
+                                                                metric.key,
+                                                                metric.label,
+                                                                metric.color
+                                                            )}
+                                                        />
+                                                    </div>
+                                                ) : (
+                                                    <div className={classes.noData}>
+                                                        Not enough data to render a chart for this
+                                                        metric.
+                                                    </div>
                                                 )}
-                                            />
-                                        </div>
-                                    ) : (
-                                        <div className={classes.noDataText}>
-                                            Not enough data to render a chart for
-                                            this metric.
-                                        </div>
-                                    )}
-                                </div>
-                            )}
-                        </div>
-                    );
-                })}
-            </Card>
-
-            {/* SUMMARY CARD (som i figma) */}
-            {metrics.length > 0 && (
-                <Card className={classes.summaryCard}>
-                    <h3 className={classes.summaryTitle}>Summary</h3>
-                    <p className={classes.summaryIntro}>
-                        <strong>
-                            {currentSchool ? currentSchool.name : "This school"}
-                        </strong>{" "}
-                        shows several areas needing improvement, particularly:
-                    </p>
-
-                    {problemMetrics.length > 0 ? (
-                        <ul className={classes.summaryList}>
-                            {problemMetrics.map((m) => (
-                                <li key={m.key}>{m.label}</li>
-                            ))}
-                        </ul>
-                    ) : (
-                        <p className={classes.summaryIntro}>
-                            All tracked indicators currently meet basic target
-                            levels.
-                        </p>
-                    )}
-
-                    <div className={classes.followUpRow}>
-                        <input
-                            type="checkbox"
-                            checked={followUp}
-                            onChange={(e) => setFollowUp(e.target.checked)}
-                        />
-                        <span>Mark for follow-up</span>
-                    </div>
-
-                    <div className={classes.nextVisitRow}>
-                        <span>Next visitation:</span>
-                        <strong>&nbsp;{nextVisit}</strong>
-                        <button
-                            type="button"
-                            className={classes.nextVisitEdit}
-                            onClick={() => {
-                                // super enkel; du kan bytte til DatePicker fra dhis2 senere
-                                const newDate = prompt(
-                                    "Set next visitation date:",
-                                    nextVisit
+                                            </div>
+                                        )}
+                                    </div>
                                 );
-                                if (newDate) setNextVisit(newDate);
-                            }}
-                        >
-                            edit
-                        </button>
-                    </div>
-                </Card>
-            )}
+                            })}
+                        </div>
+
+                        <div className={classes.divider} />
+
+                        <div className={classes.summarySection}>
+                            <h3 className={classes.summaryTitle}>Summary</h3>
+
+                            <p className={classes.summaryText}>
+                                <strong>
+                                    {currentSchool ? currentSchool.name : "This school"}
+                                </strong>{" "}
+                                shows several areas needing improvement, particularly:
+                            </p>
+
+                            {problemMetrics.length > 0 ? (
+                                <ul className={classes.summaryList}>
+                                    {problemMetrics.map((m) => (
+                                        <li key={m.key}>{m.label}</li>
+                                    ))}
+                                </ul>
+                            ) : (
+                                <p className={classes.summaryText}>
+                                    All tracked indicators currently meet basic target levels.
+                                </p>
+                            )}
+
+                            <div className={classes.checkboxRow}>
+                                <input
+                                    type="checkbox"
+                                    id="followUpCheckbox"
+                                    checked={followUp}
+                                    onChange={(e) => setFollowUp(e.target.checked)}
+                                    className={classes.checkbox}
+                                />
+                                <label htmlFor="followUpCheckbox">Mark for follow-up</label>
+                            </div>
+
+                            <div className={classes.nextVisitRow}>
+                                <span className={classes.nextVisitLabel}>
+                                    Next visitation:
+                                </span>
+                                <strong className={classes.nextVisitDate}>{nextVisit}</strong>
+                                <button
+                                    type="button"
+                                    className={classes.editButton}
+                                    onClick={() => {
+                                        const newDate = prompt(
+                                            "Set next visitation date:",
+                                            nextVisit
+                                        );
+                                        if (newDate) setNextVisit(newDate);
+                                    }}
+                                >
+                                    edit
+                                </button>
+                            </div>
+                        </div>
+                    </>
+                )}
+            </Card>
         </div>
     );
 }
