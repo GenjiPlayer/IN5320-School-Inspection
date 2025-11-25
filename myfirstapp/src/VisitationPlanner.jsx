@@ -390,7 +390,7 @@ export default function VisitationPlanner({ setActivePage }) {
                     {error}
                 </NoticeBox>
             </div>
-        );
+        );a
     }
 
     return (
