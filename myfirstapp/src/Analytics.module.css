@@ -1,0 +1,212 @@
+/* Main page container */
+.pageWrapper {
+    padding: 16px;
+    max-width: 100%;
+    box-sizing: border-box;
+    display: flex;
+    flex-direction: column;
+    height: 100%; /* Sørger for at containeren kan bruke hele høyden */
+    overflow-y: auto; /* Tillater vertikal rulling */
+}
+
+/* Page header */
+.pageHeader {
+    display: flex;
+    justify-content: flex-start; /* Align content to the start */
+    align-items: center; /* Vertically center the items */
+    gap: 16px; /* Space between the back button and title */
+    margin-bottom: 16px;
+    font-size: 22px;
+    font-weight: bold;
+    flex-wrap: wrap; /* Ensure the header content wraps if necessary */
+}
+
+/* Optional: Style the back button specifically */
+.backButton {
+    margin-right: 16px; /* Adjust spacing between button and title */
+}
+
+/* School card */
+.schoolCard {
+    margin-bottom: 20px;
+    padding: 20px;
+    background-color: #f4f6f9;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    width: 100%;
+    max-width: 100%;
+}
+
+/* Status card */
+.statusCard {
+    padding: 20px;
+    background-color: #ffffff;
+    margin-bottom: 20px;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    transition: max-height 0.3s ease-in-out;
+    position: relative;
+    display: flex;
+    flex-direction: column; /* Ensure content is stacked vertically */
+}
+
+/* Status row */
+.statusRow {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    gap: 16px;
+    flex-wrap: wrap; /* Ensures wrapping on smaller screens */
+}
+
+/* Status icon colors */
+.statusIconOK {
+    font-size: 28px;
+    color: #4caf50 !important; /* Green for OK */
+}
+
+.statusIconWarning {
+    font-size: 28px;
+    color: #ff9800 !important; /* Orange for Warning */
+}
+
+.statusIconCritical {
+    font-size: 28px;
+    color: #f44336 !important; /* Red for Critical */
+}
+
+/* Status text block */
+.statusTextBlock {
+    display: flex;
+    flex-direction: column;
+    justify-content: flex-start;
+    width: 80%; /* Adjust width for text */
+}
+
+/* Title of each status */
+.statusTitle {
+    font-weight: bold;
+    font-size: 18px;
+    margin-bottom: 6px;
+}
+
+/* Subtitle text */
+.statusSubtitle {
+    font-size: 14px;
+    color: #888;
+    margin-top: 6px;
+}
+
+/* Button to show details */
+.detailsButton {
+    background: none;
+    border: none;
+    color: #2196f3;
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: bold;
+    padding: 0;
+    text-align: right;
+}
+
+/* Expanded Status Card */
+.statusCard.expanded {
+    max-height: 1000px;
+    overflow: visible;
+}
+
+/* Expanded content (chart and recommendation) */
+.statusDetailContent {
+    display: flex;
+    flex-direction: column;
+    gap: 16px;
+    margin-top: 12px;
+    width: 100%; /* Ensure it takes the full width */
+}
+
+/* Chart container wrapper */
+.chartWrapper {
+    padding: 24px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    margin-top: 16px; /* Space between text and chart */
+    width: 100%; /* Ensure the chart fills the container */
+    max-height: 400px; /* Begrens høyden på grafene */
+    overflow-y: auto; /* Tillater vertikal rulling på grafene */
+}
+
+/* Title for the chart */
+.chartTitle {
+    font-size: 18px;
+    font-weight: bold;
+    margin-bottom: 12px;
+}
+
+/* Recommendation wrapper */
+.recommendationWrapper {
+    padding: 16px;
+    background-color: #ffffff;
+    border-radius: 8px;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+/* Recommendation text */
+.recommendationText {
+    font-size: 16px;
+    color: #333;
+    margin-top: 12px;
+}
+
+/* Summary wrapper */
+.summaryWrapper {
+    margin-top: 24px;
+    padding: 20px;
+    background-color: white;
+    border-radius: 8px;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+/* Summary title */
+.summaryWrapper h3 {
+    font-size: 20px;
+    font-weight: bold;
+    margin-bottom: 16px;
+}
+
+/* Next visit section */
+.nextVisitWrapper {
+    margin-top: 12px;
+    font-size: 16px;
+    font-weight: 500;
+}
+
+/* Follow-up checkbox */
+.followUpRow {
+    display: flex;
+    align-items: center;
+    padding: 16px;
+    font-size: 16px;
+}
+
+/* Adjust details button for hovering */
+.detailsButton:hover {
+    color: #1565c0; /* Darker blue when hovered */
+}
+
+/* Fixing "details" button positioning */
+.statusRow .detailsButton {
+    margin-left: auto; /* Push the details button to the right */
+}
+
+/* Adding spacing between status rows */
+.statusRow {
+    margin-bottom: 24px; /* Increased space between rows */
+}
+
+/* Text styling for the recommendation in the expanded view */
+.recommendationWrapper p {
+    line-height: 1.5;
+    margin-top: 10px;
+}

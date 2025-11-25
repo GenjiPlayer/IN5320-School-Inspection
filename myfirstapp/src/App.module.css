@@ -1,17 +1,277 @@
+/* ===========================
+   GLOBAL STYLES
+=========================== */
+:global {
+    html,
+    body,
+    #dhis2-app-root,
+    #root {
+        margin: 0;
+        padding: 0;
+        height: 100%;
+        background: #2d6693;
+        overflow-y: hidden;
+        font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI",
+            Roboto, Oxygen, Ubuntu, Cantarell, "Open Sans", "Helvetica Neue",
+            sans-serif;
+    }
+}
+
+/* ===========================
+   MAIN LAYOUT
+=========================== */
 .container {
     display: flex;
-    min-height: 100vh;
+    flex-direction: column;
+    height: 100%;
+    width: 100%;
 }
 
-.left {
-    width: 200px;
-    min-height: 100vh;
-    padding-top: 20px;
+.appWrapper {
+    display: flex;
+    flex-direction: column;
+    height: 100vh;
+    padding-top: 0;
 }
 
-.right {
-    flex-grow: 1;
-    min-height: 100vh;
-    padding: 26px 16px 0;
-    background: #f0f0f0;
+/* ===========================
+   HEADER
+=========================== */
+
+.appHeader svg * {
+    fill: var(--header-icon-color) !important;
+}
+
+.headerLogo {
+    width: 28px;
+    height: auto;
+    gap: 8 px;
+}
+
+.headerIconButton {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    height: 28px;
+    width: auto;
+    cursor: pointer;
+}
+
+.headerIconButton svg {
+    width: 28px;
+    height: auto;
+}
+
+.headerIconButton:active {
+    opacity: 0.6;
+}
+
+.appHeader {
+    position: sticky;
+    top: 0;
+    z-index: 999;
+    background: #2d6693;
+    padding: 20px 18px;
+    display: flex;
+    align-items: center;
+    transition: background-color 0.2s ease;
+    border-top: 2px solid #EFF6FA;
+}
+
+.appHeader h1 {
+    font-size: 24px;
+    font-weight: 400;
+    line-height: 32px;
+    margin: 0;
+}
+
+.rightButtons {
+    margin-left: auto;
+    display: flex;
+    gap: 8px;
+}
+
+.headerLeft {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.backIcon {
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    padding: 0;
+    width: 28px;
+    height: 28px;
+    cursor: pointer;
+}
+
+.backIcon svg {
+    width: 40px;
+    height: auto;
+}
+
+.backIcon:hover {
+    background: none;
+}
+
+.backIcon:active {
+    opacity: 0.6;
+}
+
+/* ===========================
+   MAIN CONTENT
+=========================== */
+
+.mainWrapper {
+    flex: 1;
+    background: #EFF6FA;
+    /*padding: 12px;*/
+    border-radius: 16px 16px 0 0;
+    overflow-y: hidden;
+    margin-top: 4px;
+    position: relative;
+}
+
+.main {
+    flex: 1;
+    padding: 12px;
+    border-radius: 16px 16px 0 0;
+}
+
+.containerCard {
+    display: flex;
+    flex-direction: column;
+    gap: 12px;
+}
+
+/* ===========================
+   NEW INSPECTION BUTTON
+=========================== */
+.newInspectionBtn {
+    margin: 16px 0 16px;
+    font-family: inherit;
+}
+
+/* ===========================
+   PROGRAM CARDS
+=========================== */
+.programWrapper {
+    margin-top: 8px;
+}
+
+.programList {
+    display: flex;
+    flex-direction: column;
+    gap: 8px;
+}
+
+.programCardWrapper {
+    cursor: pointer;
+}
+
+.programCard {
+    display: flex;
+    align-items: center;
+    background: #ffffff;
+    border-radius: 14px;
+    padding: 16px;
+    min-height: 80px;
+    box-shadow: var(--elevation-e100);
+    transition: transform 0.1s ease;
+}
+
+.programCard:active {
+    transform: scale(0.98);
+}
+
+.programContent {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+}
+
+.programIcon {
+    width: 48px;
+    height: 48px;
+    border-radius: 16px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+}
+
+.programIconYellow { background: #FB8C00; }
+.programIconGreen { background: #43A047; }
+.programIconPink { background: #F45B55; }
+.programIconTeal { background: #00897B; }
+
+.programIconYellow svg { color: #ffffff; }
+.programIconGreen svg { color: #ffffff; }
+.programIconPink svg { color: #ffffff; }
+.programIconTeal svg { color: #ffffff; }
+
+.programText {
+    font-size: 20px;
+    line-height: 28px;
+    font-weight: 300;
+    color: #333333;
+}
+
+/* ===========================
+   FOOTER
+=========================== */
+.footerNav {
+    position: sticky;
+    bottom: 0;
+    background: #ffffff;
+    padding: 16px 0;
+    border-top: 1px solid #e1e5ea;
+}
+
+.footerNav > div {
+    width: 100%;
+    display: flex !important;
+    justify-content: space-between;
+    align-items: center;
+    padding: 8px 12px;
+    gap: 28px;
+    font-weight: 300;
+}
+
+.footerButton,
+.footerButtonActive {
+    flex: 1;
+    background: transparent !important;
+    border: none !important;
+    padding: 4px 0 !important;
+    margin: 0 !important;
+    text-align: center;
+    display: flex !important;
+    flex-direction: column !important;
+    align-items: center !important;
+    font-size: 12px !important;
+}
+
+.footerButton svg,
+.footerButtonActive svg {
+    margin-bottom: 2px;
+}
+
+.footerButtonActive {
+    color: #0a55ab !important;
+    font-weight: 500 !important;
+}
+
+.footerButton:focus,
+.footerButton:active,
+.footerButton:focus-visible,
+.footerButtonActive:focus,
+.footerButtonActive:active,
+.footerButtonActive:focus-visible,
+.footerNav button:focus,
+.footerNav button:active,
+.footerNav button:focus-visible {
+    outline: none !important;
+    box-shadow: none !important;
 }

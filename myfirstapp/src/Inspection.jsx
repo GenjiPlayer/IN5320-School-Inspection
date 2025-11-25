@@ -1,356 +1,224 @@
-import React, { useState, useEffect } from "react";
+import React, { useState } from "react";
 import {
-    InputField,
-    SingleSelectField,
-    SingleSelectOption,
     Button,
+    ButtonStrip,
+    Card,
+    InputField,
+    SingleSelect,
+    SingleSelectOption,
     NoticeBox,
-    Radio,
-    FieldSet,
-    Legend,
-    CenteredContent,
-    CircularLoader,
 } from "@dhis2/ui";
 
-// 🏫 Inspection form component
-export function Inspection() {
-    // =======================
-    // 🔧 State definitions
-    // =======================
-    const [programStageId, setProgramStageId] = useState("");
-    const [schools, setSchools] = useState([]);
-    const [selectedSchool, setSelectedSchool] = useState("");
-    const [loading, setLoading] = useState(true);
-    const [dataElementIds, setDataElementIds] = useState([]);
-    const [errors, setErrors] = useState([]);
+import classes from "./Inspection.module.css";
 
-    // 📋 Form data
-    const [form, setForm] = useState({
-        reportDate: "",
-        hasComputerLab: "",
-        compLabCondition: "",
-        hasElectricity: "",
-        elecCondition: "",
-        hasHandwash: "",
-        handwashCondition: "",
-        classroomsTotal: "",
-        classroomsClean: "",
-        hasYard: "",
-        yardCondition: "",
-        teacherToilets: "",
+/* ===========================
+     DATA ELEMENT CONSTANTS
+=========================== */
+const DATA_ELEMENTS = {
+    TOILETS: "kCMjTUb7F3A",
+    SEATS: "Xx4fQvh3XZV",
+    BOOKS: "E2wyFZ3A1zZ",
+    CLASSROOMS: "mH6Z1aA7GvC",
+
+    PRINCIPAL_PRESENT: "PQmA3s8dLLA",
+    TEACHERS_PRESENT: "Pf8de92Zx1M",
+    STUDENTS_PRESENT: "d0S9bhqZQfS"
+};
+
+const EVENT_PROGRAM = "YourProgramID"; // Replace with your program
+const EVENT_STAGE = "YourStageID";     // Replace with your stage id
+
+/* ===========================
+      MAIN COMPONENT
+=========================== */
+export default function Inspection({
+    setActivePage,
+    setHeaderColor,
+    setHeaderTextColor,
+    setHeaderIconColor,
+    setHeaderTitle
+}) {
+    const [inspectionType, setInspectionType] = useState("resources");
+
+    const [resourceForm, setResourceForm] = useState({
+        toilets: "",
+        seats: "",
+        books: "",
+        classrooms: "",
     });
 
-    // =======================
-    // 🏫 Fetch list of schools (Org Units)
-    // =======================
-    useEffect(() => {
-        const fetchSchools = async () => {
-            try {
-                const res = await fetch(
-                    "https://research.im.dhis2.org/in5320g18/api/organisationUnits?filter=level:eq:5&filter=parent.name:eq:Jambalaya%20Cluster&fields=id,name,parent[id,name]&paging=false",
-                    {
-                        headers: {
-                            Authorization: "Basic " + btoa("admin:district"),
-                        },
-                    }
-                );
-                const data = await res.json();
-                setSchools(data.organisationUnits || []);
-            } catch (err) {
-                console.error("Error fetching schools:", err);
-            }
-        };
-        fetchSchools();
+    const [schoolForm, setSchoolForm] = useState({
+        principalPresent: "",
+        teachersPresent: "",
+        studentsPresent: "",
+    });
+
+    const [successMsg, setSuccessMsg] = useState("");
+    const [errorMsg, setErrorMsg] = useState("");
+
+    // Set header styling
+    React.useEffect(() => {
+        setHeaderColor("#2D6693");
+        setHeaderTextColor("#FFFFFF");
+        setHeaderIconColor("#FFFFFF");
+        setHeaderTitle("New Inspection");
     }, []);
 
-    // =======================
-    // 🧩 Fetch Program Stage & Data Element IDs
-    // =======================
-    useEffect(() => {
-        const fetchDataElements = async () => {
-            try {
-                const res = await fetch(
-                    "https://research.im.dhis2.org/in5320g18/api/programs/UxK2o06ScIe?fields=programStages[id,programStageDataElements[dataElement[id,name,code]]]",
-                    {
-                        headers: {
-                            Authorization: "Basic " + btoa("admin:district"),
-                        },
-                    }
-                );
-                const data = await res.json();
+    /* ===========================
+         FIELD CHANGE HANDLERS
+    =========================== */
+    function handleResourceChange(field, value) {
+        setResourceForm({ ...resourceForm, [field]: value });
+    }
 
-                // Get Program Stage ID
-                const stageId = data.programStages[0].id;
-                setProgramStageId(stageId);
-                console.log("📋 Program Stage ID:", stageId);
+    function handleSchoolChange(field, value) {
+        setSchoolForm({ ...schoolForm, [field]: value });
+    }
 
-                // Extract all data element IDs
-                const ids = data.programStages[0].programStageDataElements.map(
-                    (el) => el.dataElement.id
-                );
-                setDataElementIds(ids);
-                console.log("📋 Data Element IDs:", ids);
-
-                setLoading(false);
-            } catch (err) {
-                console.error("Error fetching data elements:", err);
-                setLoading(false);
-            }
-        };
-        fetchDataElements();
-    }, []);
-
-    // =======================
-    // ✏️ Form field handler
-    // =======================
-    const handleChange = (name, value) => setForm({ ...form, [name]: value });
-
-    // =======================
-    // 🧩 Validation function
-    // =======================
-    const validateInputs = () => {
-        const errs = [];
-        if (!selectedSchool) errs.push("You must select a school");
-        if (!form.reportDate) errs.push("Report date is required");
-        if (!form.hasComputerLab) errs.push("Computer lab question is required");
-        if (!form.hasElectricity) errs.push("Electricity question is required");
-        if (!form.hasHandwash) errs.push("Handwashing facilities question is required");
-        if (!form.hasYard) errs.push("Yard/playground question is required");
-
-        // Validate numeric inputs
-        const numberFields = ["classroomsTotal", "classroomsClean", "teacherToilets"];
-        numberFields.forEach((f) => {
-            if (form[f] && (isNaN(form[f]) || Number(form[f]) < 0))
-                errs.push(`${f} must be a valid positive number`);
-        });
-        return errs;
-    };
-
-    // =======================
-    // 📤 Submit event to DHIS2 Tracker API
-    // =======================
-    const trySubmitEvent = async (payload) => {
-        const base = "https://research.im.dhis2.org/in5320g18/api";
-        const url = `${base}/tracker?async=false`;
-
+    /* ===========================
+         DHIS2 POST HELPERS
+    =========================== */
+    async function postEvent(dataValues) {
         try {
-            console.log("📤 Submitting payload:", JSON.stringify(payload, null, 2));
-
-            const res = await fetch(url, {
+            const res = await fetch("/api/events", {
                 method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Authorization: "Basic " + btoa("admin:district"),
-                },
-                body: JSON.stringify(payload),
+                headers: { "Content-Type": "application/json" },
+                body: JSON.stringify({
+                    program: EVENT_PROGRAM,
+                    programStage: EVENT_STAGE,
+                    orgUnit: "OrgUnitIDHere",  // Set dynamically later
+                    eventDate: new Date().toISOString().split("T")[0],
+                    dataValues
+                })
             });
 
-            const result = await res.json();
-            console.log("📥 Full API Response:", JSON.stringify(result, null, 2));
+            if (!res.ok) throw new Error(await res.text());
 
-            if (res.ok) {
-                if (result.status === "ERROR") {
-                    console.error("❌ Validation errors:", result.validationReport);
-                    return false;
-                }
-
-                if (result.stats) {
-                    console.log("📊 Stats:", result.stats);
-                }
-
-                return true;
-            } else {
-                console.error("❌ Failed:", result);
-                return false;
-            }
+            setSuccessMsg("Inspection submitted successfully!");
+            setErrorMsg("");
         } catch (err) {
-            console.error("⚠️ Network error:", err);
-            return false;
+            setErrorMsg("Failed to submit inspection: " + err.message);
+            setSuccessMsg("");
         }
-    };
+    }
 
-    // =======================
-    // 🚀 Handle Submit button
-    // =======================
-    const handleSubmit = async () => {
-        const validationErrors = validateInputs();
-        if (validationErrors.length > 0) {
-            setErrors(validationErrors);
-            return;
-        }
-        setErrors([]);
+    /* ===========================
+       SUBMIT HANDLERS (HEAD LOGIC)
+    =========================== */
+    function submitResourceInspection() {
+        const dv = [
+            { dataElement: DATA_ELEMENTS.TOILETS, value: resourceForm.toilets },
+            { dataElement: DATA_ELEMENTS.SEATS, value: resourceForm.seats },
+            { dataElement: DATA_ELEMENTS.BOOKS, value: resourceForm.books },
+            { dataElement: DATA_ELEMENTS.CLASSROOMS, value: resourceForm.classrooms }
+        ];
 
-        const selectedSchoolObj = schools.find(s => s.id === selectedSchool);
-        console.log("🏫 Submitting to school:", selectedSchoolObj?.name, `(${selectedSchool})`);
-        console.log("📅 Report date:", form.reportDate);
+        postEvent(dv);
+    }
 
-        // 🧱 Build DataValues from user input
-        const dataValues = [
-            { dataElement: dataElementIds[0], value: form.hasComputerLab },
-            { dataElement: dataElementIds[1], value: form.compLabCondition },
-            { dataElement: dataElementIds[2], value: form.hasElectricity },
-            { dataElement: dataElementIds[3], value: form.elecCondition },
-            { dataElement: dataElementIds[4], value: form.hasHandwash },
-            { dataElement: dataElementIds[5], value: form.handwashCondition },
-            { dataElement: dataElementIds[8], value: form.classroomsTotal },
-            { dataElement: dataElementIds[9], value: form.classroomsClean },
-            { dataElement: dataElementIds[10], value: form.hasYard },
-            { dataElement: dataElementIds[11], value: form.yardCondition },
-            { dataElement: dataElementIds[12], value: form.teacherToilets },
-        ].filter(dv => dv.value !== "" && dv.value !== null && dv.value !== undefined);
+    function submitSchoolInspection() {
+        const dv = [
+            { dataElement: DATA_ELEMENTS.PRINCIPAL_PRESENT, value: schoolForm.principalPresent },
+            { dataElement: DATA_ELEMENTS.TEACHERS_PRESENT, value: schoolForm.teachersPresent },
+            { dataElement: DATA_ELEMENTS.STUDENTS_PRESENT, value: schoolForm.studentsPresent },
+        ];
 
-        // 🧾 Build Event Payload
-        const event = {
-            program: "UxK2o06ScIe",
-            programStage: programStageId,
-            orgUnit: selectedSchool,
-            occurredAt: new Date(form.reportDate).toISOString(),
-            status: "ACTIVE",
-            dataValues: dataValues,
-        };
+        postEvent(dv);
+    }
 
-        const payload = { events: [event] };
-        const success = await trySubmitEvent(payload);
-
-        // ✅ Reset form on success
-        if (success) {
-            setForm({
-                reportDate: "",
-                hasComputerLab: "",
-                compLabCondition: "",
-                hasElectricity: "",
-                elecCondition: "",
-                hasHandwash: "",
-                handwashCondition: "",
-                classroomsTotal: "",
-                classroomsClean: "",
-                hasYard: "",
-                yardCondition: "",
-                teacherToilets: "",
-            });
-            setSelectedSchool("");
-        }
-    };
-
-    // =======================
-    // ⏳ Loading state
-    // =======================
-    if (loading) {
+    /* ===========================
+        FORM UI (TINA STYLE)
+    =========================== */
+    function renderResourceForm() {
         return (
-            <CenteredContent>
-                <CircularLoader />
-            </CenteredContent>
+            <Card className={classes.formCard}>
+                <InputField
+                    label="Toilets"
+                    type="number"
+                    value={resourceForm.toilets}
+                    onChange={(e) => handleResourceChange("toilets", e.value)}
+                />
+                <InputField
+                    label="Seats"
+                    type="number"
+                    value={resourceForm.seats}
+                    onChange={(e) => handleResourceChange("seats", e.value)}
+                />
+                <InputField
+                    label="Books"
+                    type="number"
+                    value={resourceForm.books}
+                    onChange={(e) => handleResourceChange("books", e.value)}
+                />
+                <InputField
+                    label="Classrooms"
+                    type="number"
+                    value={resourceForm.classrooms}
+                    onChange={(e) => handleResourceChange("classrooms", e.value)}
+                />
+
+                <Button primary onClick={submitResourceInspection}>
+                    Submit Resource Inspection
+                </Button>
+            </Card>
         );
     }
 
-    // =======================
-    // 🎛️ UI Options
-    // =======================
-    const yesNoOptions = [
-        { label: "Yes", value: "true" },
-        { label: "No", value: "false" },
-    ];
+    function renderSchoolForm() {
+        return (
+            <Card className={classes.formCard}>
+                <InputField
+                    label="Principal Present"
+                    type="number"
+                    value={schoolForm.principalPresent}
+                    onChange={(e) => handleSchoolChange("principalPresent", e.value)}
+                />
+                <InputField
+                    label="Teachers Present"
+                    type="number"
+                    value={schoolForm.teachersPresent}
+                    onChange={(e) => handleSchoolChange("teachersPresent", e.value)}
+                />
+                <InputField
+                    label="Students Present"
+                    type="number"
+                    value={schoolForm.studentsPresent}
+                    onChange={(e) => handleSchoolChange("studentsPresent", e.value)}
+                />
 
-    const conditionOptions = [
-        { code: "1", name: "Strongly disagree" },
-        { code: "2", name: "Disagree" },
-        { code: "3", name: "Undecided" },
-        { code: "4", name: "Agree" },
-        { code: "5", name: "Strongly agree" }
-    ];
-
-    // =======================
-    // 🧠 Render form
-    // =======================
-    return (
-        <div style={{ maxWidth: 700, margin: "0 auto", display: "flex", flexDirection: "column", gap: 20 }}>
-            <h2>New School Inspection</h2>
-
-            {/* Select Organisation Unit */}
-            <SingleSelectField
-                label="Organisation Unit (School)"
-                selected={selectedSchool}
-                onChange={(e) => setSelectedSchool(e.selected || "")}
-                placeholder="Choose a school"
-            >
-                {schools.map((school) => (
-                    <SingleSelectOption key={school.id} label={school.name} value={school.id} />
-                ))}
-            </SingleSelectField>
-
-            {/* Report Date */}
-            <InputField
-                label="Report Date"
-                type="date"
-                value={form.reportDate}
-                onChange={(e) => handleChange("reportDate", e.value)}
-            />
-
-            {/* Grouped Question Fields */}
-            {[
-                { name: "hasComputerLab", label: "The school has a computer lab for learners", condition: "compLabCondition" },
-                { name: "hasElectricity", label: "The school has an electricity supply", condition: "elecCondition" },
-                { name: "hasHandwash", label: "The school has handwashing facilities", condition: "handwashCondition" },
-                { name: "hasYard", label: "The school has a yard/playground", condition: "yardCondition" },
-            ].map((item) => (
-                <FieldSet key={item.name}>
-                    <Legend>{item.label}</Legend>
-                    {yesNoOptions.map((opt) => (
-                        <Radio
-                            key={opt.value}
-                            label={opt.label}
-                            checked={form[item.name] === opt.value}
-                            onChange={() => handleChange(item.name, opt.value)}
-                        />
-                    ))}
-                    <SingleSelectField
-                        label="Condition"
-                        selected={form[item.condition]}
-                        onChange={(e) => handleChange(item.condition, e.selected)}
-                        placeholder="Select condition"
-                    >
-                        {conditionOptions.map((opt) => (
-                            <SingleSelectOption key={opt.code} label={opt.name} value={opt.code} />
-                        ))}
-                    </SingleSelectField>
-                </FieldSet>
-            ))}
-
-            {/* Numeric Inputs */}
-            <InputField
-                label="Total number of classrooms"
-                type="number"
-                value={form.classroomsTotal}
-                onChange={(e) => handleChange("classroomsTotal", e.value)}
-            />
-            <InputField
-                label="Number of classrooms that are clean and secure"
-                type="number"
-                value={form.classroomsClean}
-                onChange={(e) => handleChange("classroomsClean", e.value)}
-            />
-            <InputField
-                label="Number of toilets for teachers"
-                type="number"
-                value={form.teacherToilets}
-                onChange={(e) => handleChange("teacherToilets", e.value)}
-            />
-
-            {/* Submit Button */}
-            <div style={{ display: "flex", gap: 10 }}>
-                <Button primary onClick={handleSubmit}>
-                    Submit Inspection
+                <Button primary onClick={submitSchoolInspection}>
+                    Submit School Inspection
                 </Button>
-            </div>
+            </Card>
+        );
+    }
 
-            {/* Validation Errors */}
-            {errors.length > 0 && (
-                <NoticeBox error title="Validation Errors">
-                    {errors.map((e, i) => (
-                        <div key={i}>{e}</div>
-                    ))}
-                </NoticeBox>
-            )}
+    /* ===========================
+          MAIN RENDER
+    =========================== */
+    return (
+        <div className={classes.pageWrapper}>
+            <Card className={classes.selectionCard}>
+                <SingleSelect
+                    selected={inspectionType}
+                    onChange={(val) => setInspectionType(val.selected)}
+                    label="Inspection Type"
+                >
+                    <SingleSelectOption
+                        value="resources"
+                        label="Resource Inspection"
+                    />
+                    <SingleSelectOption
+                        value="school"
+                        label="School Inspection"
+                    />
+                </SingleSelect>
+            </Card>
+
+            {successMsg && <NoticeBox success title="Success">{successMsg}</NoticeBox>}
+            {errorMsg && <NoticeBox error title="Error">{errorMsg}</NoticeBox>}
+
+            {inspectionType === "resources" ? renderResourceForm() : renderSchoolForm()}
         </div>
     );
 }
