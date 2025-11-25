@@ -678,71 +678,98 @@ export default function VisitationPlanner({ setActivePage }) {
                     </div>
                 )}
 
-                {/* School List */}
-                <div className={classes.schoolListContainer}>
-                    <div className={classes.schoolListScrollable}>
-                        {filteredSchools.map((s) => (
-                            <div
-                                key={s.id}
-                                className={`${classes.listRow} ${
-                                    expandedSchools.includes(s.id)
-                                        ? classes.listRowExpanded
-                                        : ""
-                                }`}
-                                onClick={() => {
-                                    setExpandedSchools(prev =>
-                                        prev.includes(s.id)
-                                            ? prev.filter(id => id !== s.id)
-                                            : [...prev, s.id]
-                                    );
-                                    setSelectedSchool(s);
+               {/* School List */}
+<div className={classes.schoolListContainer}>
+    <div className={classes.schoolListScrollable}>
+
+        {filteredSchools.map((s) => (
+            <div
+                key={s.id}
+                className={`${classes.listRow} ${
+                    expandedSchools.includes(s.id)
+                        ? classes.listRowExpanded
+                        : ""
+                }`}
+            >
+
+                {/* HEADER (click to expand/collapse) */}
+                <div
+                    className={classes.listRowHeader}
+                    onClick={() => {
+                        setExpandedSchools(prev =>
+                            prev.includes(s.id)
+                                ? prev.filter(id => id !== s.id)
+                                : [...prev, s.id]
+                        );
+                        setSelectedSchool(s);
+                    }}
+                >
+                    <div>
+                        <div className={classes.listRowName}>{s.name}</div>
+                        <div className={classes.listRowSub}>
+                            {s.parentName} —{" "}
+                            {s.lastVisitDays === 999
+                                ? "Never visited"
+                                : `${s.lastVisitDays} days ago`}
+                        </div>
+                    </div>
+
+                    <IconChevronDown24
+                        className={`${classes.listRowChevron} ${
+                            expandedSchools.includes(s.id) ? "rotate" : ""
+                        }`}
+                    />
+                </div>
+
+                {/* EXPANDED CONTENT */}
+                {expandedSchools.includes(s.id) && (
+                    <div
+                        className={classes.listDetails}
+                        onClick={(e) => e.stopPropagation()} // prevents collapse
+                    >
+                        <div className={classes.listDetailLine}>
+                            <strong>Learners:</strong> {s.learners}
+                        </div>
+
+                        <div className={classes.actionButtons}>
+                            <Button
+                                small
+                                className={classes.secondaryButton}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log("See more info");
                                 }}
                             >
-                                {/* HEADER ROW */}
-                                <div className={classes.listRowHeader}>
-                                    <div>
-                                        <div className={classes.listRowName}>{s.name}</div>
-                                        <div className={classes.listRowSub}>
-                                            {s.parentName} —{" "}
-                                            {s.lastVisitDays === 999
-                                                ? "Never visited"
-                                                : `${s.lastVisitDays} days ago`}
-                                        </div>
-                                    </div>
+                                See more info
+                            </Button>
 
-                                    <IconChevronDown24
-                                        className={`${classes.listRowChevron} ${
-                                            expandedSchools.includes(s.id) ? "rotate" : ""
-                                        }`}
-                                    />
-                                </div>
-
-                                {/* EXPANDED DETAILS */}
-                                {expandedSchools.includes(s.id) && (
-                                    <div className={classes.listDetails}>
-                                        <div className={classes.listDetailLine}>
-                                            <strong>Learners:</strong> {s.learners}
-                                        </div>
-
-                                        <Button
-                                            small
-                                            primary
-                                            className={classes.actionButtonDHIS2}
-                                        >
-                                            Schedule inspection
-                                        </Button>
-                                    </div>
-                                )}
-                            </div>
-                        ))}
-
-                        {filteredSchools.length === 0 && (
-                            <div style={{ padding: 12, color: "#777" }}>
-                                No schools match these filters.
-                            </div>
-                        )}
+                            <Button
+                                small
+                                primary
+                                className={classes.primaryButton}
+                                onClick={(e) => {
+                                    e.stopPropagation();
+                                    console.log("Schedule inspection");
+                                }}
+                            >
+                                Schedule inspection
+                            </Button>
+                        </div>
                     </div>
-                </div>
+                )}
+
+            </div>
+        ))}
+
+        {filteredSchools.length === 0 && (
+            <div style={{ padding: 12, color: "#777" }}>
+                No schools match these filters.
+            </div>
+        )}
+
+    </div>
+</div>
+
             </div>
         </div>
     );

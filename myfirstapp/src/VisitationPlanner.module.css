@@ -94,7 +94,7 @@
 :global(.leaflet-top.leaflet-right .leaflet-control) {
     margin: 4px 8px 0 0 !important;
 }
-/* Optional custom control class (for your recenter button) */
+
 :global(.leaflet-control-custom) {
     width: 36px !important;
     height: 36px !important;
@@ -233,8 +233,19 @@
 }
 
 .filterButton {
-    flex-shrink: 0;
+    width: 40px !important;
+    height: 40px !important;
+    min-width: 40px !important;
+    min-height: 40px !important;
+    padding: 0 !important;
+    border-radius: 8px !important;
+    display: flex !important;
+    justify-content: center !important;
+    align-items: center !important;
+    background: white !important;
+    box-shadow: 0 2px 6px rgba(0,0,0,0.15) !important;
 }
+
 
 /* ============================================================
    FILTER BADGES – Chips with remove buttons
@@ -398,6 +409,13 @@
     margin-top: 8px;
 }
 
+.buttonRight {
+    display: flex;
+    justify-content: flex-end; /* pushes button to the right */
+    margin-top: 12px;
+}
+
+
 /* === Show More / Less === */
 .showMore {
     display: flex;
@@ -455,9 +473,17 @@
 
 .actionButtons {
     display: flex;
+    justify-content: flex-end;
     gap: 8px;
-    margin-top: 8px;
+    margin-top: 12px;
 }
+
+.secondaryButton {
+    background: white !important;
+    color: #1a3fb0 !important;
+    border: 1px solid #1a3fb0 !important;
+}
+
 
 /* === Status Row === */
 .statusRow {
