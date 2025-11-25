@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useState, useEffect } from "react";
 import {
     Card,
     Button,
@@ -8,8 +8,9 @@ import {
     IconCalendar24,
     IconHome24,
     IconAdd24,
+    IconArrowLeft24,
     IconChevronDown24,
-    IconClockHistory24
+    IconChevronUp24,
 } from "@dhis2/ui";
 
 import classes from "./InspectionReports.module.css";
@@ -20,15 +21,12 @@ const PROGRAM_ID = "UxK2o06ScIe"; // same program as in Inspection.jsx
 
 export default function InspectionReports({ setActivePage }) {
     const [reports, setReports] = useState([]);
+    const [schools, setSchools] = useState([]);
     const [deLabelMap, setDeLabelMap] = useState({});
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
-
     const [search, setSearch] = useState("");
     const [openReportId, setOpenReportId] = useState(null);
-
-    const searchRef = useRef(null);
-    const [showSuggestions, setShowSuggestions] = useState(false);
 
     // ---------- API HELPERS ----------
 
@@ -55,6 +53,7 @@ export default function InspectionReports({ setActivePage }) {
     };
 
     const fetchProgramMeta = async () => {
+        // Get dataElement labels for this program so reports can show human-readable names
         const res = await fetch(
             `${API_BASE}/programs/${PROGRAM_ID}?fields=programStages[programStageDataElements[dataElement[id,displayName,shortName,code]]]`,
             {
@@ -102,11 +101,13 @@ export default function InspectionReports({ setActivePage }) {
                     values: ev.dataValues || [],
                 }));
 
+                // sort newest first
                 formatted.sort(
                     (a, b) => new Date(b.date) - new Date(a.date)
                 );
 
                 setReports(formatted);
+                setSchools(schoolList);
                 setDeLabelMap(labelMap);
             } catch (err) {
                 console.error(err);
@@ -119,41 +120,13 @@ export default function InspectionReports({ setActivePage }) {
         loadAll();
     }, []);
 
-    // ---------- CLICK OUTSIDE SEARCH (for suggestions) ----------
-    useEffect(() => {
-        function handleOutside(e) {
-            if (searchRef.current && !searchRef.current.contains(e.target)) {
-                setShowSuggestions(false);
-            }
-        }
-        document.addEventListener("mousedown", handleOutside);
-        return () => document.removeEventListener("mousedown", handleOutside);
-    }, []);
-
-    // ---------- FILTERING + SUGGESTIONS ----------
+    // ---------- FILTERING ----------
 
     const filteredReports = reports.filter((r) =>
         r.schoolName.toLowerCase().includes(search.toLowerCase())
     );
 
-    const suggestions =
-        showSuggestions && search.length > 0
-            ? reports.filter((r) =>
-                  r.schoolName.toLowerCase().includes(search.toLowerCase())
-              )
-            : [];
-
-    const selectSuggestion = (report) => {
-        setSearch(report.schoolName);
-        setOpenReportId(report.id);
-        setShowSuggestions(false);
-    };
-
-    const toggleOpen = (id) => {
-        setOpenReportId((prev) => (prev === id ? null : id));
-    };
-
-    // ---------- LOADING / ERROR ----------
+    // ---------- RENDERING ----------
 
     if (loading) {
         return (
@@ -171,65 +144,42 @@ export default function InspectionReports({ setActivePage }) {
         );
     }
 
-    // ---------- RENDER ----------
+    const toggleOpen = (id) => {
+        setOpenReportId((prev) => (prev === id ? null : id));
+    };
 
     return (
-        <div className={classes.container}>
-            {/* SEARCH AREA */}
-           <Card className={classes.searchCard}>
-    <div className={classes.searchRow}>
+        <div className={classes.pageWrapper}>
+            {/* HEADER */}
+            <div className={classes.pageHeader}>
+                <Button
+                    small
+                    icon={<IconArrowLeft24 />}
+                    onClick={() => setActivePage("dashboard")}
+                />
+                <h2>Inspection Reports</h2>
+            </div>
 
-        {/* SEARCH INPUT + AUTOCOMPLETE */}
-        <div ref={searchRef} className={classes.searchWrapper}>
-            <div className={classes.searchInputContainer}>
+            {/* SEARCH + START INSPECTION */}
+            <Card className={classes.searchCard}>
                 <InputField
                     placeholder="Search by school name..."
                     value={search}
-                    onChange={({ value }) => {
-                        setSearch(value);
-                        setShowSuggestions(true);
-                    }}
-                    onFocus={() => setShowSuggestions(true)}
+                    onChange={({ value }) => setSearch(value)}
                 />
 
-                {/* CLEAR BUTTON */}
-                {search.length > 0 && (
-                    <button
-                        className={classes.clearButton}
-                        onClick={() => {
-                            setSearch("");
-                            setShowSuggestions(false);
-                            searchRef.current
-                                ?.querySelector("input")
-                                ?.focus();
-                        }}
-                    >
-                        ✕
-                    </button>
-                )}
-            </div>
+                <Button
+                    primary
+                    icon={<IconAdd24 />}
+                    className={classes.addButton}
+                    onClick={() => setActivePage("inspection")}
+                >
+                    Start new inspection
+                </Button>
+            </Card>
 
-            {/* AUTOCOMPLETE DROPDOWN */}
-            {showSuggestions && suggestions.length > 0 && (
-                <div className={classes.suggestionsDropdown}>
-                    {suggestions.map((r) => (
-                        <div
-                            key={r.id}
-                            className={classes.suggestionItem}
-                            onClick={() => selectSuggestion(r)}
-                        >
-                            {r.schoolName}
-                        </div>
-                    ))}
-                </div>
-            )}
-        </div>
-
-    </div>
-</Card>
-
-            {/* REPORT LIST – styled like school list */}
-            <div className={classes.schoolList}>
+            {/* REPORT LIST */}
+            <div className={classes.reportList}>
                 {filteredReports.length === 0 && (
                     <NoticeBox title="No reports found">
                         Try a different search term or submit a new inspection.
@@ -242,99 +192,90 @@ export default function InspectionReports({ setActivePage }) {
                     return (
                         <Card
                             key={report.id}
-                            className={classes.schoolCard}
+                            className={classes.reportCard}
                         >
-                            <div className={classes.schoolCardContent}>
-                                <div className={classes.schoolIcon}>
+                            <div className={classes.reportContent}>
+                                <div className={classes.iconCircle}>
                                     <IconHome24 />
                                 </div>
 
-                                <div className={classes.schoolRight}>
-                                    <div className={classes.schoolName}>
+                                <div className={classes.reportText}>
+                                    <h3 className={classes.schoolName}>
                                         {report.schoolName}
-                                    </div>
+                                    </h3>
 
-                                    <div className={classes.nextInspectionRow}>
+                                    <div className={classes.dateRow}>
                                         <IconCalendar24 />
-                                        {new Date(
-                                            report.date
-                                        ).toLocaleDateString("en-GB", {
-                                            day: "2-digit",
-                                            month: "short",
-                                            year: "numeric",
-                                        })}
+                                        <span>
+                                            {new Date(
+                                                report.date
+                                            ).toLocaleDateString("en-GB", {
+                                                day: "2-digit",
+                                                month: "short",
+                                                year: "numeric",
+                                            })}
+                                        </span>
                                     </div>
+                                </div>
 
-                                    <div
-                                        className={classes.showMore}
-                                        onClick={() => toggleOpen(report.id)}
-                                    >
-                                        <IconChevronDown24
-                                            className={`${classes.showMoreIcon} ${
-                                                isOpen ? classes.rotateUp : ""
-                                            }`}
-                                        />
-                                        {isOpen ? "Show less" : "Show details"}
-                                    </div>
-
-                                    {isOpen && (
+                                <Button
+                                    small
+                                    secondary
+                                    onClick={() => toggleOpen(report.id)}
+                                >
+                                    {isOpen ? (
                                         <>
-                                            <div className={classes.detailsWrapper}>
-                                                {report.values.length === 0 && (
-                                                    <div
-                                                        className={
-                                                            classes.detailLine
-                                                        }
-                                                    >
-                                                        <span
-                                                            className={
-                                                                classes.detailValue
-                                                            }
-                                                        >
-                                                            No data values
-                                                            recorded for this
-                                                            inspection.
-                                                        </span>
-                                                    </div>
-                                                )}
-
-                                                {report.values.map(
-                                                    (dv, idx) => {
-                                                        const label =
-                                                            deLabelMap[
-                                                                dv.dataElement
-                                                            ] ||
-                                                            dv.dataElement;
-                                                        return (
-                                                            <div
-                                                                key={`${dv.dataElement}-${idx}`}
-                                                                className={
-                                                                    classes.detailLine
-                                                                }
-                                                            >
-                                                                <span
-                                                                    className={
-                                                                        classes.detailLabel
-                                                                    }
-                                                                >
-                                                                    {label}
-                                                                </span>
-                                                                <span
-                                                                    className={
-                                                                        classes.detailValue
-                                                                    }
-                                                                >
-                                                                    {dv.value}
-                                                                </span>
-                                                            </div>
-                                                        );
-                                                    }
-                                                )}
-                                            </div>
+                                            Hide details <IconChevronUp24 />
+                                        </>
+                                    ) : (
+                                        <>
+                                            Show details <IconChevronDown24 />
                                         </>
                                     )}
-                                </div>
+                                </Button>
                             </div>
+
+                            {isOpen && (
+                                <div className={classes.reportDetails}>
+                                    <h4>Recorded values</h4>
+                                    <ul className={classes.valuesList}>
+                                        {report.values.length === 0 && (
+                                            <li className={classes.emptyValues}>
+                                                No data values recorded for this
+                                                event.
+                                            </li>
+                                        )}
+                                        {report.values.map((dv, idx) => {
+                                            const label =
+                                                deLabelMap[dv.dataElement] ||
+                                                dv.dataElement;
+                                            return (
+                                                <li
+                                                    key={`${dv.dataElement}-${idx}`}
+                                                    className={
+                                                        classes.valueRow
+                                                    }
+                                                >
+                                                    <span
+                                                        className={
+                                                            classes.valueLabel
+                                                        }
+                                                    >
+                                                        {label}
+                                                    </span>
+                                                    <span
+                                                        className={
+                                                            classes.valueText
+                                                        }
+                                                    >
+                                                        {dv.value}
+                                                    </span>
+                                                </li>
+                                            );
+                                        })}
+                                    </ul>
+                                </div>
+                            )}
                         </Card>
                     );
                 })}
