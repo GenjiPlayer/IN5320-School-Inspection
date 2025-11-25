@@ -162,6 +162,3 @@ src/
 - Leaflet.js
 - CSS Modules
 - DHIS2 Web API
-
-## Credits
-Developed as part of the IN5320 course assignment at the University of Oslo, using The Gambia's DHIS2 instance for real-world educational data management.
