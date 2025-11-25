@@ -1,35 +1,36 @@
-import React, { useState, useEffect, useMemo } from "react";
+import React, {useEffect, useMemo, useState} from "react";
 import {
+    Button,
     Card,
+    CircularLoader,
+    IconArrowLeft24,
+    IconCheckmarkCircle24,
+    IconHome24,
+    IconInfo24,
+    IconInfoFilled24,
+    IconStar24,
+    IconUserGroup24,
+    IconVisualizationColumn24,
+    IconWarningFilled24,
     InputField,
+    NoticeBox,
     SingleSelectField,
     SingleSelectOption,
-    Button,
-    NoticeBox,
-    CircularLoader,
-    IconCheckmarkCircle24,
-    IconWarningFilled24,
-    IconInfoFilled24,
-    IconArrowLeft24,
-    TabBar,
     Tab,
-    TextAreaField,
-    IconInfo24,
-    IconUserGroup24,
-    IconStar24,
-    IconHome24,
-    IconVisualizationColumn24
+    TabBar,
+    TextAreaField
 } from "@dhis2/ui";
 import classes from "./Inspection.module.css";
 import {
-    validateInspectionForm,
-    calculateRatios,
-    getRatioStatus,
-    formatRatio,
     buildEventPayload,
-    saveInspectionLocally,
-    PROGRAM_CONFIG,
+    calculateRatios,
     EDUTOPIA_STANDARDS,
+    formatRatio,
+    getRatioStatus,
+    PROGRAM_CONFIG,
+    saveInspectionLocally,
+    validateInspectionForm,
+    buildResourceEventPayload
 } from "./inspectionUtils";
 
 /**
@@ -59,20 +60,19 @@ export default function Inspection({ setActivePage }) {
     const [schools, setSchools] = useState([]);
     const [programStageId, setProgramStageId] = useState("");
     const [dataElementMap, setDataElementMap] = useState({});
-
+    const [dataElementMapResource, setDataElementMapResource] = useState({});
+    const [programStageIdResource, setProgramStageIdResource] = useState("");
     // Form data
     const [formData, setFormData] = useState({
         schoolId: "",
         inspectionDate: new Date().toISOString().split("T")[0],
         electricity: "",
-        handwashing: "",
-        computerLab: "",
+        handwash: "",
+        computer: "",
         observations: "",
     });
 
     const [formDataResource, setResourceData] = useState({
-        schoolId:  "",
-        inspetionDate: new Date().toISOString().split("T")[0],
         classrooms: "",
         seats: "",
         toilets: "",
@@ -135,11 +135,10 @@ export default function Inspection({ setActivePage }) {
                 const mapping = {};
                 data.programStages[0].programStageDataElements.forEach((psde) => {
                     const code = psde.dataElement.code;
-                    const id = psde.dataElement.id;
-                    mapping[code] = id;
+                    mapping[code] = psde.dataElement.id;
                 });
                 setDataElementMap(mapping);
-
+                console.log(data)
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching program config:", err);
@@ -164,17 +163,14 @@ export default function Inspection({ setActivePage }) {
                 const data = await res.json();
 
                 const stageId = data.programStages[0].id;
-                setProgramStageId(stageId);
-
-                // Create mapping of codes to IDs
+                setProgramStageIdResource(stageId);
                 const mapping = {};
                 data.programStages[0].programStageDataElements.forEach((psde) => {
                     const code = psde.dataElement.code;
-                    const id = psde.dataElement.id;
-                    mapping[code] = id;
+                    mapping[code] = psde.dataElement.id;
                 });
-                setDataElementMap(mapping);
-
+                console.log(data)
+                setDataElementMapResource(mapping);
                 setLoading(false);
             } catch (err) {
                 console.error("Error fetching program config:", err);
@@ -209,8 +205,8 @@ export default function Inspection({ setActivePage }) {
                 formData.toilets !== "" && formData.textbooks !== "";
         } else if (step === 3) {
             // Facilities - only require that facilities are selected
-            return formData.electricity !== "" && formData.handwashing !== "" &&
-                formData.computerLab !== "";
+            return formData.electricity !== "" && formData.handwash !== "" &&
+                formData.computer !== "";
         }
         return true;
     };
@@ -221,6 +217,7 @@ export default function Inspection({ setActivePage }) {
 
     const handleFieldChange = (field, value) => {
         setFormData(prev => ({ ...prev, [field]: value }));
+        setResourceData(prev => ({ ...prev, [field]: value }))
         setTouched(prev => ({ ...prev, [field]: true }));
 
         // Clear error for this field
@@ -277,11 +274,10 @@ export default function Inspection({ setActivePage }) {
         setSubmitStatus(null);
 
         try {
-            // Build payload
-            const payload = buildEventPayload(formData, programStageId, dataElementMap);
+            // ========== SUBMIT EVENT 1: School Inspection (electricity, handwashing, computer) ==========
+            const payload1 = buildEventPayload(formData, programStageId, dataElementMap);
 
-            // Submit to DHIS2
-            const res = await fetch(
+            const res1 = await fetch(
                 `${PROGRAM_CONFIG.apiBase}/tracker?async=false`,
                 {
                     method: "POST",
@@ -289,50 +285,71 @@ export default function Inspection({ setActivePage }) {
                         "Content-Type": "application/json",
                         Authorization: `Basic ${PROGRAM_CONFIG.credentials}`,
                     },
-                    body: JSON.stringify(payload),
+                    body: JSON.stringify(payload1),
                 }
             );
 
-            const result = await res.json();
+            const result1 = await res1.json();
 
-            if (res.ok && result.status !== "ERROR") {
-                // Success
-                setSubmitStatus({
-                    type: "success",
-                    message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
-                });
-
-                // Reset form
-                setTimeout(() => {
-                    resetForm();
-                }, 2000);
-            } else {
-                // DHIS2 validation error
-                console.error("DHIS2 validation error:", result);
-
-                // Try to save locally for offline support
-                const localKey = saveInspectionLocally({
-                    ...formData,
-                    schoolName: selectedSchool?.name,
-                });
-
-                setSubmitStatus({
-                    type: "warning",
-                    message: `Could not sync with server. Inspection saved locally (${localKey}). Will sync when connection is restored.`,
-                });
+            if (!res1.ok || result1.status === "ERROR") {
+                console.error("DHIS2 validation error (School Inspection):", result1);
+                throw new Error("Failed to submit school inspection data");
             }
-        } catch (error) {
-            console.error("Submit error:", error);
 
-            // Save locally
+            // ========== SUBMIT EVENT 2: Resource Inspection (classrooms, seats, books, toilets) ==========
+            const payload2 = buildResourceEventPayload(
+                formDataResource,
+                programStageIdResource,
+                dataElementMapResource,
+                formData.schoolId,
+                formData.inspectionDate
+            );
+
+            const res2 = await fetch(
+                `${PROGRAM_CONFIG.apiBase}/tracker?async=false`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Authorization: `Basic ${PROGRAM_CONFIG.credentials}`,
+                    },
+                    body: JSON.stringify(payload2),
+                }
+            );
+
+            const result2 = await res2.json();
+
+            if (!res2.ok || result2.status === "ERROR") {
+                console.error("DHIS2 validation error (Resource Inspection):", result2);
+                throw new Error("Failed to submit resource inspection data");
+            }
+
+            // ========== SUCCESS ==========
+            setSubmitStatus({
+                type: "success",
+                message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
+            });
+
+            // Reset form
+            setTimeout(() => {
+                resetForm();
+                resetFormResource();
+                setActiveStep(0);
+            }, 2000);
+
+        } catch (err) {
+            console.error("Submission error:", err);
+
+            // Try to save locally for offline support
             const localKey = saveInspectionLocally({
                 ...formData,
+                ...formDataResource,
                 schoolName: selectedSchool?.name,
             });
 
             setSubmitStatus({
-                type: "error",
-                message: `Network error. Inspection saved locally (${localKey}). Will sync when connection is restored.`,
+                type: "warning",
+                message: `Could not sync with server. Inspection saved locally (${localKey}). Will sync when connection is restored.`,
             });
         } finally {
             setSubmitting(false);
@@ -344,9 +361,22 @@ export default function Inspection({ setActivePage }) {
             schoolId: "",
             inspectionDate: new Date().toISOString().split("T")[0],
             electricity: "",
-            handwashing: "",
-            computerLab: "",
+            handwash: "",
+            computer: "",
             observations: "",
+        });
+        setErrors({});
+        setTouched({});
+        setActiveStep(0);
+        setSubmitStatus(null);
+    };
+
+    const resetFormResource = () => {
+        setResourceData({
+            classrooms: "",
+            seats: "",
+            toilets: "",
+            textbooks: "",
         });
         setErrors({});
         setTouched({});
@@ -636,7 +666,7 @@ export default function Inspection({ setActivePage }) {
                                 label="Classrooms"
                                 type="number"
                                 min="1"
-                                value={formData.classrooms}
+                                value={formDataResource.classrooms}
                                 onChange={({ value }) => handleFieldChange("classrooms", value)}
                                 onBlur={() => handleBlur("classrooms")}
                                 error={touched.classrooms && !!errors.classrooms}
@@ -648,7 +678,7 @@ export default function Inspection({ setActivePage }) {
                                 label="Seats/Desks"
                                 type="number"
                                 min="0"
-                                value={formData.seats}
+                                value={formDataResource.seats}
                                 onChange={({ value }) => handleFieldChange("seats", value)}
                                 onBlur={() => handleBlur("seats")}
                                 error={touched.seats && !!errors.seats}
@@ -663,7 +693,7 @@ export default function Inspection({ setActivePage }) {
                                 label="Toilets"
                                 type="number"
                                 min="1"
-                                value={formData.toilets}
+                                value={formDataResource.toilets}
                                 onChange={({ value }) => handleFieldChange("toilets", value)}
                                 onBlur={() => handleBlur("toilets")}
                                 error={touched.toilets && !!errors.toilets}
@@ -675,7 +705,7 @@ export default function Inspection({ setActivePage }) {
                                 label="Textbooks"
                                 type="number"
                                 min="0"
-                                value={formData.textbooks}
+                                value={formDataResource.textbooks}
                                 onChange={({ value }) => handleFieldChange("textbooks", value)}
                                 onBlur={() => handleBlur("textbooks")}
                                 error={touched.textbooks && !!errors.textbooks}
@@ -720,18 +750,18 @@ export default function Inspection({ setActivePage }) {
                             validationText={touched.electricity && errors.electricity}
                             required
                         >
-                            <SingleSelectOption value="yes" label="Yes" />
+                            <SingleSelectOption value= "yes" label="Yes" />
                             <SingleSelectOption value="no" label="No" />
                         </SingleSelectField>
 
                         <SingleSelectField
                             label="Handwashing Facilities"
                             placeholder="Select..."
-                            selected={formData.handwashing}
-                            onChange={({ selected }) => handleFieldChange("handwashing", selected)}
-                            onBlur={() => handleBlur("handwashing")}
-                            error={touched.handwashing && !!errors.handwashing}
-                            validationText={touched.handwashing && errors.handwashing}
+                            selected={formData.handwash}
+                            onChange={({ selected }) => handleFieldChange("handwash", selected)}
+                            onBlur={() => handleBlur("handwash")}
+                            error={touched.handwash && !!errors.handwash}
+                            validationText={touched.handwash && errors.handwash}
                             required
                         >
                             <SingleSelectOption value="yes" label="Yes" />
@@ -741,11 +771,11 @@ export default function Inspection({ setActivePage }) {
                         <SingleSelectField
                             label="Computer Lab"
                             placeholder="Select..."
-                            selected={formData.computerLab}
-                            onChange={({ selected }) => handleFieldChange("computerLab", selected)}
-                            onBlur={() => handleBlur("computerLab")}
-                            error={touched.computerLab && !!errors.computerLab}
-                            validationText={touched.computerLab && errors.computerLab}
+                            selected={formData.computer}
+                            onChange={({ selected }) => handleFieldChange("computer", selected)}
+                            onBlur={() => handleBlur("computer")}
+                            error={touched.computer && !!errors.computer}
+                            validationText={touched.computer && errors.computer}
                             required
                         >
                             <SingleSelectOption value="yes" label="Yes" />
@@ -850,11 +880,11 @@ export default function Inspection({ setActivePage }) {
                                 <div className={formData.electricity === "yes" ? classes.facilityYes : classes.facilityNo}>
                                     {formData.electricity === "yes" ? "✓" : "✗"} Electricity
                                 </div>
-                                <div className={formData.handwashing === "yes" ? classes.facilityYes : classes.facilityNo}>
-                                    {formData.handwashing === "yes" ? "✓" : "✗"} Handwashing
+                                <div className={formData.handwash === "yes" ? classes.facilityYes : classes.facilityNo}>
+                                    {formData.handwash === "yes" ? "✓" : "✗"} Handwashing
                                 </div>
-                                <div className={formData.computerLab === "yes" ? classes.facilityYes : classes.facilityNo}>
-                                    {formData.computerLab === "yes" ? "✓" : "✗"} Computer Lab
+                                <div className={formData.computer=== "yes" ? classes.facilityYes : classes.facilityNo}>
+                                    {formData.computer === "yes" ? "✓" : "✗"} Computer Lab
                                 </div>
                             </div>
                         </div>

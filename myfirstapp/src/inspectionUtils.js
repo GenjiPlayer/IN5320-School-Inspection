@@ -34,8 +34,8 @@ export const DATA_ELEMENTS = {
     TOILETS: "toilets",
     TEXTBOOKS: "textbooks",
     ELECTRICITY: "electricity",
-    HANDWASHING: "handwashing",
-    COMPUTER_LAB: "computerLab",
+    HANDWASHING: "handwash",
+    COMPUTER_LAB: "computer",
     OBSERVATIONS: "observations",
 };
 
@@ -144,12 +144,12 @@ export const validateInspectionForm = (formData) => {
         errors.electricity = "Please indicate if the school has electricity";
     }
 
-    if (!formData.handwashing) {
-        errors.handwashing = "Please indicate if the school has handwashing facilities";
+    if (!formData.handwash) {
+        errors.handwash = "Please indicate if the school has handwashing facilities";
     }
 
-    if (!formData.computerLab) {
-        errors.computerLab = "Please indicate if the school has a computer lab";
+    if (!formData.computer) {
+        errors.computer = "Please indicate if the school has a computer lab";
     }
 
     return {
@@ -261,6 +261,50 @@ export const formatRatio = (value, decimals = 1) => {
 export const buildEventPayload = (formData, programStageId, dataElementMap) => {
     const dataValues = [];
 
+    const addDataValue = (code, value, isBoolean = false) => {
+        const dataElementId = dataElementMap[code];
+        if (dataElementId && value !== null && value !== undefined && value !== "") {
+            let finalValue = value;
+
+            if (isBoolean) {
+                finalValue = value === "yes" || value === "Yes" || value === true;
+            }
+
+            dataValues.push({
+                dataElement: dataElementId,
+                value: isBoolean ? finalValue : String(value),
+            });
+        }
+    };
+    // Add all form fields
+    addDataValue(DATA_ELEMENTS.LEARNERS_BOYS, formData.boysEnrolled);
+    addDataValue(DATA_ELEMENTS.LEARNERS_GIRLS, formData.girlsEnrolled);
+    addDataValue(DATA_ELEMENTS.TEACHERS_MALE, formData.maleTeachers);
+    addDataValue(DATA_ELEMENTS.TEACHERS_FEMALE, formData.femaleTeachers);
+    addDataValue(DATA_ELEMENTS.CLASSROOMS, formData.classrooms);
+    addDataValue(DATA_ELEMENTS.SEATS, formData.seats);
+    addDataValue(DATA_ELEMENTS.TOILETS, formData.toilets);
+    addDataValue(DATA_ELEMENTS.TEXTBOOKS, formData.textbooks);
+    addDataValue(DATA_ELEMENTS.ELECTRICITY, formData.electricity, true);
+    addDataValue(DATA_ELEMENTS.HANDWASHING, formData.handwash, true);
+    addDataValue(DATA_ELEMENTS.COMPUTER_LAB, formData.computer, true);
+    addDataValue(DATA_ELEMENTS.OBSERVATIONS, formData.observations);
+
+    const event = {
+        program: PROGRAM_CONFIG.programId,
+        programStage: programStageId,
+        orgUnit: formData.schoolId,
+        occurredAt: new Date(formData.inspectionDate).toISOString(),
+        status: "ACTIVE",
+        dataValues,
+    };
+
+    return { events: [event] };
+};
+
+export const buildResourceEventPayload = (formDataResource, programStageId, dataElementMap, schoolId, inspectionDate) => {
+    const dataValues = [];
+
     // Helper to add data value
     const addDataValue = (code, value) => {
         const dataElementId = dataElementMap[code];
@@ -272,26 +316,19 @@ export const buildEventPayload = (formData, programStageId, dataElementMap) => {
         }
     };
 
-    // Add all form fields
-    addDataValue(DATA_ELEMENTS.LEARNERS_BOYS, formData.boysEnrolled);
-    addDataValue(DATA_ELEMENTS.LEARNERS_GIRLS, formData.girlsEnrolled);
-    addDataValue(DATA_ELEMENTS.TEACHERS_MALE, formData.maleTeachers);
-    addDataValue(DATA_ELEMENTS.TEACHERS_FEMALE, formData.femaleTeachers);
-    addDataValue(DATA_ELEMENTS.CLASSROOMS, formData.classrooms);
-    addDataValue(DATA_ELEMENTS.SEATS, formData.seats);
-    addDataValue(DATA_ELEMENTS.TOILETS, formData.toilets);
-    addDataValue(DATA_ELEMENTS.TEXTBOOKS, formData.textbooks);
-    addDataValue(DATA_ELEMENTS.ELECTRICITY, formData.electricity);
-    addDataValue(DATA_ELEMENTS.HANDWASHING, formData.handwashing);
-    addDataValue(DATA_ELEMENTS.COMPUTER_LAB, formData.computerLab);
-    addDataValue(DATA_ELEMENTS.OBSERVATIONS, formData.observations);
+    // Add resource fields - using codes that match your DHIS2 setup
+    addDataValue("classrooms", formDataResource.classrooms);
+    addDataValue("seats", formDataResource.seats);
+    addDataValue("toilets", formDataResource.toilets);
+    addDataValue("textbooks", formDataResource.textbooks);
+    addDataValue("mandatory", "0");
 
     const event = {
-        program: PROGRAM_CONFIG.programId,
+        program: PROGRAM_CONFIG.programIdResource,
         programStage: programStageId,
-        orgUnit: formData.schoolId,
-        occurredAt: new Date(formData.inspectionDate).toISOString(),
-        status: "ACTIVE",
+        orgUnit: schoolId,
+        occurredAt: new Date(inspectionDate).toISOString(),
+        status: "COMPLETED",
         dataValues,
     };
 
@@ -333,8 +370,8 @@ export const generateInspectionSummary = (formData, schoolName) => {
         // Facilities
         facilities: {
             electricity: formData.electricity === "yes",
-            handwashing: formData.handwashing === "yes",
-            computerLab: formData.computerLab === "yes",
+            handwash: formData.handwash === "yes",
+            computer: formData.computer === "yes",
         },
 
         // Calculated ratios
@@ -517,7 +554,7 @@ const generateRecommendations = (ratios, formData) => {
         });
     }
 
-    if (formData.handwashing === "no") {
+    if (formData.handwash === "no") {
         recommendations.push({
             priority: "medium",
             area: "Health & Hygiene",
@@ -526,7 +563,7 @@ const generateRecommendations = (ratios, formData) => {
         });
     }
 
-    if (formData.computerLab === "no") {
+    if (formData.computer === "no") {
         recommendations.push({
             priority: "low",
             area: "Digital Learning",
