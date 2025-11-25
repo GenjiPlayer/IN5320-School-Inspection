@@ -106,6 +106,6 @@ To read data, we use `/api/tracker/events.json` to grab inspection events, `/api
 
 ## What We'd Add Next
 
-If we had more time, we'd make it a proper Progressive Web App so it works offline, add photo uploads for documenting facility conditions, generate printable PDF reports, add push notifications for overdue inspections, and support Wolof and Mandinka languages.
+If we had more time, we'd make it a proper Progressive Web App so it works offline, add photo uploads for documenting facility conditions, generate printable PDF reports, add push notifications for overdue inspections, and support other languages.
 
 Overall, this app shows how you can turn educational monitoring from paper forms and spreadsheets into something actually useful. School inspectors get a tool that makes their job easier, and education officials get real data to make better decisions about where to invest resources.
