@@ -1,83 +1,101 @@
 # IN5320 School Inspection Application
 **Devs from school inspectors worst nightmare**
 
-## Project Overview
+## What This App Does
 
-This application provides a comprehensive digital solution for school inspectors in Edutopia to conduct inspections, plan school visits, and analyze educational performance across the Jambalaya and Pepper clusters  (Dummy data).
+We built a mobile app for school inspectors in Edutopia to make their jobs easier. Instead of dealing with paper forms and clipboards, inspectors can now use their phones to record inspections, figure out which schools need visits, and see how schools are performing against national standards. Everything saves directly into Edutopia's DHIS2 system, so the data flows straight into their national education database.
 
-## Core Functionality
+## The Main Features
 
-### School Inspection Data Collection
+### Recording Inspections
 
-The inspection form is designed for ease of use on mobile devices during field visits, organized into two logical tabs for efficient data capture.
+The inspection form has two tabs to keep things organized. 
 
-The **Facilities Tab** records infrastructure availability and condition: electricity, handwashing facilities, and computer labs. Each facility present receives a five-point condition rating, providing qualitative context beyond simple presence/absence data. The **Resources Tab** captures quantitative counts of classrooms, seats, textbooks, and toilets—essential metrics for calculating the five Edutopia minimum standards.
+The **Facilities Tab** is for yes/no questions: does the school have electricity, handwashing stations, computer labs? If they have something, you rate its condition from 1-5. This gives context beyond just "yes it exists", you can note if the electricity works but the wiring is sketchy.
 
-Real-time validation ensures data quality before submission. The application automatically posts data to two DHIS2 programs: the School Inspection Program for facility data and the Resource Inspection Program for physical resources. A key technical achievement was implementing dynamic boolean conversion—DHIS2 expects true/false values for facility fields, so our payload builder automatically converts user selections ("yes"/"no") to the appropriate format during submission.
+The **Resources Tab** is where you count stuff: how many classrooms, seats, textbooks, and toilets. These numbers are what we use to calculate the five Edutopia standards that Edutiopia uses to measure school quality.
 
-### School Visit Planner
+The form validates everything before you submit, so you can't accidentally send incomplete data. When you hit submit, it posts to two different DHIS2 programs, one for facilities and one for resources. Getting this to work was a bit tricky because DHIS2 expects actual boolean values (true/false) for the yes/no fields, not strings. We handle that conversion automatically in the background.
 
-The Visit Planner helps inspectors prioritize visits across their assigned cluster through an interactive Leaflet map combined with a filterable list view. Schools appear as color-coded markers: green for recently visited (< 30 days), yellow for due soon (30-90 days), red for overdue (> 90 days), and gray for never visited. This visual encoding enables quick identification of schools requiring immediate attention.
+### Planning School Visits
 
-The application calculates days since last visit by querying each school's most recent inspection event and computing the time difference. Schools automatically sort by urgency, placing the most overdue at the top. Inspectors can search by school name, filter by time ranges, and apply status filters to refine their view.
+The visit planner shows all schools in your cluster on an interactive map. Schools are color-coded so you can immediately see which ones need attention:
+- Green = visited recently (last 30 days)
+- Yellow = due soon (30-90 days ago)
+- Red = overdue (90+ days ago)  
+- Gray = never been visited
 
-Each school card expands to reveal detailed information from the last inspection, enabling inspectors to prepare effectively before field visits. The system intelligently handles schools that exist as separate Lower Basic and Upper Basic entities in DHIS2, merging them into unified entries for a more intuitive user experience.
+The app calculates "days since last visit" by finding each school's most recent inspection in DHIS2 and comparing it to today's date. Schools automatically sort with the most overdue at the top, so you know where to focus.
 
-### School Inspection Analytics
+You can search for specific schools, filter by time ranges, or just browse the list. Click on any school and it expands to show details from the last inspection super helpful for preparing before you show up. 
 
-The analytics component transforms raw inspection data into actionable insights through two complementary dashboards.
+One thing we added that wasn't strictly necessary: some schools in DHIS2 are split into "Lower Basic" and "Upper Basic" as separate entities. We merge those together so you see one unified school instead of two confusing entries.
 
-**Individual School Analytics** displays resource availability metrics (toilets, seats, textbooks, classrooms) with color-coded status indicators: green checkmarks for meeting standards, orange warnings for below-standard resources, and red alerts for critical shortages. Expanding any metric reveals a time-series chart showing performance over 12 months, overlaid with minimum thresholds and cluster averages for context.
+### Looking at the Data
 
-**Cluster Analytics** enables comparison across schools or between clusters through two view modes. In **Cluster View**, inspectors compare aggregate metrics between Jambalaya and Pepper clusters, viewing total counts and the five Edutopia minimum standards:
+We have two analytics dashboards that turn raw inspection data into something useful.
 
-1. **Seat-to-Learner Ratio** ≥ 1:1
-2. **Textbook-to-Learner Ratio** ≥ 1:1
-3. **Learner-to-Classroom Ratio** ≤ 53:1
-4. **Learner-to-Teacher Ratio** ≤ 45:1
-5. **Learner-to-Toilet Ratio** ≤ 25:1
+**Individual School Analytics** lets you pick one school and see how it's doing. You get metrics for toilets, seats, textbooks, and classrooms with color-coded status badges, green means good, orange means below standard, red means critical. Click "Show details" on any metric and you get a chart showing how that resource has changed over the past year, with lines showing the minimum standard and cluster average for comparison.
 
-Each standard displays its current value, status assessment, and official threshold. Expandable metric cards reveal time-series trends and comparison charts. In **School Comparison** mode, inspectors select multiple schools within a cluster for side-by-side analysis, useful for identifying high-performing schools and analyzing resource distribution patterns.
+**Cluster Analytics** is where you can compare multiple schools or look at entire clusters. There are two modes:
 
-### Supporting Features
+In **Cluster View**, you compare Jambalaya vs Pepper clusters on the five Edutopia standards:
+1. Seat-to-Learner Ratio (need at least 1:1)
+2. Textbook-to-Learner Ratio (need at least 1:1)  
+3. Learners per Classroom (max 53:1)
+4. Learners per Teacher (max 45:1)
+5. Learners per Toilet (max 25:1)
 
-The **School Registry** provides a browsable list of all schools sorted by inspection urgency, with expandable cards showing status, contact information, and quick-action buttons. The **Inspection Reports** feature offers a searchable archive of all submitted inspections, with each report displaying complete data values labeled with human-readable field names fetched dynamically from DHIS2.
+Each standard shows the current value, whether it meets the threshold, and you can expand it to see trends over time.
 
-Throughout the application, a persistent mobile-optimized navigation system provides quick access to major features through a sticky header and footer tab bar.
+In **School Comparison** mode, you can check multiple schools within one cluster to see them side-by-side. Really useful for finding which schools are doing well or spotting patterns in resource distribution.
 
-## Technical Implementation
+We also included a **School Registry** (browsable list of all schools sorted by urgency) and **Inspection Reports** (searchable history of all submitted inspections).
 
-### Architecture
+## How We Built It
 
-The application uses React 18 with functional components and hooks for state management, chosen for its robust ecosystem and excellent mobile performance. The DHIS2 UI library provides pre-styled components following DHIS2 design guidelines. CSS Modules scope styles to individual components, preventing conflicts and improving maintainability. The mobile-first design ensures usability on small screens with responsive breakpoints for larger devices.
+### Tech Stack
 
-Highcharts handles data visualization with excellent browser compatibility and touch support. Leaflet.js provides lightweight mapping functionality without requiring API keys.
+Built with React 18 using hooks for state management. We went with React because it works great on mobile and integrates well with the DHIS2 UI library. DHIS2 UI gives us pre-made components (buttons, forms, cards) that match DHIS2's design style.
 
-### DHIS2 Integration
+For styling, we used CSS Modules so each component's styles stay separate. Everything is mobile-first since inspectors use phones in the field, but it scales up nicely on tablets and desktops too.
 
-All data flows through RESTful API calls to Edutopias DHIS2 instance. The application interacts with three programs:
+Charts are done with Highcharts (handles touch interactions really well), and the map uses Leaflet.js (lightweight, no API keys needed).
 
-- **School Inspection Program** for facility data
-- **Resource Inspection Program** for resource counts
-- **Teacher Registration Program** for learner-to-teacher ratios
+### Working with DHIS2
 
-When submitting inspections, the application makes two sequential POST requests to `/api/tracker`, one for each program. Each includes properly formatted event payloads with unique client-side generated UIDs.
+All the data comes from Edutopia's DHIS2 instance through their REST API. We're hitting three main programs:
+- School Inspection Program (for facility data)
+- Resource Inspection Program (for resource counts)  
+- Teacher Registration Program (to calculate learner-to-teacher ratios)
 
-For reading data, `/api/tracker/events.json` retrieves inspection events filtered by program and organization unit. Learner enrollment comes from `/api/analytics.json`, which aggregates data across grade levels, genders, and age groups. Organization unit hierarchy data from `/api/organisationUnits` provides school lists and GeoJSON coordinates for mapping.
+When you submit an inspection, we fire off two POST requests to `/api/tracker` one for each program. Each request has a properly formatted event with a unique ID we generate on the client side.
 
-### Key Technical Solutions
+To read data, we use `/api/tracker/events.json` to grab inspection events, `/api/analytics.json` for learner enrollment numbers (which aggregates across grade levels and genders automatically), and `/api/organisationUnits` to get the list of schools and their map coordinates.
 
-**Dynamic Form Construction** fetches program metadata on mount, creating a code-to-ID mapping that makes the form resilient to DHIS2 configuration changes. **Validation System** checks required fields, validates ranges, and performs consistency checks before allowing submission. **Ratio Calculations** handle division-by-zero gracefully and format values appropriately for each standard. **Time-Series Aggregation** groups events by month across all schools, producing data structures for Highcharts rendering. **Map Performance** optimizations handle 100+ schools smoothly through batch loading and in-memory filtering.
+### Cool Stuff We Figured Out
 
-## Known Limitations
+**Dynamic form building** - Instead of hardcoding data element IDs, we fetch the program metadata when the form loads and build a mapping of codes to IDs. Makes the form work even if DHIS2's configuration changes.
 
-**Learner Data Period**: The analytics API uses 2020 enrollment data as specified in assignment documentation. More recent periods would provide current data, though the test instance has limited recent enrollment records.
+**Smart validation** - We validate everything before submission: required fields, number ranges, logical consistency (can't have zero learners if you've entered boys and girls).
 
-**Partial Features**: Gender Parity Index calculations are implemented but not displayed in the UI. Offline support includes LocalStorage functions but not the full synchronization mechanism. Advanced filtering options (performance-based, contextual) have UI elements but require additional DHIS2 metadata configuration to function fully.
+**Ratio calculations** - All five Edutopia standards get calculated from the raw data, with proper handling for division by zero and formatting to two decimal places.
 
-**Data Refresh**: The application loads data on component mount but doesn't automatically refresh. Users can reload the page to see newly submitted data.
+**Time-series aggregation** - For cluster analytics, we group all events by month across all schools, accumulate the totals, then calculate ratios for each month. That's how we get those trend lines.
 
-## Technologies Used
+**Map performance** - Loading 100+ schools could be slow, so we fetch everything in one batch on load, then do all the searching and filtering in memory. Makes it feel instant when you interact with it.
+
+## What's Not Finished
+
+**Learner numbers from 2020** - The analytics API pulls enrollment data from 2020 because that's what the assignment docs specified. That data is obviously outdated now, and a lot of schools show zero learners because they weren't set up in DHIS2 back then. Using recent data would be better, but the test instance doesn't have much recent enrollment data anyway.
+
+**Sparse time-series** - Schools typically get inspected once or twice a year, so those 12-month charts only have one or two data points. That's just reality inspections don't happen that often.
+
+**Partial features** - We calculate Gender Parity Index but don't show it in the UI (ran out of time). Offline support has the LocalStorage code written but not the sync mechanism. Some filter options in the visit planner are placeholder UI they'd need more metadata in DHIS2 to actually work.
+
+**No auto-refresh** - The app loads data when components mount but doesn't refresh automatically. You can just reload the page to see new data.
+
+## Tech We Used
 
 - React 18
 - DHIS2 UI Library
@@ -86,6 +104,8 @@ For reading data, `/api/tracker/events.json` retrieves inspection events filtere
 - CSS Modules
 - DHIS2 Web API
 
-## Future Enhancements
+## What We'd Add Next
 
-The application provides a solid foundation with clear pathways for enhancement: implementing Progressive Web App capabilities for offline use, adding photo documentation for facility conditions, creating printable PDF reports, implementing push notifications for overdue inspections, and adding multi-language support.
+If we had more time, we'd make it a proper Progressive Web App so it works offline, add photo uploads for documenting facility conditions, generate printable PDF reports, add push notifications for overdue inspections, and support Wolof and Mandinka languages.
+
+Overall, this app shows how you can turn educational monitoring from paper forms and spreadsheets into something actually useful. School inspectors get a tool that makes their job easier, and education officials get real data to make better decisions about where to invest resources.
