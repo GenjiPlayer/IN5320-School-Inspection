@@ -120,6 +120,7 @@ export default function App() {
 
     const [headerTextColor, setHeaderTextColor] = useState("#FFFFFF");
     const [headerIconColor, setHeaderIconColor] = useState("#FFFFFF");
+const [selectedSchoolIdForAnalytics, setSelectedSchoolIdForAnalytics] = useState(null);
 
         function renderPage() {
         switch (activePage) {
@@ -186,6 +187,7 @@ export default function App() {
                         setHeaderTextColor={setHeaderTextColor}
                         setHeaderIconColor={setHeaderIconColor}
                         setHeaderTitle={setHeaderTitle}
+                        selectedSchoolId={selectedSchoolIdForAnalytics} 
                     />
                 );
 
@@ -193,6 +195,7 @@ export default function App() {
                 return (
                     <Inspection
                         setActivePage={setActivePage}
+                        setSelectedSchoolIdForAnalytics={setSelectedSchoolIdForAnalytics}
                         setHeaderColor={setHeaderColor}
                         setHeaderTextColor={setHeaderTextColor}
                         setHeaderIconColor={setHeaderIconColor}
@@ -322,7 +325,7 @@ function Dashboard({
                             setHeaderTextColor("#ffffffff");
                             setHeaderIconColor("#ffffffff");
                             setHeaderTitle("Cluster Analytics");
-                            setActivePage("clusterAnalytics");
+                            setActivePage("analytics"); //ENDRET TIL ANALYTICS FOR Å FIKSE LAYOUT
                         }}
                     >
                         <Card className={classes.programCard}>

@@ -1,6 +1,5 @@
 /* Main page container */
 .pageWrapper {
-    padding: 16px;
     max-width: 100%;
     box-sizing: border-box;
     display: flex;
@@ -13,30 +12,13 @@
 .loadingWrapper {
     display: flex;
     justify-content: center;
-    padding: 60px 0;
-}
-
-/* Page header */
-.pageHeader {
-    display: flex;
-    justify-content: flex-start; /* Align content to the start */
-    align-items: center; /* Vertically center the items */
-    gap: 16px; /* Space between the back button and title */
-    margin-bottom: 16px;
-    font-size: 22px;
-    font-weight: bold;
-    flex-wrap: wrap; /* Ensure the header content wraps if necessary */
-}
-
-/* Optional: Style the back button specifically */
-.backButton {
-    margin-right: 16px; /* Adjust spacing between button and title */
+    padding: 80px 0;
 }
 
 /* School card */
 .schoolCard {
-    margin-bottom: 20px;
-    padding: 20px;
+    margin-bottom: 0px;
+    padding: 16px;
     background-color: #f4f6f9;
     border-radius: 8px;
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
@@ -46,11 +28,10 @@
 
 /* Status card */
 .statusCard {
-    padding: 20px;
+    padding: 8px;
     background-color: #ffffff;
-    margin-bottom: 20px;
+    margin-bottom: 0px;
     border-radius: 8px;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
     transition: max-height 0.3s ease-in-out;
     position: relative;
     display: flex;
@@ -63,7 +44,7 @@
     justify-content: space-between;
     align-items: center;
     margin-bottom: 16px;
-    gap: 16px;
+    gap: 8px;
     flex-wrap: wrap; /* Ensures wrapping on smaller screens */
 }
 
@@ -94,7 +75,7 @@
 /* Title of each status */
 .statusTitle {
     font-weight: bold;
-    font-size: 18px;
+    font-size: 16px;
     margin-bottom: 6px;
 }
 
@@ -102,7 +83,7 @@
 .statusSubtitle {
     font-size: 14px;
     color: #888;
-    margin-top: 6px;
+    margin-top: 8px;
 }
 
 /* Button to show details */
@@ -112,7 +93,7 @@
     color: #2196f3;
     cursor: pointer;
     font-size: 16px;
-    font-weight: bold;
+    font-weight: regular;
     padding: 0;
     text-align: right;
 }
@@ -127,7 +108,7 @@
 .statusDetailContent {
     display: flex;
     flex-direction: column;
-    gap: 16px;
+    gap: 12px;
     margin-top: 12px;
     width: 100%; /* Ensure it takes the full width */
 }
@@ -205,11 +186,6 @@
 /* Fixing "details" button positioning */
 .statusRow .detailsButton {
     margin-left: auto; /* Push the details button to the right */
-}
-
-/* Adding spacing between status rows */
-.statusRow {
-    margin-bottom: 24px; /* Increased space between rows */
 }
 
 /* Text styling for the recommendation in the expanded view */

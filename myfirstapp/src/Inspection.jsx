@@ -43,7 +43,7 @@ import {
  * - Comprehensive inspection summary
  * - Mobile-friendly responsive design
  */
-export default function Inspection({ setActivePage }) {
+export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalytics }) {
     // ========================================
     // STATE MANAGEMENT
     // ========================================
@@ -329,13 +329,15 @@ setSubmitStatus({
     message: `Inspection successfully recorded for ${selectedSchool?.name}!`,
 });
 
-// Reset & redirect to home page
 setTimeout(() => {
+    setSelectedSchoolIdForAnalytics(formData.schoolId);   //lagrer school ID globalt
     resetForm();
     resetFormResource();
     setActiveStep(0);
-    setActivePage("Home");
+
+    setActivePage("analytics");  // til analytics direkte
 }, 1500);
+
 
         } catch (err) {
             console.error("Submission error:", err);
