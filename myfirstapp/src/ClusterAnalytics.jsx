@@ -1,3 +1,4 @@
+// src/ClusterAnalytics.jsx
 import React, { useState, useEffect } from "react";
 import Highcharts from "highcharts";
 import "highcharts/highcharts-more";
@@ -15,7 +16,9 @@ import {
     SingleSelectOption,
     Checkbox,
 } from "@dhis2/ui";
-import classes from "./ClusterAnalytics.module.css";
+
+// IMPORT Analytics.module.css for consistent styling
+import classes from "./Analytics.module.css";
 
 // ========== API CONFIGURATION ==========
 const API_BASE = "https://research.im.dhis2.org/in5320g20/api";
@@ -24,11 +27,107 @@ const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 const LEARNER_DATA_ELEMENT = "ue3QIMOAC7G";
 const TEACHER_PROGRAM = "rmuGQ7kBQBU";
 
+const DATA_ELEMENTS = {
+    SEATS: "fgUU2XNkGvI",
+    BOOKS: "m9k3VefvGQw",
+    CLASSROOMS: "mlbyc3CWNyb",
+    TOILETS: "slYohGwjQme",
+};
+
 const CLUSTERS = {
     "Jambalaya Cluster": { id: "Jj1IUjjPaWf" },
     "Pepper Cluster": { id: "GWRcrane4FY" }
 };
 
+// ========== MINIMUM STANDARDS ==========
+const MINIMUM_STANDARDS = {
+    seatToLearner: { min: 1.0, label: "1:1 (one seat per learner)" },
+    textbookToLearner: { min: 1.0, label: "1:1 (one textbook per learner)" },
+    learnersPerClassroom: { max: 53, label: "<53:1 (less than 53 learners per classroom)" },
+    learnersPerTeacher: { max: 45, label: "<45:1 (less than 45 learners per teacher)" },
+    learnersPerToilet: { max: 25, label: "<25:1 (maximum 25 learners per toilet)" },
+    genderParityIndex: { target: 1.0, label: "1.0 (equal ratio of girls to boys)" },
+};
+
+// ========== HELPER FUNCTIONS ==========
+const getStatusForMetric = (value, standard) => {
+    if (value === null || value === undefined || isNaN(value)) {
+        return { severity: "unknown", label: "No data" };
+    }
+
+    if (standard.min !== undefined) {
+        if (value >= standard.min) {
+            return { severity: "adequate", label: "Meets standard" };
+        } else if (value >= standard.min * 0.8) {
+            return { severity: "limited", label: "Below standard" };
+        } else {
+            return { severity: "critical", label: "Critical shortage" };
+        }
+    }
+
+    if (standard.max !== undefined) {
+        if (value <= standard.max) {
+            return { severity: "adequate", label: "Meets standard" };
+        } else if (value <= standard.max * 1.2) {
+            return { severity: "limited", label: "Above standard" };
+        } else {
+            return { severity: "critical", label: "Critical overcrowding" };
+        }
+    }
+
+    if (standard.target !== undefined) {
+        const tolerance = standard.tolerance || 0.1;
+        if (Math.abs(value - standard.target) <= tolerance) {
+            return { severity: "adequate", label: "Balanced" };
+        } else if (Math.abs(value - standard.target) <= tolerance * 2) {
+            return { severity: "limited", label: "Slight imbalance" };
+        } else {
+            return { severity: "critical", label: "Significant imbalance" };
+        }
+    }
+
+    return { severity: "unknown", label: "No data" };
+};
+
+const renderStatusIcon = (severity) => {
+    if (severity === "critical") {
+        return <IconWarningFilled24 color="#d32f2f" />;
+    }
+    if (severity === "limited") {
+        return <IconInfoFilled24 color="#fb8c00" />;
+    }
+    if (severity === "adequate") {
+        return <IconCheckmarkCircle24 color="#43a047" />;
+    }
+    return <IconInfoFilled24 color="#757575" />;
+};
+
+const formatRatio = (value) => {
+    if (value === null || value === undefined || isNaN(value)) return "N/A";
+    return Number(value).toFixed(2);
+};
+
+const getSeverityColor = (severity) => {
+    if (severity === "critical") return "#d32f2f";
+    if (severity === "limited") return "#fb8c00";
+    if (severity === "adequate") return "#43a047";
+    return "#757575";
+};
+
+const calculateClusterStats = (timeSeries, metricKey) => {
+    if (!timeSeries || timeSeries.length === 0) return null;
+
+    const values = timeSeries.map((p) => p[metricKey]).filter((v) => v != null && v > 0);
+    if (values.length === 0) return null;
+
+    const avg = values.reduce((sum, v) => sum + v, 0) / values.length;
+    const variance = values.reduce((sum, v) => sum + Math.pow(v - avg, 2), 0) / values.length;
+    const stdDev = Math.sqrt(variance);
+
+    return { avg, stdDev };
+};
+
+// ========== MAIN COMPONENT ==========
 export default function ClusterAnalytics({ setActivePage }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
@@ -37,23 +136,13 @@ export default function ClusterAnalytics({ setActivePage }) {
     const [comparisonClusters, setComparisonClusters] = useState([]);
     const [clusterDataMap, setClusterDataMap] = useState({});
     const [schoolDataMap, setSchoolDataMap] = useState({});
-    const [openMetric, setOpenMetric] = useState(null);
     const [viewMode, setViewMode] = useState("cluster");
     const [selectedSchools, setSelectedSchools] = useState([]);
 
-    // ========== MINIMUM STANDARDS ==========
-    const MINIMUM_STANDARDS = {
-        seatToLearner: { min: 1.0, label: "1:1 (one seat per learner)" },
-        textbookToLearner: { min: 1.0, label: "1:1 (one textbook per learner)" },
-        learnersPerClassroom: { max: 53, label: "<53:1 (less than 53 learners per classroom)" },
-        learnersPerTeacher: { max: 45, label: "<45:1 (less than 45 learners per teacher)" },
-        learnersPerToilet: { max: 25, label: "<25:1 (maximum 25 learners per toilet)" },
-        genderParityIndex: { target: 1.0, label: "1.0 (equal ratio of girls to boys)" },
-    };
-
-    // ========== FETCH CLUSTERS FROM API ==========
+    // ========== DATA FETCHING ==========
     useEffect(() => {
         fetchClusters();
+        // eslint-disable-next-line react-hooks/exhaustive-deps
     }, []);
 
     const fetchClusters = async () => {
@@ -79,15 +168,10 @@ export default function ClusterAnalytics({ setActivePage }) {
 
         for (const clusterName of Object.keys(CLUSTERS)) {
             const clusterId = CLUSTERS[clusterName].id;
-            console.log(`Fetching data for ${clusterName} (${clusterId})`);
             const data = await fetchClusterData(clusterId, clusterName);
             clusterMap[clusterName] = data.clusterData;
             Object.assign(schoolMap, data.schoolDataMap);
-            console.log(`Schools in ${clusterName}:`, Object.keys(data.schoolDataMap).length);
         }
-
-        console.log("Final schoolMap:", schoolMap);
-        console.log("Final clusterMap:", clusterMap);
 
         setClusterDataMap(clusterMap);
         setSchoolDataMap(schoolMap);
@@ -115,30 +199,22 @@ export default function ClusterAnalytics({ setActivePage }) {
 
             // Fetch data for each school
             for (const school of schools) {
-                // ========== FETCH LEARNER DATA FROM ANALYTICS ==========
+                // Fetch learner data
                 const learnersRes = await fetch(
                     `${API_BASE}/analytics.json?dimension=dx:${LEARNER_DATA_ELEMENT}&dimension=ou:${school.id}&dimension=pe:2020`,
                     { headers: { Authorization: CREDENTIALS } }
                 );
                 const learnersData = await learnersRes.json();
 
-                console.log(`Learner data for ${school.name}:`, learnersData);
-
-                // Extract total learners
                 let learners = 0;
                 if (learnersData.rows && learnersData.rows.length > 0) {
-                    console.log(`Rows for ${school.name}:`, learnersData.rows);
-                    // Sum all rows (in case there are multiple)
                     learnersData.rows.forEach(row => {
-                        const value = parseInt(row[3]) || 0;
+                        const value = parseInt(row[3], 10) || 0;
                         learners += value;
-                        console.log(`Row value: ${value}, running total: ${learners}`);
                     });
                 }
 
-                console.log(`Final learner count for ${school.name}: ${learners}`);
-
-                // ========== FETCH TEACHER DATA ==========
+                // Fetch teacher data
                 const teachersRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${TEACHER_PROGRAM}&orgUnit=${school.id}&pageSize=1000`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -146,7 +222,7 @@ export default function ClusterAnalytics({ setActivePage }) {
                 const teachersData = await teachersRes.json();
                 const teacherCount = teachersData.events?.length || 0;
 
-                // ========== FETCH RESOURCE DATA ==========
+                // Fetch resource data
                 const resourcesRes = await fetch(
                     `${API_BASE}/tracker/events.json?program=${RESOURCE_PROGRAM_ID}&orgUnit=${school.id}&pageSize=100`,
                     { headers: { Authorization: CREDENTIALS } }
@@ -154,7 +230,6 @@ export default function ClusterAnalytics({ setActivePage }) {
                 const resourcesData = await resourcesRes.json();
                 const events = resourcesData.events || [];
 
-                // Variables for this school's totals
                 let totalSeatsSchool = 0;
                 let totalTextbooksSchool = 0;
                 let totalClassroomsSchool = 0;
@@ -162,10 +237,10 @@ export default function ClusterAnalytics({ setActivePage }) {
 
                 // Process each event for time series
                 events.forEach((event) => {
-                    const date = (event.occurredAt || event.eventDate || "").substring(0, 7); // YYYY-MM
+                    const month = (event.occurredAt || event.eventDate || "").substring(0, 7);
 
-                    if (!timeSeriesData[date]) {
-                        timeSeriesData[date] = {
+                    if (!timeSeriesData[month]) {
+                        timeSeriesData[month] = {
                             totalLearners: 0,
                             totalTeachers: 0,
                             totalSeats: 0,
@@ -176,23 +251,26 @@ export default function ClusterAnalytics({ setActivePage }) {
                     }
 
                     const dataValues = event.dataValues || [];
+                    const getVal = (id) => parseInt(dataValues.find(dv => dv.dataElement === id)?.value || 0, 10);
 
-                    timeSeriesData[date].totalLearners += learners;
-                    timeSeriesData[date].totalTeachers += teacherCount;
-                    timeSeriesData[date].totalSeats += parseInt(dataValues.find(dv => dv.dataElement === "fgUU2XNkGvI")?.value || 0);
-                    timeSeriesData[date].totalTextbooks += parseInt(dataValues.find(dv => dv.dataElement === "m9k3VefvGQw")?.value || 0);
-                    timeSeriesData[date].totalClassrooms += parseInt(dataValues.find(dv => dv.dataElement === "mlbyc3CWNyb")?.value || 0);
-                    timeSeriesData[date].totalToilets += parseInt(dataValues.find(dv => dv.dataElement === "slYohGwjQme")?.value || 0);
+                    timeSeriesData[month].totalLearners += learners;
+                    timeSeriesData[month].totalTeachers += teacherCount;
+                    timeSeriesData[month].totalSeats += getVal(DATA_ELEMENTS.SEATS);
+                    timeSeriesData[month].totalTextbooks += getVal(DATA_ELEMENTS.BOOKS);
+                    timeSeriesData[month].totalClassrooms += getVal(DATA_ELEMENTS.CLASSROOMS);
+                    timeSeriesData[month].totalToilets += getVal(DATA_ELEMENTS.TOILETS);
                 });
 
                 // Get latest values for this school
                 const latestEvent = events[0];
                 if (latestEvent) {
                     const dataValues = latestEvent.dataValues || [];
-                    totalSeatsSchool = parseInt(dataValues.find(dv => dv.dataElement === "fgUU2XNkGvI")?.value || 0);
-                    totalTextbooksSchool = parseInt(dataValues.find(dv => dv.dataElement === "m9k3VefvGQw")?.value || 0);
-                    totalClassroomsSchool = parseInt(dataValues.find(dv => dv.dataElement === "mlbyc3CWNyb")?.value || 0);
-                    totalToiletsSchool = parseInt(dataValues.find(dv => dv.dataElement === "slYohGwjQme")?.value || 0);
+                    const getVal = (id) => parseInt(dataValues.find(dv => dv.dataElement === id)?.value || 0, 10);
+
+                    totalSeatsSchool = getVal(DATA_ELEMENTS.SEATS);
+                    totalTextbooksSchool = getVal(DATA_ELEMENTS.BOOKS);
+                    totalClassroomsSchool = getVal(DATA_ELEMENTS.CLASSROOMS);
+                    totalToiletsSchool = getVal(DATA_ELEMENTS.TOILETS);
                 }
 
                 // Add to cluster totals
@@ -210,7 +288,10 @@ export default function ClusterAnalytics({ setActivePage }) {
                     clusterName: clusterName,
                     totalLearners: learners,
                     totalTeachers: teacherCount,
-                    totalSchools: 1,
+                    totalSeats: totalSeatsSchool,
+                    totalTextbooks: totalTextbooksSchool,
+                    totalClassrooms: totalClassroomsSchool,
+                    totalToilets: totalToiletsSchool,
                     ratios: {
                         seatToLearner: learners > 0 ? parseFloat((totalSeatsSchool / learners).toFixed(2)) : 0,
                         textbookToLearner: learners > 0 ? parseFloat((totalTextbooksSchool / learners).toFixed(2)) : 0,
@@ -218,7 +299,6 @@ export default function ClusterAnalytics({ setActivePage }) {
                         learnersPerTeacher: teacherCount > 0 ? parseFloat((learners / teacherCount).toFixed(2)) : 0,
                         learnersPerToilet: totalToiletsSchool > 0 ? parseFloat((learners / totalToiletsSchool).toFixed(2)) : 0,
                     },
-                    timeSeries: []
                 };
             }
 
@@ -227,7 +307,12 @@ export default function ClusterAnalytics({ setActivePage }) {
                 const data = timeSeriesData[month];
                 return {
                     month,
-                    ...data,
+                    learners: data.totalLearners,
+                    teachers: data.totalTeachers,
+                    seats: data.totalSeats,
+                    books: data.totalTextbooks,
+                    classrooms: data.totalClassrooms,
+                    toilets: data.totalToilets,
                     seatToLearner: data.totalLearners > 0 ? parseFloat((data.totalSeats / data.totalLearners).toFixed(2)) : 0,
                     textbookToLearner: data.totalLearners > 0 ? parseFloat((data.totalTextbooks / data.totalLearners).toFixed(2)) : 0,
                     learnersPerClassroom: data.totalClassrooms > 0 ? parseFloat((data.totalLearners / data.totalClassrooms).toFixed(2)) : 0,
@@ -238,12 +323,13 @@ export default function ClusterAnalytics({ setActivePage }) {
 
             return {
                 clusterData: {
+                    name: clusterName,
                     totalSchools: schools.length,
                     totalLearners,
                     totalTeachers,
-                    totalClassrooms,
                     totalSeats,
                     totalTextbooks,
+                    totalClassrooms,
                     totalToilets,
                     ratios: {
                         seatToLearner: totalLearners > 0 ? parseFloat((totalSeats / totalLearners).toFixed(2)) : 0,
@@ -260,6 +346,7 @@ export default function ClusterAnalytics({ setActivePage }) {
             console.error("Error fetching cluster data:", err);
             return {
                 clusterData: {
+                    name: clusterName,
                     totalSchools: 0,
                     totalLearners: 0,
                     totalTeachers: 0,
@@ -271,11 +358,277 @@ export default function ClusterAnalytics({ setActivePage }) {
         }
     };
 
-    // ========== HELPER FUNCTIONS (KEEP AS IS) ==========
-    const toggleOpen = (metric) => {
-        setOpenMetric((prev) => (prev === metric ? null : metric));
+    // ========== CHART GENERATION ==========
+    const createTimeSeriesChart = (metricKey, label, color, currentValue, standard, timeSeries) => {
+        if (!timeSeries || timeSeries.length === 0) return null;
+
+        const clusterStats = calculateClusterStats(timeSeries, metricKey);
+        const dataPoints = timeSeries.map((p) => p[metricKey]);
+        const categories = timeSeries.map((p) => p.month);
+
+        const areaData = clusterStats
+            ? categories.map(() => [
+                  Math.max(0, clusterStats.avg - clusterStats.stdDev),
+                  clusterStats.avg + clusterStats.stdDev,
+              ])
+            : [];
+
+        const clusterAvgData = clusterStats ? categories.map(() => clusterStats.avg) : [];
+
+        const plotLines = [];
+        if (standard.min !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: standard.min,
+                width: 2,
+                label: {
+                    text: `Min: ${standard.min}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+        if (standard.max !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: standard.max,
+                width: 2,
+                label: {
+                    text: `Max: ${standard.max}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+        if (standard.target !== undefined) {
+            plotLines.push({
+                color: "#1976d2",
+                dashStyle: "Dot",
+                value: standard.target,
+                width: 2,
+                label: {
+                    text: `Target: ${standard.target}`,
+                    align: "right",
+                    style: { color: "#1976d2", fontWeight: "bold" },
+                },
+            });
+        }
+
+        const status = getStatusForMetric(currentValue, standard);
+        const finalPointColor = getSeverityColor(status.severity);
+
+        return {
+            chart: { type: "line", height: 320, backgroundColor: "#ffffff" },
+            title: { text: "" },
+            xAxis: {
+                categories,
+                gridLineColor: "#f0f0f0",
+            },
+            yAxis: {
+                title: { text: label },
+                gridLineColor: "#e5e7eb",
+                plotLines,
+            },
+            credits: { enabled: false },
+            tooltip: {
+                shared: true,
+                crosshairs: true,
+            },
+            series: [
+                clusterStats && {
+                    name: "±1 SD",
+                    data: areaData,
+                    type: "arearange",
+                    lineWidth: 0,
+                    color: "#bbdefb",
+                    fillOpacity: 0.3,
+                    zIndex: 0,
+                    marker: { enabled: false },
+                    enableMouseTracking: false,
+                },
+                clusterStats && {
+                    name: "Average",
+                    data: clusterAvgData,
+                    color: "#1976d2",
+                    dashStyle: "Dash",
+                    lineWidth: 2,
+                    zIndex: 1,
+                    marker: { enabled: false },
+                },
+                {
+                    name: label,
+                    data: dataPoints.map((val, idx) => ({
+                        y: val,
+                        marker: {
+                            enabled: true,
+                            radius: idx === dataPoints.length - 1 ? 6 : 4,
+                            fillColor: idx === dataPoints.length - 1 ? finalPointColor : "#e0e0e0",
+                        },
+                        dataLabels: {
+                            enabled: idx === dataPoints.length - 1,
+                            format: "{y:.2f}",
+                            backgroundColor: finalPointColor,
+                            color: "#ffffff",
+                            borderRadius: 3,
+                            padding: 4,
+                            style: {
+                                fontSize: "11px",
+                                fontWeight: "bold",
+                            },
+                        },
+                    })),
+                    color,
+                    lineWidth: 2,
+                    zIndex: 2,
+                    dataLabels: { enabled: false },
+                },
+            ].filter(Boolean),
+        };
     };
 
+    const createComparisonChart = (metricKey, label, color, standard) => {
+        const categories = [];
+        const dataValues = [];
+
+        if (viewMode === "cluster") {
+            // Compare selected cluster with comparison clusters
+            [selectedCluster, ...comparisonClusters].forEach((clusterName) => {
+                const data = clusterDataMap[clusterName];
+                if (data) {
+                    categories.push(clusterName);
+                    dataValues.push(data.ratios[metricKey] || 0);
+                }
+            });
+        } else {
+            // Compare selected schools
+            selectedSchools.forEach((schoolId) => {
+                const school = schoolDataMap[schoolId];
+                if (school) {
+                    categories.push(school.name);
+                    dataValues.push(school.ratios[metricKey] || 0);
+                }
+            });
+        }
+
+        if (categories.length === 0) return null;
+
+        const plotLines = [];
+        if (standard.min !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: standard.min,
+                width: 2,
+                label: {
+                    text: `Min: ${standard.min}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+        if (standard.max !== undefined) {
+            plotLines.push({
+                color: "#d32f2f",
+                dashStyle: "Dash",
+                value: standard.max,
+                width: 2,
+                label: {
+                    text: `Max: ${standard.max}`,
+                    align: "right",
+                    style: { color: "#d32f2f", fontWeight: "bold" },
+                },
+            });
+        }
+
+        return {
+            chart: { type: "column", height: 320, backgroundColor: "#ffffff" },
+            title: { text: "" },
+            xAxis: {
+                categories,
+                gridLineColor: "#f0f0f0",
+            },
+            yAxis: {
+                title: { text: label },
+                gridLineColor: "#e5e7eb",
+                plotLines,
+            },
+            credits: { enabled: false },
+            tooltip: {
+                shared: false,
+            },
+            series: [
+                {
+                    name: label,
+                    data: dataValues,
+                    color: color,
+                },
+            ],
+        };
+    };
+
+    const generateRecommendation = (metricKey, value, standard) => {
+        if (value === null || value === undefined || isNaN(value)) {
+            return "No data available to generate recommendation.";
+        }
+
+        const status = getStatusForMetric(value, standard);
+        if (status.severity === "adequate") {
+            return "This metric meets the required standard. Continue monitoring.";
+        }
+
+        const currentData = getCurrentData();
+        if (!currentData) return "Unable to generate recommendation.";
+
+        if (metricKey === "seatToLearner" && standard.min !== undefined) {
+            const deficit = standard.min - value;
+            if (deficit > 0) {
+                const learnersCount = currentData.totalLearners || 0;
+                const additionalSeats = Math.ceil(deficit * learnersCount);
+                return `Need for approximately ${additionalSeats} additional seats to reach a full 1:1 seating ratio across ${viewMode === "cluster" ? "the cluster" : "selected schools"}.`;
+            }
+        }
+
+        if (metricKey === "textbookToLearner" && standard.min !== undefined) {
+            const deficit = standard.min - value;
+            if (deficit > 0) {
+                const learnersCount = currentData.totalLearners || 0;
+                const additionalBooks = Math.ceil(deficit * learnersCount);
+                return `Need for approximately ${additionalBooks} additional textbooks to achieve 1:1 ratio.`;
+            }
+        }
+
+        if (metricKey === "learnersPerClassroom" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const neededClassrooms = Math.ceil(excess / standard.max);
+                return `Approximately ${neededClassrooms} additional classroom(s) needed to reduce overcrowding.`;
+            }
+        }
+
+        if (metricKey === "learnersPerTeacher" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const learnersCount = currentData.totalLearners || 0;
+                const additionalTeachers = Math.ceil(learnersCount / standard.max - (currentData.totalTeachers || 0));
+                return `Need for approximately ${additionalTeachers} additional teacher(s) to meet the standard ratio.`;
+            }
+        }
+
+        if (metricKey === "learnersPerToilet" && standard.max !== undefined) {
+            const excess = value - standard.max;
+            if (excess > 0) {
+                const learnersCount = currentData.totalLearners || 0;
+                const additionalToilets = Math.ceil(learnersCount / standard.max - (currentData.totalToilets || 0));
+                return `Need for approximately ${additionalToilets} additional toilet(s) to meet hygiene standards.`;
+            }
+        }
+
+        return "This metric requires attention to meet standards.";
+    };
+
+    // ========== HANDLERS ==========
     const handleComparisonToggle = (clusterName) => {
         setComparisonClusters((prev) =>
             prev.includes(clusterName)
@@ -293,225 +646,106 @@ export default function ClusterAnalytics({ setActivePage }) {
     };
 
     const getAvailableSchools = () => {
-        console.log("getAvailableSchools called");
-        console.log("viewMode:", viewMode);
-        console.log("selectedCluster:", selectedCluster);
-        console.log("schoolDataMap:", schoolDataMap);
-
-        // Return schools from the selected cluster for BOTH modes
-        const filtered = Object.values(schoolDataMap).filter(
-            (s) => {
-                console.log(`School ${s.name}: clusterName="${s.clusterName}", matches=${s.clusterName === selectedCluster}`);
-                return s.clusterName === selectedCluster;
-            }
+        return Object.values(schoolDataMap).filter(
+            (s) => s.clusterName === selectedCluster
         );
-        console.log("Filtered schools:", filtered);
-        return filtered;
     };
 
-    const getStatusForMetric = (value, standard, metricKey) => {
-        if (value === null || value === undefined || isNaN(value)) {
-            return { severity: "unknown", label: "No data" };
+    const getCurrentData = () => {
+        if (viewMode === "cluster") {
+            return clusterDataMap[selectedCluster];
+        } else {
+            // Combine data from selected schools
+            if (selectedSchools.length === 0) return null;
+
+            const combined = {
+                totalLearners: 0,
+                totalTeachers: 0,
+                totalSeats: 0,
+                totalTextbooks: 0,
+                totalClassrooms: 0,
+                totalToilets: 0,
+                ratios: {},
+            };
+
+            selectedSchools.forEach((id) => {
+                const school = schoolDataMap[id];
+                if (school) {
+                    combined.totalLearners += school.totalLearners || 0;
+                    combined.totalTeachers += school.totalTeachers || 0;
+                    combined.totalSeats += school.totalSeats || 0;
+                    combined.totalTextbooks += school.totalTextbooks || 0;
+                    combined.totalClassrooms += school.totalClassrooms || 0;
+                    combined.totalToilets += school.totalToilets || 0;
+                }
+            });
+
+            // Calculate combined ratios
+            combined.ratios = {
+                seatToLearner: combined.totalLearners > 0 ? parseFloat((combined.totalSeats / combined.totalLearners).toFixed(2)) : 0,
+                textbookToLearner: combined.totalLearners > 0 ? parseFloat((combined.totalTextbooks / combined.totalLearners).toFixed(2)) : 0,
+                learnersPerClassroom: combined.totalClassrooms > 0 ? parseFloat((combined.totalLearners / combined.totalClassrooms).toFixed(2)) : 0,
+                learnersPerTeacher: combined.totalTeachers > 0 ? parseFloat((combined.totalLearners / combined.totalTeachers).toFixed(2)) : 0,
+                learnersPerToilet: combined.totalToilets > 0 ? parseFloat((combined.totalLearners / combined.totalToilets).toFixed(2)) : 0,
+            };
+
+            return combined;
         }
-
-        if (standard.min !== undefined) {
-            if (value >= standard.min) {
-                return { severity: "adequate", label: "Meets standard" };
-            } else if (value >= standard.min * 0.8) {
-                return { severity: "limited", label: "Below standard" };
-            } else {
-                return { severity: "critical", label: "Critical shortage" };
-            }
-        }
-
-        if (standard.max !== undefined) {
-            if (value <= standard.max) {
-                return { severity: "adequate", label: "Meets standard" };
-            } else if (value <= standard.max * 1.2) {
-                return { severity: "limited", label: "Above standard" };
-            } else {
-                return { severity: "critical", label: "Critical overcrowding" };
-            }
-        }
-
-        if (standard.target !== undefined) {
-            const tolerance = standard.tolerance || 0.1;
-            if (Math.abs(value - standard.target) <= tolerance) {
-                return { severity: "adequate", label: "Balanced" };
-            } else if (Math.abs(value - standard.target) <= tolerance * 2) {
-                return { severity: "limited", label: "Slight imbalance" };
-            } else {
-                return { severity: "critical", label: "Significant imbalance" };
-            }
-        }
-
-        return { severity: "unknown", label: "No data" };
-    };
-
-    const renderStatusIcon = (severity) => {
-        switch (severity) {
-            case "adequate":
-                return <IconCheckmarkCircle24 className={classes.iconGood} />;
-            case "limited":
-                return <IconInfoFilled24 className={classes.iconWarning} />;
-            case "critical":
-                return <IconWarningFilled24 className={classes.iconCritical} />;
-            default:
-                return <IconInfoFilled24 />;
-        }
-    };
-
-    const formatRatio = (value, metricKey) => {
-        if (value === null || value === undefined || isNaN(value)) {
-            return "N/A";
-        }
-        return parseFloat(value).toFixed(2);
-    };
-
-    const createTimeSeriesChart = (metric, color, standard) => {
-        const currentData = viewMode === "cluster"
-            ? clusterDataMap[selectedCluster]
-            : getCombinedSchoolData();
-
-        if (!currentData || !currentData.timeSeries || currentData.timeSeries.length === 0) {
-            return null;
-        }
-
-        const seriesData = currentData.timeSeries.map((point) => ({
-            x: new Date(point.month + "-01").getTime(),
-            y: point[metric.key] || 0,
-        }));
-
-        return {
-            chart: { type: "line", height: 300 },
-            title: { text: `${metric.label} Over Time` },
-            xAxis: { type: "datetime" },
-            yAxis: {
-                title: { text: metric.label },
-                plotLines: standard.max !== undefined
-                    ? [{ value: standard.max, color: "red", dashStyle: "Dash", width: 2, label: { text: `Max: ${standard.max}` } }]
-                    : standard.min !== undefined
-                        ? [{ value: standard.min, color: "red", dashStyle: "Dash", width: 2, label: { text: `Min: ${standard.min}` } }]
-                        : [],
-            },
-            series: [{ name: metric.label, data: seriesData, color: color }],
-            credits: { enabled: false },
-        };
-    };
-
-    const createComparisonChart = (metric, color, standard) => {
-        const allData = viewMode === "cluster"
-            ? [selectedCluster, ...comparisonClusters].map((name) => ({
-                name,
-                value: clusterDataMap[name]?.ratios[metric.key] || 0,
-            }))
-            : selectedSchools.map((id) => ({
-                name: schoolDataMap[id]?.name || id,
-                value: schoolDataMap[id]?.ratios[metric.key] || 0,
-            }));
-
-        return {
-            chart: { type: "column", height: 300 },
-            title: { text: `${metric.label} Comparison` },
-            xAxis: { categories: allData.map((d) => d.name) },
-            yAxis: {
-                title: { text: metric.label },
-                plotLines: standard.max !== undefined
-                    ? [{ value: standard.max, color: "red", dashStyle: "Dash", width: 2 }]
-                    : standard.min !== undefined
-                        ? [{ value: standard.min, color: "red", dashStyle: "Dash", width: 2 }]
-                        : [],
-            },
-            series: [{ name: metric.label, data: allData.map((d) => d.value), color: color }],
-            credits: { enabled: false },
-        };
-    };
-
-    const getCombinedSchoolData = () => {
-        if (selectedSchools.length === 0) return null;
-
-        const combined = {
-            totalSchools: selectedSchools.length,
-            totalLearners: 0,
-            totalTeachers: 0,
-            ratios: {},
-            timeSeries: []
-        };
-
-        selectedSchools.forEach((id) => {
-            const school = schoolDataMap[id];
-            if (school) {
-                combined.totalLearners += school.totalLearners || 0;
-                combined.totalTeachers += school.totalTeachers || 0;
-            }
-        });
-
-        // Calculate combined ratios
-        const allRatios = selectedSchools.map(id => schoolDataMap[id]?.ratios).filter(Boolean);
-        Object.keys(MINIMUM_STANDARDS).forEach(key => {
-            const values = allRatios.map(r => r[key]).filter(v => v > 0);
-            combined.ratios[key] = values.length > 0
-                ? parseFloat((values.reduce((a, b) => a + b, 0) / values.length).toFixed(2))
-                : 0;
-        });
-
-        return combined;
     };
 
     // ========== METRICS CONFIGURATION ==========
-    const currentData = viewMode === "cluster"
-        ? clusterDataMap[selectedCluster]
-        : getCombinedSchoolData();
+    const currentData = getCurrentData();
+    const currentTimeSeries = viewMode === "cluster" && clusterDataMap[selectedCluster]
+        ? clusterDataMap[selectedCluster].timeSeries
+        : [];
 
     const metrics = currentData
         ? [
-            {
-                key: "seatToLearner",
-                label: "Seat-to-Learner Ratio",
-                value: currentData.ratios.seatToLearner,
-                standard: MINIMUM_STANDARDS.seatToLearner,
-                description: "Number of seats available per learner",
-                color: "#2196f3",
-                suffix: ":1",
-            },
-            {
-                key: "textbookToLearner",
-                label: "Textbook-to-Learner Ratio",
-                value: currentData.ratios.textbookToLearner,
-                standard: MINIMUM_STANDARDS.textbookToLearner,
-                description: "Number of textbooks available per learner",
-                color: "#4caf50",
-                suffix: ":1",
-            },
-            {
-                key: "learnersPerClassroom",
-                label: "Learners per Classroom",
-                value: currentData.ratios.learnersPerClassroom,
-                standard: MINIMUM_STANDARDS.learnersPerClassroom,
-                description: "Average number of learners per classroom",
-                color: "#ff9800",
-                suffix: ":1",
-            },
-            {
-                key: "learnersPerTeacher",
-                label: "Learners per Teacher",
-                value: currentData.ratios.learnersPerTeacher,
-                standard: MINIMUM_STANDARDS.learnersPerTeacher,
-                description: "Average number of learners per teacher",
-                color: "#9c27b0",
-                suffix: ":1",
-            },
-            {
-                key: "learnersPerToilet",
-                label: "Learners per Toilet",
-                value: currentData.ratios.learnersPerToilet,
-                standard: MINIMUM_STANDARDS.learnersPerToilet,
-                description: "Average number of learners per toilet facility",
-                color: "#f44336",
-                suffix: ":1",
-            },
-        ]
+              {
+                  key: "learnersPerTeacher",
+                  label: "Teacher Shortage",
+                  color: "#d32f2f",
+                  standard: MINIMUM_STANDARDS.learnersPerTeacher,
+                  description: "Average number of learners per teacher.",
+              },
+              {
+                  key: "learnersPerClassroom",
+                  label: "Classroom Capacity",
+                  color: "#ef6c00",
+                  standard: MINIMUM_STANDARDS.learnersPerClassroom,
+                  description: "Average number of learners per classroom.",
+              },
+              {
+                  key: "seatToLearner",
+                  label: "Seating Availability",
+                  color: "#43a047",
+                  standard: MINIMUM_STANDARDS.seatToLearner,
+                  description: "Number of seats per learner.",
+              },
+              {
+                  key: "textbookToLearner",
+                  label: "Textbook Availability",
+                  color: "#fb8c00",
+                  standard: MINIMUM_STANDARDS.textbookToLearner,
+                  description: "Number of textbooks per learner.",
+              },
+              {
+                  key: "learnersPerToilet",
+                  label: "Toilet Ratio",
+                  color: "#00897b",
+                  standard: MINIMUM_STANDARDS.learnersPerToilet,
+                  description: "Average number of learners per toilet.",
+              },
+          ].map((m) => ({
+              ...m,
+              value: currentData.ratios[m.key],
+          }))
         : [];
+
+    const problemMetrics = metrics.filter((m) => {
+        const s = getStatusForMetric(m.value, m.standard);
+        return s.severity === "critical" || s.severity === "limited";
+    });
 
     // ========== RENDER ==========
     if (loading) {
@@ -523,20 +757,21 @@ export default function ClusterAnalytics({ setActivePage }) {
     }
 
     if (error) {
-        return <NoticeBox error title="Error">{error}</NoticeBox>;
+        return (
+            <div className={classes.container}>
+                <NoticeBox error title="Error">
+                    {error}
+                </NoticeBox>
+            </div>
+        );
     }
 
     return (
-        <div className={classes.pageWrapper}>
-            {/* HEADER */}
-            <div className={classes.pageHeader}>
-                <Button small icon={<IconArrowLeft24 />} onClick={() => setActivePage("dashboard")} />
-                <h2>Cluster Analytics</h2>
-            </div>
+        <div className={classes.container}>
 
             {/* VIEW MODE TOGGLE */}
-            <Card className={classes.viewModeCard}>
-                <div className={classes.viewModeButtons}>
+            <Card style={{ marginBottom: "16px", padding: "16px" }}>
+                <div style={{ display: "flex", gap: "12px" }}>
                     <Button
                         onClick={() => {
                             setViewMode("cluster");
@@ -557,30 +792,26 @@ export default function ClusterAnalytics({ setActivePage }) {
 
             {/* SELECTOR CARD */}
             {viewMode === "cluster" ? (
-                <Card className={classes.selectorCard}>
-                    <div className={classes.selectorRow}>
-                        <div className={classes.mainSelector}>
-                            <SingleSelectField
-                                label="Select cluster"
-                                selected={selectedCluster}
-                                onChange={({ selected }) => {
-                                    setSelectedCluster(selected);
-                                    setComparisonClusters([]);
-                                }}
-                            >
-                                {clusters.map((cluster) => (
-                                    <SingleSelectOption
-                                        key={cluster}
-                                        value={cluster}
-                                        label={cluster}
-                                    />
-                                ))}
-                            </SingleSelectField>
-                        </div>
-                    </div>
+                <Card style={{ marginBottom: "16px", padding: "16px" }}>
+                    <SingleSelectField
+                        label="Select cluster"
+                        selected={selectedCluster}
+                        onChange={({ selected }) => {
+                            setSelectedCluster(selected);
+                            setComparisonClusters([]);
+                        }}
+                    >
+                        {clusters.map((cluster) => (
+                            <SingleSelectOption
+                                key={cluster}
+                                value={cluster}
+                                label={cluster}
+                            />
+                        ))}
+                    </SingleSelectField>
 
-                    <div className={classes.comparisonSection}>
-                        <p className={classes.comparisonLabel}>Compare with:</p>
+                    <div style={{ marginTop: "16px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>Compare with:</p>
                         {clusters
                             .filter((c) => c !== selectedCluster)
                             .map((cluster) => (
@@ -594,30 +825,26 @@ export default function ClusterAnalytics({ setActivePage }) {
                     </div>
                 </Card>
             ) : (
-                <Card className={classes.selectorCard}>
-                    <div className={classes.selectorRow}>
-                        <div className={classes.mainSelector}>
-                            <SingleSelectField
-                                label="Select base cluster"
-                                selected={selectedCluster}
-                                onChange={({ selected }) => {
-                                    setSelectedCluster(selected);
-                                    setSelectedSchools([]);
-                                }}
-                            >
-                                {clusters.map((cluster) => (
-                                    <SingleSelectOption
-                                        key={cluster}
-                                        value={cluster}
-                                        label={cluster}
-                                    />
-                                ))}
-                            </SingleSelectField>
-                        </div>
-                    </div>
+                <Card style={{ marginBottom: "16px", padding: "16px" }}>
+                    <SingleSelectField
+                        label="Select base cluster"
+                        selected={selectedCluster}
+                        onChange={({ selected }) => {
+                            setSelectedCluster(selected);
+                            setSelectedSchools([]);
+                        }}
+                    >
+                        {clusters.map((cluster) => (
+                            <SingleSelectOption
+                                key={cluster}
+                                value={cluster}
+                                label={cluster}
+                            />
+                        ))}
+                    </SingleSelectField>
 
-                    <div className={classes.comparisonSection}>
-                        <p className={classes.comparisonLabel}>Select schools to compare:</p>
+                    <div style={{ marginTop: "16px" }}>
+                        <p style={{ fontSize: "14px", fontWeight: 600, marginBottom: "8px" }}>Select schools to compare:</p>
                         {getAvailableSchools().map((school) => (
                             <Checkbox
                                 key={school.id}
@@ -637,138 +864,193 @@ export default function ClusterAnalytics({ setActivePage }) {
                 </NoticeBox>
             )}
 
-            {/* INFO CARD */}
+            {/* MAIN ANALYTICS CARD - USING ANALYTICS.JSX STRUCTURE */}
             {currentData && (
-                <Card className={classes.infoCard}>
-                    <h3 className={classes.clusterTitle}>
-                        {viewMode === "cluster" ? selectedCluster : `${selectedSchools.length} School(s) Selected`}
-                    </h3>
-                    <div className={classes.clusterStats}>
-                        {viewMode === "cluster" && (
-                            <div className={classes.statItem}>
-                                <span className={classes.statLabel}>Schools</span>
-                                <span className={classes.statValue}>{currentData.totalSchools}</span>
+                <Card className={classes.mainCard}>
+                    <div className={classes.header}>
+                        <h2 className={classes.schoolTitle}>
+                            {viewMode === "cluster"
+                                ? selectedCluster
+                                : `${selectedSchools.length} School(s) Selected`}
+                        </h2>
+                        <div style={{ display: "flex", gap: "24px", marginTop: "12px", fontSize: "14px", color: "#6e7a8a" }}>
+                            {viewMode === "cluster" && (
+                                <div>
+                                    <strong>Schools:</strong> {currentData.totalSchools}
+                                </div>
+                            )}
+                            <div>
+                                <strong>Total Learners:</strong> {currentData.totalLearners}
                             </div>
-                        )}
-                        <div className={classes.statItem}>
-                            <span className={classes.statLabel}>Total Learners</span>
-                            <span className={classes.statValue}>{currentData.totalLearners}</span>
-                        </div>
-                        <div className={classes.statItem}>
-                            <span className={classes.statLabel}>Total Teachers</span>
-                            <span className={classes.statValue}>{currentData.totalTeachers}</span>
+                            <div>
+                                <strong>Total Teachers:</strong> {currentData.totalTeachers}
+                            </div>
                         </div>
                     </div>
+
+                    {metrics.length === 0 && (
+                        <div className={classes.noData}>
+                            No data available for this selection.
+                        </div>
+                    )}
+
+                    {metrics.length > 0 && (
+                        <>
+                            <div className={classes.metricsSection}>
+                                {metrics.map((metric) => {
+                                    const status = getStatusForMetric(metric.value, metric.standard);
+
+                                    return (
+                                        <div key={metric.key} className={classes.metricRow}>
+                                            {/* METRIC HEADER */}
+                                            <div className={classes.metricHeader}>
+                                                <div className={classes.metricIcon}>
+                                                    {renderStatusIcon(status.severity)}
+                                                </div>
+
+                                                <div className={classes.metricText}>
+                                                    <div className={classes.metricTitle}>
+                                                        {metric.label} – {status.label}
+                                                    </div>
+                                                    <div className={classes.metricSubtitle}>
+                                                        Latest value:{" "}
+                                                        <strong>
+                                                            {metric.value != null
+                                                                ? `${formatRatio(metric.value)}${
+                                                                      metric.key === "seatToLearner" ||
+                                                                      metric.key === "textbookToLearner"
+                                                                          ? ":1"
+                                                                          : ":1"
+                                                                  }`
+                                                                : "No data"}
+                                                        </strong>
+                                                    </div>
+                                                </div>
+                                            </div>
+
+                                            {/* SEVERITY BORDER */}
+                                            <div
+                                                className={`${classes.severityBorder} ${
+                                                    classes[`severity${status.severity}`]
+                                                }`}
+                                            />
+
+                                            {/* ALWAYS EXPANDED DETAILS */}
+                                            <div className={classes.metricDetails}>
+                                                {/* CHART HEADER */}
+                                                <div
+                                                    className={`${classes.chartHeader} ${
+                                                        classes[`chartHeader${status.severity}`]
+                                                    }`}
+                                                >
+                                                    <span className={classes.chartHeaderText}>
+                                                        {metric.label}: {formatRatio(metric.value)}{" "}
+                                                        {metric.standard.min !== undefined
+                                                            ? `(Target ≥ ${metric.standard.min})`
+                                                            : metric.standard.max !== undefined
+                                                            ? `(Target ≤ ${metric.standard.max})`
+                                                            : metric.standard.target !== undefined
+                                                            ? `(Target = ${metric.standard.target})`
+                                                            : ""}
+                                                    </span>
+                                                </div>
+
+                                                {/* TIME SERIES CHART */}
+                                                {viewMode === "cluster" && currentTimeSeries.length > 0 && createTimeSeriesChart(
+                                                    metric.key,
+                                                    metric.label,
+                                                    metric.color,
+                                                    metric.value,
+                                                    metric.standard,
+                                                    currentTimeSeries
+                                                ) && (
+                                                    <div className={classes.chartWrapper}>
+                                                        <HighchartsReact
+                                                            highcharts={Highcharts}
+                                                            options={createTimeSeriesChart(
+                                                                metric.key,
+                                                                metric.label,
+                                                                metric.color,
+                                                                metric.value,
+                                                                metric.standard,
+                                                                currentTimeSeries
+                                                            )}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {/* COMPARISON CHART */}
+                                                {((viewMode === "cluster" && comparisonClusters.length > 0) ||
+                                                    (viewMode === "school" && selectedSchools.length > 1)) &&
+                                                    createComparisonChart(metric.key, metric.label, metric.color, metric.standard) && (
+                                                    <div className={classes.chartWrapper}>
+                                                        <HighchartsReact
+                                                            highcharts={Highcharts}
+                                                            options={createComparisonChart(
+                                                                metric.key,
+                                                                metric.label,
+                                                                metric.color,
+                                                                metric.standard
+                                                            )}
+                                                        />
+                                                    </div>
+                                                )}
+
+                                                {/* DESCRIPTION & RECOMMENDATION */}
+                                                <div className={classes.metricAnalysis}>
+                                                    <p className={classes.metricDescription}>
+                                                        <strong>Description:</strong> {metric.description}
+                                                    </p>
+
+                                                    <p className={classes.recommendation}>
+                                                        <strong>Recommendation:</strong>{" "}
+                                                        {generateRecommendation(
+                                                            metric.key,
+                                                            metric.value,
+                                                            metric.standard
+                                                        )}
+                                                    </p>
+                                                </div>
+                                            </div>
+                                        </div>
+                                    );
+                                })}
+                            </div>
+
+                            {/* SUMMARY SECTION */}
+                            {problemMetrics.length > 0 && (
+                                <>
+                                    <div className={classes.divider} />
+
+                                    <div className={classes.summarySection}>
+                                        <div className={classes.summaryHeaderRow}>
+                                            <h3 className={classes.summaryTitle}>Summary</h3>
+                                        </div>
+
+                                        <div className={classes.summaryCard}>
+                                            <p className={classes.summaryIntro}>
+                                                <strong>
+                                                    {viewMode === "cluster"
+                                                        ? selectedCluster
+                                                        : "Selected schools"}
+                                                </strong>{" "}
+                                                {problemMetrics.length > 0 ? "show areas needing improvement:" : "meet basic standards."}
+                                            </p>
+
+                                            {problemMetrics.length > 0 && (
+                                                <ul className={classes.summaryList}>
+                                                    {problemMetrics.map((m) => (
+                                                        <li key={m.key}>{m.label}</li>
+                                                    ))}
+                                                </ul>
+                                            )}
+                                        </div>
+                                    </div>
+                                </>
+                            )}
+                        </>
+                    )}
                 </Card>
-            )}
-
-            {/* METRICS */}
-            {currentData && (
-                <div className={classes.metricsContainer}>
-                    {metrics.map((metric) => {
-                        const status = getStatusForMetric(
-                            metric.value,
-                            metric.standard,
-                            metric.key
-                        );
-                        const isExpanded = openMetric === metric.key;
-
-                        return (
-                            <Card key={metric.key} className={classes.metricCard}>
-                                <div className={classes.metricHeader}>
-                                    <div className={classes.metricIconWrapper}>
-                                        {renderStatusIcon(status.severity)}
-                                    </div>
-                                    <div className={classes.metricTextBlock}>
-                                        <div className={classes.metricLabel}>
-                                            {metric.label}
-                                        </div>
-                                        <div className={classes.metricValue}>
-                                            {formatRatio(metric.value, metric.key)}{metric.suffix}
-                                        </div>
-                                        <div className={classes.metricStatus}>
-                                            {status.label}
-                                        </div>
-                                        <div className={classes.metricStandard}>
-                                            Standard: {metric.standard.label}
-                                        </div>
-                                    </div>
-                                </div>
-
-                                <p className={classes.metricDescription}>
-                                    {metric.description}
-                                </p>
-
-                                <Button
-                                    small
-                                    onClick={() => toggleOpen(metric.key)}
-                                    className={classes.detailsButton}
-                                >
-                                    {isExpanded ? "Hide details" : "See details"}
-                                </Button>
-
-                                {isExpanded && (
-                                    <div className={classes.expandedContent}>
-                                        {/* TIME SERIES CHART */}
-                                        {createTimeSeriesChart(metric, metric.color, metric.standard) && (
-                                            <div className={classes.chartWrapper}>
-                                                <HighchartsReact
-                                                    highcharts={Highcharts}
-                                                    options={createTimeSeriesChart(
-                                                        metric,
-                                                        metric.color,
-                                                        metric.standard
-                                                    )}
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* COMPARISON CHART */}
-                                        {((viewMode === "cluster" && comparisonClusters.length > 0) ||
-                                            (viewMode === "school" && selectedSchools.length > 1)) && (
-                                            <div className={classes.chartWrapper}>
-                                                <HighchartsReact
-                                                    highcharts={Highcharts}
-                                                    options={createComparisonChart(
-                                                        metric,
-                                                        metric.color,
-                                                        metric.standard
-                                                    )}
-                                                />
-                                            </div>
-                                        )}
-
-                                        {/* RECOMMENDATION */}
-                                        <Card className={classes.recommendationCard}>
-                                            <h4 className={classes.recommendationTitle}>Recommendation</h4>
-                                            <div className={classes.recommendationText}>
-                                                {status.severity === "critical" && (
-                                                    <p>
-                                                        This metric is <strong>below standard</strong>{" "}
-                                                        and requires immediate attention. Consider
-                                                        resource reallocation or targeted interventions.
-                                                    </p>
-                                                )}
-                                                {status.severity === "limited" && (
-                                                    <p>
-                                                        This metric is <strong>close to standard</strong>.
-                                                        Plan follow-up actions to meet the minimum requirement.
-                                                    </p>
-                                                )}
-                                                {status.severity === "adequate" && (
-                                                    <p>
-                                                        This metric <strong>meets the standard</strong>.
-                                                        Continue monitoring and maintain current levels.
-                                                    </p>
-                                                )}
-                                            </div>
-                                        </Card>
-                                    </div>
-                                )}
-                            </Card>
-                        );
-                    })}
-                </div>
             )}
         </div>
     );
