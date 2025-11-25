@@ -25,17 +25,6 @@ import {
     buildResourceEventPayload
 } from "./inspectionUtils";
 
-/**
- * IMPROVED INSPECTION COMPONENT
- *
- * Features:
- * - Multi-step form with validation (4 steps: 0-3)
- * - Real-time ratio calculations
- * - Visual feedback for standards compliance
- * - Offline support with local storage
- * - Direct submission from step 3 to Analytics
- * - Mobile-friendly responsive design
- */
 export default function Inspection({ setActivePage, setSelectedSchoolIdForAnalytics }) {
     // ========================================
     // STATE MANAGEMENT
