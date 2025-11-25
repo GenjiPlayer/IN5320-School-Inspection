@@ -1,3 +1,6 @@
+// Updated SchoolRegistry.jsx
+// Full copy-paste version with working School Inspection navigation
+// and Resource Inspection modal.
 
 import React, { useState, useEffect } from "react";
 import {
@@ -14,6 +17,10 @@ import {
     IconClockHistory24,
     CircularLoader,
     NoticeBox,
+    Modal,
+    ModalTitle,
+    ModalContent,
+    ModalActions,
 } from "@dhis2/ui";
 
 import classes from "./SchoolRegistry.module.css";
@@ -26,6 +33,15 @@ export default function SchoolRegistry({ setActivePage }) {
     const [loading, setLoading] = useState(true);
     const [error, setError] = useState(null);
 
+    const [openResourceModal, setOpenResourceModal] = useState(false);
+    const [resourceDate, setResourceDate] = useState("");
+    const [resourceInputs, setResourceInputs] = useState({
+        classrooms: "",
+        seats: "",
+        toilets: "",
+        books: "",
+    });
+
     const RESOURCE_PROGRAM_ID = "uvpW17dnfUS";
 
     useEffect(() => {
@@ -36,9 +52,6 @@ export default function SchoolRegistry({ setActivePage }) {
         setOpenSchoolId((prev) => (prev === id ? null : id));
     };
 
-    /* ----------------------------
-       FETCH SCHOOL LIST
-    ----------------------------- */
     const fetchSchools = async () => {
         try {
             const res = await fetch(
@@ -61,9 +74,6 @@ export default function SchoolRegistry({ setActivePage }) {
         }
     };
 
-    /* ----------------------------
-       FETCH LATEST VISITS
-    ----------------------------- */
     const fetchLastVisits = async (list) => {
         const results = [];
 
@@ -96,9 +106,6 @@ export default function SchoolRegistry({ setActivePage }) {
         setLoading(false);
     };
 
-    /* ----------------------------
-       HELPERS
-    ----------------------------- */
     const isOverdue = (date) => {
         if (!date) return true;
         const diff = (Date.now() - new Date(date)) / (1000 * 60 * 60 * 24);
@@ -110,18 +117,13 @@ export default function SchoolRegistry({ setActivePage }) {
         const bO = isOverdue(b.lastVisitDate);
         if (aO && !bO) return -1;
         if (!aO && bO) return 1;
-        return (
-            new Date(b.lastVisitDate || 0) - new Date(a.lastVisitDate || 0)
-        );
+        return new Date(b.lastVisitDate || 0) - new Date(a.lastVisitDate || 0);
     });
 
     const filtered = sortedData.filter((s) =>
         s.name.toLowerCase().includes(search.toLowerCase())
     );
 
-    /* ----------------------------
-       LOADING + ERROR
-    ----------------------------- */
     if (loading) {
         return (
             <div className={classes.loadingWrapper}>
@@ -138,12 +140,8 @@ export default function SchoolRegistry({ setActivePage }) {
         );
     }
 
-    /* ----------------------------
-       UI
-    ----------------------------- */
     return (
         <div className={classes.pageWrapper}>
-            {/* HEADER */}
             <div className={classes.pageHeader}>
                 <Button
                     small
@@ -153,7 +151,6 @@ export default function SchoolRegistry({ setActivePage }) {
                 <h2>School Registry</h2>
             </div>
 
-            {/* SEARCH + ADD SCHOOL */}
             <Card className={classes.searchCard}>
                 <InputField
                     placeholder="Search for school"
@@ -171,45 +168,33 @@ export default function SchoolRegistry({ setActivePage }) {
                 </Button>
             </Card>
 
-            {/* SCHOOL LIST */}
             <div className={classes.schoolList}>
                 {filtered.map((school) => (
                     <Card key={school.id} className={classes.schoolCard}>
                         <div className={classes.schoolCardContent}>
-                            {/* LEFT ICON */}
                             <div className={classes.schoolIcon}>
                                 <IconHome24 />
                             </div>
 
-                            {/* RIGHT SIDE */}
                             <div className={classes.schoolRight}>
-                                {/* NAME */}
-                                <div className={classes.schoolName}>
-                                    {school.name}
-                                </div>
+                                <div className={classes.schoolName}>{school.name}</div>
 
-                                {/* STATUS */}
                                 {isOverdue(school.lastVisitDate) ? (
                                     <div className={classes.statusRow}>
-                                        <IconInfoFilled24
-                                            className={classes.iconRed}
-                                        />
+                                        <IconInfoFilled24 className={classes.iconRed} />
                                         <span className={classes.textRed}>
                                             Inspection overdue
                                         </span>
                                     </div>
                                 ) : (
                                     <div className={classes.statusRow}>
-                                        <IconFlag24
-                                            className={classes.iconOrange}
-                                        />
+                                        <IconFlag24 className={classes.iconOrange} />
                                         <span className={classes.textOrange}>
                                             Marked for follow-up
                                         </span>
                                     </div>
                                 )}
 
-                                {/* NEXT INSPECTION */}
                                 <div className={classes.nextInspectionRow}>
                                     <IconCalendar24 />
                                     {school.lastVisitDate
@@ -220,7 +205,6 @@ export default function SchoolRegistry({ setActivePage }) {
                                         : "No visits recorded"}
                                 </div>
 
-                                {/* SHOW MORE */}
                                 <div
                                     className={classes.showMore}
                                     onClick={() => toggleOpen(school.id)}
@@ -237,18 +221,13 @@ export default function SchoolRegistry({ setActivePage }) {
                                         : "Show more"}
                                 </div>
 
-                                {/* DETAILS SECTION */}
                                 {openSchoolId === school.id && (
                                     <div className={classes.detailsWrapper}>
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Date of last visitation:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 {school.lastVisitDate
                                                     ? new Date(
                                                         school.lastVisitDate
@@ -258,47 +237,38 @@ export default function SchoolRegistry({ setActivePage }) {
                                         </div>
 
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Phone:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 +234 123 111 6785
                                             </span>
                                         </div>
 
                                         <div className={classes.detailLine}>
-                                            <span
-                                                className={classes.detailLabel}
-                                            >
+                                            <span className={classes.detailLabel}>
                                                 Address:
                                             </span>
-                                            <span
-                                                className={classes.detailValue}
-                                            >
+                                            <span className={classes.detailValue}>
                                                 Street Streetname 12, District
                                             </span>
                                         </div>
 
-                                        {/* DHIS2 BUTTONS */}
+                                        {/* School Inspection */}
                                         <Button
                                             primary
                                             icon={<IconAdd24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
+                                            onClick={() => setActivePage("inspection")}
                                         >
                                             New school inspection
                                         </Button>
 
+                                        {/* Resource Inspection */}
                                         <Button
                                             icon={<IconAdd24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
+                                            onClick={() => setOpenResourceModal(true)}
                                         >
                                             New resource count
                                         </Button>
@@ -306,9 +276,7 @@ export default function SchoolRegistry({ setActivePage }) {
                                         <Button
                                             secondary
                                             icon={<IconCalendar24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             Schedule visitation
                                         </Button>
@@ -316,9 +284,7 @@ export default function SchoolRegistry({ setActivePage }) {
                                         <Button
                                             secondary
                                             icon={<IconClockHistory24 />}
-                                            className={
-                                                classes.actionButtonDHIS2
-                                            }
+                                            className={classes.actionButtonDHIS2}
                                         >
                                             Previous reports
                                         </Button>
@@ -329,6 +295,89 @@ export default function SchoolRegistry({ setActivePage }) {
                     </Card>
                 ))}
             </div>
+
+            {/* Resource Inspection Modal */}
+            {openResourceModal && (
+                <Modal onClose={() => setOpenResourceModal(false)}>
+                    <ModalTitle>Resource Inspection</ModalTitle>
+                    <ModalContent>
+                        <InputField
+                            label="Inspection Date"
+                            type="date"
+                            value={resourceDate}
+                            onChange={({ value }) => setResourceDate(value)}
+                            required
+                        />
+
+                        <InputField
+                            label="Number of Classrooms"
+                            type="number"
+                            value={resourceInputs.classrooms}
+                            onChange={({ value }) =>
+                                setResourceInputs((prev) => ({
+                                    ...prev,
+                                    classrooms: value,
+                                }))
+                            }
+                        />
+
+                        <InputField
+                            label="Number of Seats"
+                            type="number"
+                            value={resourceInputs.seats}
+                            onChange={({ value }) =>
+                                setResourceInputs((prev) => ({
+                                    ...prev,
+                                    seats: value,
+                                }))
+                            }
+                        />
+
+                        <InputField
+                            label="Number of Toilets"
+                            type="number"
+                            value={resourceInputs.toilets}
+                            onChange={({ value }) =>
+                                setResourceInputs((prev) => ({
+                                    ...prev,
+                                    toilets: value,
+                                }))
+                            }
+                        />
+
+                        <InputField
+                            label="Number of Textbooks"
+                            type="number"
+                            value={resourceInputs.books}
+                            onChange={({ value }) =>
+                                setResourceInputs((prev) => ({
+                                    ...prev,
+                                    books: value,
+                                }))
+                            }
+                        />
+                    </ModalContent>
+
+                    <ModalActions>
+                        <Button onClick={() => setOpenResourceModal(false)}>
+                            Cancel
+                        </Button>
+                        <Button
+                            primary
+                            onClick={() => {
+                                console.log("Submitting resource inspection:", {
+                                    date: resourceDate,
+                                    ...resourceInputs,
+                                });
+
+                                setOpenResourceModal(false);
+                            }}
+                        >
+                            Submit
+                        </Button>
+                    </ModalActions>
+                </Modal>
+            )}
         </div>
     );
 }
