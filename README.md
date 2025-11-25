@@ -73,7 +73,7 @@ When you submit an inspection, we fire off two POST requests to `/api/tracker` o
 
 To read data, we use `/api/tracker/events.json` to grab inspection events, `/api/analytics.json` for learner enrollment numbers (which aggregates across grade levels and genders automatically), and `/api/organisationUnits` to get the list of schools and their map coordinates.
 
-### Cool Stuff We Figured Out
+### What we did
 
 **Dynamic form building** - Instead of hardcoding data element IDs, we fetch the program metadata when the form loads and build a mapping of codes to IDs. Makes the form work even if DHIS2's configuration changes.
 
